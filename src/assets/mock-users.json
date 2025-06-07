@@ -1,0 +1,19 @@
+{
+  "users": [
+    {
+      "email": "oterot1812@gmail.com",
+      "password": "password123",
+      "name": "Apolo Systems"
+    },
+    {
+      "email": "apolo@example.com",
+      "password": "password123",
+      "name": "Apolo Systems"
+    },
+    {
+      "email": "juan@example.com",
+      "password": "secret456",
+      "name": "Juan Pérez"
+    }
+  ]
+}
