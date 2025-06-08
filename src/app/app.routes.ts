@@ -22,7 +22,7 @@ export const routes: Routes = [
     children: [
       // TODO: reemplaza con loadChildren o componentes según tu app
       { path: 'dashboard', component: DashboardComponent },
-      // { path: 'templates', loadChildren: () => import('./features/templates/templates.module').then(m=>m.TemplatesModule) },
+      // { path: 'documents', loadChildren: () => import('./features/documents/document.module').then(m=>m.DocumentsModule) },
       // { path: 'users',     loadChildren: () => import('./features/users/users.module').then(m=>m.UsersModule) },
       // …
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
