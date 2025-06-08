@@ -1,0 +1,25 @@
+{
+  "documents": [
+    {
+      "id": "1",
+      "name": "Documento de Prueba",
+      "description": "Descripción de ejemplo",
+      "creationDate": "2025-06-01T10:00:00Z",
+      "createdBy": "admin",
+      "language": "Español",
+      "status": "Pendiente",
+      "registeredBy": "admin",
+      "registerDate": "2025-06-01T10:00:00Z",
+      "updatedBy": "admin",
+      "updateDate": "2025-06-01T10:00:00Z"
+    },
+    {
+      "id": "2",
+      "name": "Sample Document",
+      "creationDate": "2025-06-02T14:30:00Z",
+      "createdBy": "user1",
+      "language": "Inglés",
+      "status": "Completado"
+    }
+  ]
+}

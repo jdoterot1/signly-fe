@@ -20,16 +20,15 @@ export const routes: Routes = [
     path: '',
     component: LayoutComponent,
     children: [
-      // TODO: reemplaza con loadChildren o componentes según tu app
       { path: 'dashboard', component: DashboardComponent },
-      // { path: 'documents', loadChildren: () => import('./features/documents/document.module').then(m=>m.DocumentsModule) },
-      // { path: 'users',     loadChildren: () => import('./features/users/users.module').then(m=>m.UsersModule) },
-      // …
+      {
+        path: 'documents',
+        loadChildren: () =>
+          import('./core/modules/documents/document.module').then(m => m.DocumentModule)
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: '**', redirectTo: 'dashboard' }
     ]
   },
 
-  // 3) Fallback global (opcional, nunca se alcanzará porque '**' está dentro del bloque con layout)
-  // { path: '**', redirectTo: 'login' }
 ];
