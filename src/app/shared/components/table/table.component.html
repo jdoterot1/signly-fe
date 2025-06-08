@@ -1,0 +1,26 @@
+<table class="min-w-full bg-white">
+  <thead>
+    <tr>
+      <th *ngFor="let col of columns"
+          class="px-4 py-2 text-left text-sm font-medium text-gray-700">
+        {{ col.header }}
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let row of data" class="border-t">
+      <td *ngFor="let col of columns"
+          class="px-4 py-2 text-sm text-gray-800">
+        <!-- Si la columna tiene actionsTpl, lo renderiza; si no, muestra el valor -->
+        <ng-container *ngIf="col.actionsTpl; else showValue">
+          <ng-container
+            *ngTemplateOutlet="col.actionsTpl; context: { $implicit: row }">
+          </ng-container>
+        </ng-container>
+        <ng-template #showValue>
+          {{ row[col.field!] }}
+        </ng-template>
+      </td>
+    </tr>
+  </tbody>
+</table>
