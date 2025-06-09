@@ -1,21 +1,15 @@
 <!-- src/app/core/layout/layout/layout.component.html -->
 <div class="flex h-screen">
-  <!-- Sidebar con logo -->
-  <aside class="w-64 bg-white overflow-y-auto">
+  <!-- Sidebar: el width lo maneja app-sidebar -->
+  <aside class="bg-white overflow-y-auto">
     <app-sidebar></app-sidebar>
   </aside>
 
-  <!-- Resto: header, contenido y footer -->
   <div class="flex flex-col flex-1">
-    <!-- Header standalone (solo campana + usuario) -->
     <app-header></app-header>
-
-    <!-- Área de vistas hijas -->
     <main class="flex-1 bg-gray-100 p-6 overflow-auto">
       <router-outlet></router-outlet>
     </main>
-
-    <!-- Footer -->
     <footer class="flex-shrink-0 bg-white shadow p-4">
       <app-footer></app-footer>
     </footer>
