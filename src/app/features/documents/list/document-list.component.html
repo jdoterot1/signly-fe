@@ -1,1 +1,186 @@
-<h2 class="text-2xl font-bold mb-4">Lista de Documentos</h2>
+<div
+  class="p-6 bg-white rounded-lg shadow"
+  style="font-family: 'Poppins', sans-serif;"
+>
+  <!-- header: título, búsqueda y sort -->
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-2xl font-bold">Lista de Documentos</h2>
+    <div class="flex space-x-3">
+      <!-- Search -->
+      <div class="relative">
+        <img
+          src="assets/icons/tables/Search.svg"
+          alt="Search"
+          class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
+        />
+        <input
+          type="text"
+          placeholder="Search"
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="onSearchTermChange()"
+          class="bg-[#F9FBFF] placeholder-[#B5B7C0] text-sm rounded-full pl-10 pr-3 py-2 focus:outline-none"
+        />
+      </div>
+      <!-- Sort by -->
+      <div
+        (click)="
+          sortOption = sortOption === 'newest' ? 'oldest' : 'newest';
+          onSortOptionChange(sortOption)
+        "
+        class="flex items-center bg-[#F9FBFF] rounded-full px-4 py-2 cursor-pointer select-none"
+      >
+        <span class="text-sm text-gray-700">
+          Short by:
+          <span class="font-bold">
+            {{ sortOption === 'newest' ? 'Newest' : 'Oldest' }}
+          </span>
+        </span>
+        <img
+          src="assets/icons/tables/ChevronDown.svg"
+          alt="Toggle sort"
+          class="w-4 h-4 ml-2"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- tabla -->
+  <table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+          Nombre de Documento
+        </th>
+        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+          Descripción
+        </th>
+        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+          Fecha de Creación
+        </th>
+        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+          Creado por
+        </th>
+        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+          Idioma
+        </th>
+        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+          Estado
+        </th>
+        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+          Acciones
+        </th>
+      </tr>
+    </thead>
+    <tbody class="bg-white divide-y divide-gray-200">
+      <tr *ngFor="let doc of filteredDocs">
+        <td class="px-4 py-4">{{ doc.name }}</td>
+        <td class="px-4 py-4">{{ doc.description }}</td>
+        <td class="px-4 py-4">{{ doc.creationDate | date:'dd/MM/yyyy' }}</td>
+        <td class="px-4 py-4">{{ doc.createdBy }}</td>
+        <td class="px-4 py-4">{{ doc.language }}</td>
+        <td class="px-4 py-4 text-center">
+          <span
+            class="inline-flex justify-center items-center w-24 px-2 py-1 rounded text-sm text-white"
+            [ngClass]="{
+              'bg-[#DF0404]': doc.status === 'Pendiente',
+              'bg-[#FF9500]': doc.status === 'En Proceso',
+              'bg-[#00B087]': doc.status === 'Completado'
+            }"
+          >
+            {{ doc.status }}
+          </span>
+        </td>
+        <td class="px-4 py-4 text-center">
+          <div class="inline-flex space-x-4 justify-center">
+            <a
+              [routerLink]="['/documents', doc.id]"
+              title="Ver Documento"
+              class="hover:opacity-75"
+            >
+              <img
+                src="assets/icons/tables/Pdf.svg"
+                alt="PDF"
+                class="w-6 h-6"
+              />
+            </a>
+            <a
+              [routerLink]="['/documents', doc.id, 'configure']"
+              title="Editar Documento"
+              class="hover:opacity-75"
+            >
+              <img
+                src="assets/icons/tables/Edit.svg"
+                alt="Editar"
+                class="w-6 h-6"
+              />
+            </a>
+            <button
+              (click)="deleteDocument(doc)"
+              title="Eliminar Documento"
+              class="hover:opacity-75"
+            >
+              <img
+                src="assets/icons/tables/Delete.svg"
+                alt="Eliminar"
+                class="w-6 h-6"
+              />
+            </button>
+          </div>
+        </td>
+      </tr>
+      <tr *ngIf="!filteredDocs.length">
+        <td colspan="7" class="px-4 py-4 text-center text-gray-500">
+          No se encontraron documentos.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- paginación -->
+  <div class="flex items-center justify-between mt-4 text-sm">
+    <div class="text-[#B5B7C0]">
+      Mostrando datos
+      <strong>{{ (currentPage - 1) * pageSize + 1 }}</strong>
+      a
+      <strong>{{ (currentPage - 1) * pageSize + filteredDocs.length }}</strong>
+      de
+      <strong>{{ totalItems }}</strong>
+      entradas
+    </div>
+    <div class="inline-flex items-center">
+      <!-- icono puro izquierda -->
+      <img
+        src="assets/icons/tables/MoveLeft.svg"
+        alt="Anterior"
+        (click)="prevPage()"
+        [class.cursor-pointer]="currentPage>1"
+        [class.cursor-pointer]="currentPage>1"
+        class="w-8 h-8 mx-1"
+      />
+      <!-- números de página -->
+      <ul class="inline-flex">
+        <li *ngFor="let p of pages">
+          <button
+            (click)="goToPage(p)"
+            [ngClass]="{
+              'bg-blue-500 text-white': currentPage === p,
+              'border border-gray-300 text-gray-700 hover:bg-gray-200': currentPage !== p
+            }"
+            class="px-3 py-1 mx-1 rounded"
+          >
+            {{ p }}
+          </button>
+        </li>
+      </ul>
+      <!-- icono puro derecha -->
+      <img
+        src="assets/icons/tables/MoveRight.svg"
+        alt="Siguiente"
+        (click)="nextPage()"
+        [class.cursor-pointer]="currentPage<totalPages"
+        [class.opacity-50]="currentPage===totalPages"
+        class="w-8 h-8 mx-1"
+      />
+    </div>
+  </div>
+</div>
