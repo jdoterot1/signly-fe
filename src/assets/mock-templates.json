@@ -1,0 +1,49 @@
+{
+  "templates": [
+    {
+      "id": "1",
+      "name": "Sales Agreement",
+      "description": "Standard sales agreement template",
+      "creationDate": "2025-06-01T00:00:00.000Z",
+      "createdBy": "John Doe",
+      "language": "English",
+      "status": "Pending"
+    },
+    {
+      "id": "2",
+      "name": "NDA Template",
+      "description": "Non-disclosure agreement template",
+      "creationDate": "2025-06-01T00:00:00.000Z",
+      "createdBy": "Jane Smith",
+      "language": "English",
+      "status": "In Progress"
+    },
+    {
+      "id": "3",
+      "name": "Employment Contract",
+      "description": "Permanent employee contract",
+      "creationDate": "2025-06-01T00:00:00.000Z",
+      "createdBy": "Bob Brown",
+      "language": "Spanish",
+      "status": "Completed"
+    },
+    {
+      "id": "4",
+      "name": "Service Agreement",
+      "description": "B2B client service agreement",
+      "creationDate": "2025-06-01T00:00:00.000Z",
+      "createdBy": "Alice Green",
+      "language": "English",
+      "status": "Pending"
+    },
+    {
+      "id": "5",
+      "name": "Power of Attorney",
+      "description": "Signed and facial validation document",
+      "creationDate": "2025-06-01T00:00:00.000Z",
+      "createdBy": "Mark Lee",
+      "language": "English",
+      "status": "Completed"
+    }
+  ]
+}

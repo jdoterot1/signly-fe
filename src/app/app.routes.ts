@@ -26,9 +26,13 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./core/modules/documents/document.module').then(m => m.DocumentModule)
       },
+      {
+        path: 'templates',
+        loadChildren: () =>
+          import('./core/modules/templates/template.module').then(m => m.TemplateModule)
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: '**', redirectTo: 'dashboard' }
     ]
   },
-
 ];
