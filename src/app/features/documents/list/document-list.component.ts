@@ -1,31 +1,79 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+// src/app/features/documents/list/document-list.component.ts
+import { Component, OnInit }      from '@angular/core';
+import { CommonModule }           from '@angular/common';
+import { RouterModule }           from '@angular/router';
+import { FormsModule }            from '@angular/forms';
 
-import { DocumentService } from '../../../core/services/documents/document.service';
-import { Document } from '../../../core/models/documents/document.model';
+import { TableComponent }         from '../../../shared/table/table.component';
+import { TableModel }             from '../../../shared/table/table.model';
+import { DocumentService }        from '../../../core/services/documents/document.service';
+import { Document, DocumentStatus } from '../../../core/models/documents/document.model';
+
+interface DocumentRow {
+  id: string;
+  name: string;
+  description?: string;
+  creationDate: string;      // formateada como 'dd/MM/yyyy'
+  createdBy: string;
+  language: string;
+  status: DocumentStatus;    // 'Pendiente' | 'En Proceso' | 'Completado'
+}
 
 @Component({
   selector: 'app-document-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [ CommonModule, RouterModule, FormsModule, TableComponent ],
   templateUrl: './document-list.component.html'
 })
 export class DocumentListComponent implements OnInit {
-  documents: Document[] = [];
-  filteredDocs: Document[] = [];
-
-  // filtros y orden
-  searchTerm = '';
-  sortOption: 'newest' | 'oldest' = 'newest';
-
-  // paginación
-  currentPage = 1;
-  pageSize = 8;
-  totalPages = 0;
-  totalItems = 0;
-  pages: number[] = [];
+  tableModel: TableModel<DocumentRow> = {
+    entityName: 'Lista de Documentos',
+    tableConfig: {
+      pageSize: 8,
+      enableFiltering: true,
+      enableSorting: true,
+      showPagination: true,
+      showRowSelection: false,
+      showIndexColumn: false,
+      emptyMessage: 'No se encontraron documentos.',
+      trackByField: 'id'
+    },
+    columns: [
+      { key: 'name',         header: 'Nombre de Documento', columnType: 'text',   sortable: true,  filterable: true,  visible: true },
+      { key: 'description',  header: 'Descripción',          columnType: 'text',   sortable: true,  filterable: true,  visible: true },
+      { key: 'creationDate', header: 'Fecha de Creación',    columnType: 'text',   sortable: true,  filterable: false, visible: true },
+      { key: 'createdBy',    header: 'Creado por',           columnType: 'text',   sortable: true,  filterable: true,  visible: true },
+      { key: 'language',     header: 'Idioma',               columnType: 'text',   sortable: true,  filterable: true,  visible: true },
+      { key: 'status',       header: 'Estado',               columnType: 'text',   sortable: true,  filterable: false, visible: true },
+      {
+        key: 'actions',
+        header: 'Acciones',
+        columnType: 'action',
+        visible: true,
+        actions: [
+          {
+            label: '',
+            icon: 'assets/icons/tables/Pdf.svg',
+            tooltip: 'Ver documento',
+            handler: row => this.onView(row)
+          },
+          {
+            label: '',
+            icon: 'assets/icons/tables/Edit.svg',
+            tooltip: 'Editar documento',
+            handler: row => this.onEdit(row)
+          },
+          {
+            label: '',
+            icon: 'assets/icons/tables/Delete.svg',
+            tooltip: 'Eliminar documento',
+            handler: row => this.onDelete(row)
+          }
+        ]
+      }
+    ],
+    data: []
+  };
 
   constructor(private documentService: DocumentService) {}
 
@@ -33,71 +81,36 @@ export class DocumentListComponent implements OnInit {
     this.loadDocuments();
   }
 
-  private loadDocuments() {
+  private loadDocuments(): void {
     this.documentService.getAllDocuments().subscribe(docs => {
-      this.documents = docs;
-      this.applyFilters();
+      const rows: DocumentRow[] = docs.map(d => ({
+        id:           d.id,
+        name:         d.name,
+        description:  d.description,
+        creationDate: d.creationDate
+                         .toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+        createdBy:    d.createdBy,
+        language:     d.language,
+        status:       d.status
+      }));
+      this.tableModel = { ...this.tableModel, data: rows };
     });
   }
 
-  applyFilters(): void {
-    let docs = [...this.documents];
-
-    // 1) filtro de búsqueda
-    if (this.searchTerm.trim()) {
-      const term = this.searchTerm.toLowerCase();
-      docs = docs.filter(doc =>
-        doc.name.toLowerCase().includes(term) ||
-        (!!doc.description && doc.description.toLowerCase().includes(term)) ||
-        doc.createdBy.toLowerCase().includes(term)
-      );
-    }
-
-    // 2) orden
-    docs.sort((a, b) =>
-      this.sortOption === 'newest'
-        ? b.creationDate.getTime() - a.creationDate.getTime()
-        : a.creationDate.getTime() - b.creationDate.getTime()
-    );
-
-    // 3) paginación
-    this.totalItems = docs.length;
-    this.totalPages = Math.ceil(this.totalItems / this.pageSize);
-    this.pages = Array.from({ length: this.totalPages }, (_, i) => i + 1);
-
-    const start = (this.currentPage - 1) * this.pageSize;
-    this.filteredDocs = docs.slice(start, start + this.pageSize);
+  onView(row: DocumentRow) {
+    console.log('Ver documento', row);
+    // this.router.navigate(['/documents', row.id]);
   }
 
-  onSearchTermChange(): void {
-    this.currentPage = 1;
-    this.applyFilters();
+  onEdit(row: DocumentRow) {
+    console.log('Editar documento', row);
+    // this.router.navigate(['/documents', row.id, 'configure']);
   }
 
-  onSortOptionChange(option: 'newest' | 'oldest'): void {
-    this.sortOption = option;
-    this.applyFilters();
-  }
-
-  goToPage(page: number): void {
-    if (page < 1 || page > this.totalPages) return;
-    this.currentPage = page;
-    this.applyFilters();
-  }
-
-  prevPage(): void {
-    this.goToPage(this.currentPage - 1);
-  }
-
-  nextPage(): void {
-    this.goToPage(this.currentPage + 1);
-  }
-
-  deleteDocument(doc: Document): void {
-    if (confirm(`¿Seguro que deseas eliminar "${doc.name}"?`)) {
-      this.documentService.deleteDocument(doc.id).subscribe(() => {
-        this.loadDocuments();
-      });
+  onDelete(row: DocumentRow) {
+    if (confirm(`¿Seguro que deseas eliminar "${row.name}"?`)) {
+      this.documentService.deleteDocument(row.id)
+        .subscribe(() => this.loadDocuments());
     }
   }
 }
