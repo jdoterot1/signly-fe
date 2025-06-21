@@ -44,6 +44,321 @@
       "createdBy": "Mark Lee",
       "language": "English",
       "status": "Completed"
+    },
+    {
+      "id": "6",
+      "name": "Lease Agreement",
+      "description": "Residential property rental contract",
+      "creationDate": "2025-06-02T00:00:00.000Z",
+      "createdBy": "Sarah Johnson",
+      "language": "English",
+      "status": "In Progress"
+    },
+    {
+      "id": "7",
+      "name": "Consulting Contract",
+      "description": "Independent consultant agreement",
+      "creationDate": "2025-06-02T00:00:00.000Z",
+      "createdBy": "Michael Chen",
+      "language": "English",
+      "status": "Pending"
+    },
+    {
+      "id": "8",
+      "name": "Partnership Agreement",
+      "description": "Business partnership terms",
+      "creationDate": "2025-06-03T00:00:00.000Z",
+      "createdBy": "Emily Wilson",
+      "language": "French",
+      "status": "Completed"
+    },
+    {
+      "id": "9",
+      "name": "Loan Agreement",
+      "description": "Personal loan terms and conditions",
+      "creationDate": "2025-06-03T00:00:00.000Z",
+      "createdBy": "David Kim",
+      "language": "English",
+      "status": "Pending"
+    },
+    {
+      "id": "10",
+      "name": "Freelancer Contract",
+      "description": "Contract for freelance workers",
+      "creationDate": "2025-06-04T00:00:00.000Z",
+      "createdBy": "Lisa Wong",
+      "language": "Spanish",
+      "status": "In Progress"
+    },
+    {
+      "id": "11",
+      "name": "Software License",
+      "description": "End-user license agreement",
+      "creationDate": "2025-06-05T00:00:00.000Z",
+      "createdBy": "Paul Rodriguez",
+      "language": "English",
+      "status": "Completed"
+    },
+    {
+      "id": "12",
+      "name": "MOU Template",
+      "description": "Memorandum of understanding",
+      "creationDate": "2025-06-06T00:00:00.000Z",
+      "createdBy": "Olivia Martinez",
+      "language": "English",
+      "status": "Pending"
+    },
+    {
+      "id": "13",
+      "name": "Confidentiality Agreement",
+      "description": "Employee confidentiality terms",
+      "creationDate": "2025-06-07T00:00:00.000Z",
+      "createdBy": "James Taylor",
+      "language": "German",
+      "status": "In Progress"
+    },
+    {
+      "id": "14",
+      "name": "Purchase Agreement",
+      "description": "Asset purchase contract",
+      "creationDate": "2025-06-08T00:00:00.000Z",
+      "createdBy": "Sophia Anderson",
+      "language": "English",
+      "status": "Completed"
+    },
+    {
+      "id": "15",
+      "name": "Settlement Agreement",
+      "description": "Legal dispute resolution",
+      "creationDate": "2025-06-09T00:00:00.000Z",
+      "createdBy": "Daniel White",
+      "language": "English",
+      "status": "Pending"
+    },
+    {
+      "id": "16",
+      "name": "Franchise Agreement",
+      "description": "Franchise business terms",
+      "creationDate": "2025-06-10T00:00:00.000Z",
+      "createdBy": "Emma Harris",
+      "language": "French",
+      "status": "In Progress"
+    },
+    {
+      "id": "17",
+      "name": "Sponsorship Agreement",
+      "description": "Event sponsorship terms",
+      "creationDate": "2025-06-11T00:00:00.000Z",
+      "createdBy": "Christopher Martin",
+      "language": "English",
+      "status": "Completed"
+    },
+    {
+      "id": "18",
+      "name": "NDA (Multilateral)",
+      "description": "Multi-party confidentiality agreement",
+      "creationDate": "2025-06-12T00:00:00.000Z",
+      "createdBy": "Ava Thompson",
+      "language": "English",
+      "status": "Pending"
+    },
+    {
+      "id": "19",
+      "name": "Service Level Agreement",
+      "description": "IT services performance terms",
+      "creationDate": "2025-06-13T00:00:00.000Z",
+      "createdBy": "Matthew Garcia",
+      "language": "Spanish",
+      "status": "In Progress"
+    },
+    {
+      "id": "20",
+      "name": "Joint Venture Agreement",
+      "description": "Business collaboration contract",
+      "creationDate": "2025-06-14T00:00:00.000Z",
+      "createdBy": "Isabella Clark",
+      "language": "English",
+      "status": "Completed"
+    },
+    {
+      "id": "21",
+      "name": "License Agreement",
+      "description": "Intellectual property license",
+      "creationDate": "2025-06-15T00:00:00.000Z",
+      "createdBy": "Andrew Lewis",
+      "language": "English",
+      "status": "Pending"
+    },
+    {
+      "id": "22",
+      "name": "Independent Contractor",
+      "description": "1099 contractor agreement",
+      "creationDate": "2025-06-16T00:00:00.000Z",
+      "createdBy": "Mia Walker",
+      "language": "German",
+      "status": "In Progress"
+    },
+    {
+      "id": "23",
+      "name": "Equipment Lease",
+      "description": "Commercial equipment rental",
+      "creationDate": "2025-06-17T00:00:00.000Z",
+      "createdBy": "Joshua Hall",
+      "language": "English",
+      "status": "Completed"
+    },
+    {
+      "id": "24",
+      "name": "Termination Agreement",
+      "description": "Employment termination terms",
+      "creationDate": "2025-06-18T00:00:00.000Z",
+      "createdBy": "Charlotte Young",
+      "language": "English",
+      "status": "Pending"
+    },
+    {
+      "id": "25",
+      "name": "Royalty Agreement",
+      "description": "Intellectual property royalties",
+      "creationDate": "2025-06-19T00:00:00.000Z",
+      "createdBy": "Ethan Allen",
+      "language": "French",
+      "status": "In Progress"
+    },
+    {
+      "id": "26",
+      "name": "Non-Compete Agreement",
+      "description": "Employee non-compete terms",
+      "creationDate": "2025-06-20T00:00:00.000Z",
+      "createdBy": "Amelia Hernandez",
+      "language": "English",
+      "status": "Completed"
+    },
+    {
+      "id": "27",
+      "name": "Software Development",
+      "description": "Custom software contract",
+      "creationDate": "2025-06-21T00:00:00.000Z",
+      "createdBy": "Benjamin King",
+      "language": "English",
+      "status": "Pending"
+    },
+    {
+      "id": "28",
+      "name": "Marketing Agreement",
+      "description": "Marketing services contract",
+      "creationDate": "2025-06-22T00:00:00.000Z",
+      "createdBy": "Abigail Wright",
+      "language": "Spanish",
+      "status": "In Progress"
+    },
+    {
+      "id": "29",
+      "name": "Commission Agreement",
+      "description": "Sales commission terms",
+      "creationDate": "2025-06-23T00:00:00.000Z",
+      "createdBy": "William Scott",
+      "language": "English",
+      "status": "Completed"
+    },
+    {
+      "id": "30",
+      "name": "Volunteer Agreement",
+      "description": "Non-profit volunteer terms",
+      "creationDate": "2025-06-24T00:00:00.000Z",
+      "createdBy": "Harper Green",
+      "language": "English",
+      "status": "Pending"
+    },
+    {
+      "id": "31",
+      "name": "Event Contract",
+      "description": "Venue and services agreement",
+      "creationDate": "2025-06-25T00:00:00.000Z",
+      "createdBy": "Alexander Adams",
+      "language": "German",
+      "status": "In Progress"
+    },
+    {
+      "id": "32",
+      "name": "Reseller Agreement",
+      "description": "Product distribution terms",
+      "creationDate": "2025-06-26T00:00:00.000Z",
+      "createdBy": "Evelyn Baker",
+      "language": "English",
+      "status": "Completed"
+    },
+    {
+      "id": "33",
+      "name": "Referral Agreement",
+      "description": "Business referral terms",
+      "creationDate": "2025-06-27T00:00:00.000Z",
+      "createdBy": "Jacob Nelson",
+      "language": "French",
+      "status": "Pending"
+    },
+    {
+      "id": "34",
+      "name": "Maintenance Agreement",
+      "description": "Equipment maintenance contract",
+      "creationDate": "2025-06-28T00:00:00.000Z",
+      "createdBy": "Victoria Carter",
+      "language": "English",
+      "status": "In Progress"
+    },
+    {
+      "id": "35",
+      "name": "Coaching Agreement",
+      "description": "Professional coaching services",
+      "creationDate": "2025-06-29T00:00:00.000Z",
+      "createdBy": "Ryan Mitchell",
+      "language": "English",
+      "status": "Completed"
+    },
+    {
+      "id": "36",
+      "name": "Photography Contract",
+      "description": "Professional photography services",
+      "creationDate": "2025-06-30T00:00:00.000Z",
+      "createdBy": "Grace Perez",
+      "language": "Spanish",
+      "status": "Pending"
+    },
+    {
+      "id": "37",
+      "name": "Influencer Agreement",
+      "description": "Social media collaboration",
+      "creationDate": "2025-07-01T00:00:00.000Z",
+      "createdBy": "Nathan Roberts",
+      "language": "English",
+      "status": "In Progress"
+    },
+    {
+      "id": "38",
+      "name": "Arbitration Agreement",
+      "description": "Dispute resolution terms",
+      "creationDate": "2025-07-02T00:00:00.000Z",
+      "createdBy": "Chloe Turner",
+      "language": "English",
+      "status": "Completed"
+    },
+    {
+      "id": "39",
+      "name": "Subscription Agreement",
+      "description": "Recurring service contract",
+      "creationDate": "2025-07-03T00:00:00.000Z",
+      "createdBy": "Samuel Phillips",
+      "language": "German",
+      "status": "Pending"
+    },
+    {
+      "id": "40",
+      "name": "Internship Agreement",
+      "description": "Intern employment terms",
+      "creationDate": "2025-07-04T00:00:00.000Z",
+      "createdBy": "Zoey Campbell",
+      "language": "English",
+      "status": "In Progress"
     }
   ]
 }
