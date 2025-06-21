@@ -1,3 +1,4 @@
+// src/app/shared/table/table.component.ts
 import {
   Component,
   Input,
@@ -35,10 +36,14 @@ export class TableComponent<T = any> implements OnChanges {
   @Input() model!: TableModel<T>;
   @Output() selectionChange = new EventEmitter<T[]>();
 
-  // control de búsqueda
+  // búsqueda global
   searchTerm = '';
+  // controla visibilidad de la fila de filtros por columna
+  showColumnFilters = false;
+  // valores de filtro por cada columna
+  columnFilters: Record<string, string> = {};
 
-  // estado interno de ordenamiento, filtrado y paginado
+  // estado interno: orden, paginado, datos filtrados
   state: {
     sortBy?: string;
     sortDir: 'asc' | 'desc';
@@ -53,7 +58,7 @@ export class TableComponent<T = any> implements OnChanges {
   selectAll = false;
   private selected = new Set<T>();
 
-  // mapeo de clases para badges de estado
+  // clases para badge de estado
   statusClasses: Record<string, string> = {
     Pending: 'bg-[#DF0404]',
     'In Progress': 'bg-[#FF9500]',
@@ -67,7 +72,7 @@ export class TableComponent<T = any> implements OnChanges {
     }
   }
 
-  // Helpers para acceso rápido
+  // getters rápidos
   get config(): TableConfig {
     return this.model.tableConfig;
   }
@@ -77,23 +82,35 @@ export class TableComponent<T = any> implements OnChanges {
   get data(): T[] {
     return this.model.data;
   }
-
-  /**
-   * Etiqueta dinámica para el botón de sort
-   */
   get sortLabel(): string {
     return this.state.sortDir === 'asc' ? 'Newest' : 'Oldest';
   }
 
-  /**
-   * Invierte la dirección de ordenamiento (para el botón Sort By)
-   */
+  // alterna orden asc/desc
   onSortToggle(): void {
     this.state.sortDir = this.state.sortDir === 'asc' ? 'desc' : 'asc';
     this.applyFilters();
   }
 
-  private resetState() {
+  // muestra/oculta la fila de inputs de filtro
+  toggleFiltersRow(): void {
+    this.showColumnFilters = !this.showColumnFilters;
+    if (!this.showColumnFilters) {
+      // al ocultar, limpiamos filtros y recargamos
+      this.columnFilters = {};
+      this.resetState();
+      this.applyFilters();
+    }
+  }
+
+  // manejo de cambio de filtro por columna
+  onColumnFilterChange(key: string, value: string): void {
+    this.columnFilters[key] = value;
+    this.state.data.currentPage = 1;
+    this.applyFilters();
+  }
+
+  private resetState(): void {
     this.state.data.currentPage = 1;
     this.selectAll = false;
     this.selected.clear();
@@ -103,7 +120,7 @@ export class TableComponent<T = any> implements OnChanges {
   applyFilters(): void {
     let list = [...this.data];
 
-    // filtrado por término de búsqueda
+    // 1) búsqueda global
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase();
       list = list.filter(r =>
@@ -113,12 +130,24 @@ export class TableComponent<T = any> implements OnChanges {
       );
     }
 
-    // ordenamiento
+    // 2) filtros por columna
+    Object.entries(this.columnFilters).forEach(([key, val]) => {
+      const term = val.toLowerCase();
+      if (term) {
+        list = list.filter(r =>
+          String((r as any)[key]).toLowerCase().includes(term)
+        );
+      }
+    });
+
+    // 3) ordenamiento
     if (this.state.sortBy) {
       const key = this.state.sortBy;
       list.sort((a, b) => {
-        const aRaw = (a as any)[key], bRaw = (b as any)[key];
-        const aNum = parseFloat(aRaw), bNum = parseFloat(bRaw);
+        const aRaw = (a as any)[key];
+        const bRaw = (b as any)[key];
+        const aNum = parseFloat(aRaw);
+        const bNum = parseFloat(bRaw);
         let cmp: number;
         if (!isNaN(aNum) && !isNaN(bNum)) {
           cmp = aNum - bNum;
@@ -129,17 +158,22 @@ export class TableComponent<T = any> implements OnChanges {
       });
     }
 
-    // paginación
+    // 4) paginación
     const total = list.length;
     const perPage = this.config.pageSize;
     const totalPages = Math.ceil(total / perPage) || 1;
-    // Clamp currentPage between 1 and totalPages
     const current = Math.max(1, Math.min(this.state.data.currentPage, totalPages));
     const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
     const start = (current - 1) * perPage;
     const sliced = list.slice(start, start + perPage);
 
-    this.state.data = { filteredData: sliced, currentPage: current, totalPages, totalItems: total, pages };
+    this.state.data = {
+      filteredData: sliced,
+      currentPage: current,
+      totalPages,
+      totalItems: total,
+      pages,
+    };
   }
 
   onSearchTermChange(): void {
@@ -159,38 +193,40 @@ export class TableComponent<T = any> implements OnChanges {
   }
 
   goToPage(page: number): void {
-    // No permitimos páginas fuera de rango
     if (page < 1 || page > this.state.data.totalPages) return;
     this.state.data.currentPage = page;
     this.applyFilters();
   }
-
   prevPage(): void {
     if (this.state.data.currentPage > 1) {
       this.goToPage(this.state.data.currentPage - 1);
     }
   }
-
   nextPage(): void {
     if (this.state.data.currentPage < this.state.data.totalPages) {
       this.goToPage(this.state.data.currentPage + 1);
     }
   }
 
-  toggleRow(row: T) {
-    if (this.selected.has(row)) this.selected.delete(row);
-    else {
-      if (this.config.rowSelectionMode === 'single') this.selected.clear();
+  toggleRow(row: T): void {
+    if (this.selected.has(row)) {
+      this.selected.delete(row);
+    } else {
+      if (this.config.rowSelectionMode === 'single') {
+        this.selected.clear();
+      }
       this.selected.add(row);
     }
     this.updateSelectAllState();
     this.emitSelection();
   }
 
-  toggleSelectAll() {
+  toggleSelectAll(): void {
     this.selectAll = !this.selectAll;
     this.selected.clear();
-    if (this.selectAll) this.state.data.filteredData.forEach(r => this.selected.add(r));
+    if (this.selectAll) {
+      this.state.data.filteredData.forEach(r => this.selected.add(r));
+    }
     this.emitSelection();
   }
 
@@ -198,21 +234,20 @@ export class TableComponent<T = any> implements OnChanges {
     return this.selected.has(row);
   }
 
-  private updateSelectAllState() {
-    this.selectAll = this.state.data.filteredData.every(r => this.selected.has(r))
-                  && this.state.data.filteredData.length > 0;
+  private updateSelectAllState(): void {
+    this.selectAll =
+      this.state.data.filteredData.every(r => this.selected.has(r)) &&
+      this.state.data.filteredData.length > 0;
   }
 
-  private emitSelection() {
+  private emitSelection(): void {
     this.selectionChange.emit(Array.from(this.selected));
   }
 
   trackByFn(index: number, row: T): any {
-    const key = this.model?.tableConfig?.trackByField;
-    if (key && (row as any)[key] != null) {
-      return (row as any)[key];
-    }
-    return index;
+    const cfg = this.model?.tableConfig;
+    const key = cfg?.trackByField;
+    return cfg && key && (row as any)[key] != null ? (row as any)[key] : index;
   }
 
   getCellValue(row: T, key: string): any {
@@ -224,6 +259,8 @@ export class TableComponent<T = any> implements OnChanges {
   }
 
   isActionDisabled(action: TableCellAction, row: T): boolean {
-    return typeof action.disabled === 'function' ? action.disabled(row) : !!action.disabled;
+    return typeof action.disabled === 'function'
+      ? action.disabled(row)
+      : !!action.disabled;
   }
 }

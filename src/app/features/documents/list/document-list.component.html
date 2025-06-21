@@ -1,2 +1,19 @@
-<!-- src/app/features/documents/list/document-list.component.html -->
+<!-- Confirmación -->
+<app-alert
+  [confirmMode]="true"
+  [show]="confirmVisible"
+  [message]="confirmMessage"
+  (confirm)="onConfirmedDelete()"
+  (cancel)="onCancelDelete()">
+</app-alert>
+
+<!-- Toast -->
+<app-alert
+  [confirmMode]="false"
+  [type]="currentAlertType"
+  [message]="alertMessage"
+  [show]="alertVisible">
+</app-alert>
+
+<!-- Tabla principal -->
 <app-table [model]="tableModel"></app-table>

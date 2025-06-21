@@ -90,7 +90,7 @@ export class TemplateListComponent implements OnInit {
           description:   t.description,
           creationDate:  t.creationDate
                             .toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
-                            .replace(/\//g, '/'),   // 31/05/2025
+                            .replace(/\//g, '/'),
           createdBy:     t.createdBy,
           language:      t.language,
           status:        t.status

@@ -1,0 +1,74 @@
+<!-- ********** MODO CONFIRMACIÓN ********** -->
+<div
+  *ngIf="show && confirmMode"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+>
+  <div class="bg-white rounded-lg shadow-lg max-w-sm w-full overflow-hidden">
+    <div class="px-6 py-4">
+      <h3 class="text-lg font-semibold mb-2">Confirmación</h3>
+      <p class="text-gray-700">{{ message }}</p>
+    </div>
+    <div class="px-6 py-3 bg-gray-50 flex justify-end space-x-2">
+      <button
+        (click)="onCancel()"
+        class="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+      >
+        Cancelar
+      </button>
+      <button
+        (click)="onConfirm()"
+        class="px-4 py-2 rounded bg-red-500 text-white hover:bg-red-600"
+      >
+        Aceptar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ********** MODO TOAST ********** -->
+<div *ngIf="show && !confirmMode" class="fixed top-4 right-4 z-50">
+  <div
+    class="flex items-start bg-white border shadow-lg rounded-lg overflow-hidden max-w-sm w-full animate-fade-in"
+  >
+    <!-- Borde e icono -->
+    <div
+      [ngClass]="{
+        'border-green-500': type === alertType.Success,
+        'border-yellow-500': type === alertType.Edit,
+        'border-red-500': type === alertType.Delete
+      }"
+      class="border-l-4 flex-shrink-0 p-4 flex items-center justify-center bg-white"
+    >
+      <!-- iconos SVG -->
+      <svg *ngIf="type === alertType.Success" class="w-6 h-6 text-green-500"
+           fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+      </svg>
+      <svg *ngIf="type === alertType.Edit" class="w-6 h-6 text-yellow-500"
+           fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5l3 3L12 15l-4 1 1-4L18.5 2.5z"/>
+      </svg>
+      <svg *ngIf="type === alertType.Delete" class="w-6 h-6 text-red-500"
+           fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </div>
+
+    <!-- Mensaje -->
+    <div class="px-4 py-3 flex-1">
+      <p class="text-gray-800">{{ message }}</p>
+    </div>
+
+    <!-- Botón de cierre -->
+    <button (click)="close()"
+            class="p-3 text-gray-400 hover:text-gray-600 focus:outline-none">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"
+           viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+</div>

@@ -1,4 +1,3 @@
-// src/app/features/documents/list/document-list.component.ts
 import { Component, OnInit }      from '@angular/core';
 import { CommonModule }           from '@angular/common';
 import { RouterModule }           from '@angular/router';
@@ -9,21 +8,30 @@ import { TableModel }             from '../../../shared/table/table.model';
 import { DocumentService }        from '../../../core/services/documents/document.service';
 import { Document, DocumentStatus } from '../../../core/models/documents/document.model';
 
+import { AlertComponent }         from '../../../shared/alert/alert.component';
+import { AlertType }              from '../../../shared/alert/alert-type.enum';
+
 interface DocumentRow {
   id: string;
   name: string;
   description?: string;
-  creationDate: string;      // formateada como 'dd/MM/yyyy'
+  creationDate: string;    // 'dd/MM/yyyy'
   createdBy: string;
   language: string;
-  status: DocumentStatus;    // 'Pendiente' | 'En Proceso' | 'Completado'
+  status: DocumentStatus;
 }
 
 @Component({
   selector: 'app-document-list',
   standalone: true,
-  imports: [ CommonModule, RouterModule, FormsModule, TableComponent ],
-  templateUrl: './document-list.component.html'
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
+    TableComponent,
+    AlertComponent
+  ],
+  templateUrl: './document-list.component.html',
 })
 export class DocumentListComponent implements OnInit {
   tableModel: TableModel<DocumentRow> = {
@@ -36,15 +44,15 @@ export class DocumentListComponent implements OnInit {
       showRowSelection: false,
       showIndexColumn: false,
       emptyMessage: 'No se encontraron documentos.',
-      trackByField: 'id'
+      trackByField: 'id',
     },
     columns: [
-      { key: 'name',         header: 'Nombre de Documento', columnType: 'text',   sortable: true,  filterable: true,  visible: true },
-      { key: 'description',  header: 'Descripción',          columnType: 'text',   sortable: true,  filterable: true,  visible: true },
-      { key: 'creationDate', header: 'Fecha de Creación',    columnType: 'text',   sortable: true,  filterable: false, visible: true },
-      { key: 'createdBy',    header: 'Creado por',           columnType: 'text',   sortable: true,  filterable: true,  visible: true },
-      { key: 'language',     header: 'Idioma',               columnType: 'text',   sortable: true,  filterable: true,  visible: true },
-      { key: 'status',       header: 'Estado',               columnType: 'text',   sortable: true,  filterable: false, visible: true },
+      { key: 'name',         header: 'Nombre de Documento', columnType: 'text', sortable: true,  filterable: true,  visible: true },
+      { key: 'description',  header: 'Descripción',          columnType: 'text', sortable: true,  filterable: true,  visible: true },
+      { key: 'creationDate', header: 'Fecha de Creación',    columnType: 'text', sortable: true,  filterable: false, visible: true },
+      { key: 'createdBy',    header: 'Creado por',           columnType: 'text', sortable: true,  filterable: true,  visible: true },
+      { key: 'language',     header: 'Idioma',               columnType: 'text', sortable: true,  filterable: true,  visible: true },
+      { key: 'status',       header: 'Estado',               columnType: 'text', sortable: true,  filterable: false, visible: true },
       {
         key: 'actions',
         header: 'Acciones',
@@ -75,6 +83,18 @@ export class DocumentListComponent implements OnInit {
     data: []
   };
 
+  // ── Toast Alert ──
+  alertType       = AlertType;
+  currentAlertType: AlertType = AlertType.Success;
+  alertMessage    = '';
+  alertVisible    = false;
+
+  // ── Confirm Modal ──
+  confirmMode     = true;
+  confirmVisible  = false;
+  confirmMessage  = '';
+  private pendingDelete!: DocumentRow;
+
   constructor(private documentService: DocumentService) {}
 
   ngOnInit(): void {
@@ -87,8 +107,7 @@ export class DocumentListComponent implements OnInit {
         id:           d.id,
         name:         d.name,
         description:  d.description,
-        creationDate: d.creationDate
-                         .toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+        creationDate: d.creationDate.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }),
         createdBy:    d.createdBy,
         language:     d.language,
         status:       d.status
@@ -97,20 +116,41 @@ export class DocumentListComponent implements OnInit {
     });
   }
 
+  /** Mostrar toast */
+  private showToast(type: AlertType, message: string): void {
+    this.currentAlertType = type;
+    this.alertMessage     = message;
+    this.alertVisible     = true;
+    setTimeout(() => this.alertVisible = false, 3000);
+  }
+
   onView(row: DocumentRow) {
     console.log('Ver documento', row);
-    // this.router.navigate(['/documents', row.id]);
   }
 
   onEdit(row: DocumentRow) {
     console.log('Editar documento', row);
-    // this.router.navigate(['/documents', row.id, 'configure']);
   }
 
   onDelete(row: DocumentRow) {
-    if (confirm(`¿Seguro que deseas eliminar "${row.name}"?`)) {
-      this.documentService.deleteDocument(row.id)
-        .subscribe(() => this.loadDocuments());
-    }
+    // abre modal de confirmación
+    this.pendingDelete  = row;
+    this.confirmMessage = `¿Seguro que deseas eliminar "${row.name}"?`;
+    this.confirmVisible = true;
+  }
+
+  /** usuario confirma eliminación */
+  onConfirmedDelete() {
+    this.confirmVisible = false;
+    this.documentService.deleteDocument(this.pendingDelete.id)
+      .subscribe(() => {
+        this.loadDocuments();
+        this.showToast(AlertType.Delete, `Documento "${this.pendingDelete.name}" eliminado con éxito.`);
+      });
+  }
+
+  /** usuario cancela */
+  onCancelDelete() {
+    this.confirmVisible = false;
   }
 }
