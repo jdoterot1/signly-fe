@@ -1,89 +1,130 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, of, throwError } from 'rxjs';
-import { map, catchError, delay } from 'rxjs/operators';
-import { User } from '../../models/auth/user.model';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
-interface MockUsersResponse {
-  users: User[];
-}
+import { environment } from '../../../../environments/environment';
+import { AuthService } from '../auth/auth.service';
+import {
+  UserSummary,
+  CreateUserPayload,
+  CreateUserResponse,
+  UpdateUserAttributesPayload,
+  UpdateUserStatusPayload
+} from '../../models/auth/user.model';
+import { ApiResponse } from '../../models/auth/auth-session.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
-  private mockUrl = 'assets/mock-users.json';
-  private cache: User[] = [];
+  private readonly baseUrl = `${environment.apiBaseUrl}/users`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private authService: AuthService) {}
 
-  private loadUsers(): Observable<User[]> {
-    if (this.cache.length) {
-      return of(this.cache);
+  getUsers(limit = 20, nextToken?: string): Observable<UserSummary[]> {
+    let params = new HttpParams().set('limit', String(limit));
+    if (nextToken) {
+      params = params.set('nextToken', nextToken);
     }
-    return this.http.get<MockUsersResponse>(this.mockUrl).pipe(
-      delay(500),
-      map(res => {
-        // Asegurar que todos tengan ID
-        this.cache = res.users.map((u, index) => ({
-          id: u.id || (index + 1).toString(),
-          ...u
-        }));
-        return this.cache;
-      })
+
+    return this.executeWithHeaders(headers =>
+      this.http
+        .get<ApiResponse<UserSummary[]>>(this.baseUrl, { headers, params })
+        .pipe(
+          map(res => res.data ?? []),
+          catchError(err => this.handleError(err))
+        )
     );
   }
 
-  /** Obtener todos los usuarios */
-  getAllUsers(): Observable<User[]> {
-    return this.loadUsers();
-  }
-
-  /** Obtener un usuario por ID */
-  getUserById(id: string): Observable<User> {
-    return this.loadUsers().pipe(
-      map(list => {
-        const found = list.find(u => u.id === id);
-        if (!found) throw new Error('Usuario no encontrado');
-        return found;
-      }),
-      catchError(err => throwError(() => new Error(err.message)))
+  getUserById(userId: string): Observable<UserSummary> {
+    return this.executeWithHeaders(headers =>
+      this.http
+        .get<ApiResponse<UserSummary>>(`${this.baseUrl}/${userId}`, { headers })
+        .pipe(
+          map(res => res.data),
+          catchError(err => this.handleError(err))
+        )
     );
   }
 
-  /** Crear nuevo usuario */
-  createUser(user: User): Observable<User> {
-    const newUser: User = {
-      ...user,
-      id: (Math.random() * 1e6).toFixed(0) // Generar ID falso
-    };
-    this.cache.push(newUser);
-    return of(newUser).pipe(delay(500));
-  }
-
-  /** Actualizar usuario existente por ID */
-  updateUser(updatedUser: User): Observable<User> {
-    return this.loadUsers().pipe(
-      map(list => {
-        const idx = list.findIndex(u => u.id === updatedUser.id);
-        if (idx < 0) throw new Error('Usuario no encontrado');
-        const updated = { ...list[idx], ...updatedUser };
-        list[idx] = updated;
-        return updated;
-      }),
-      catchError(err => throwError(() => new Error(err.message)))
+  createUser(payload: CreateUserPayload): Observable<CreateUserResponse> {
+    return this.executeWithHeaders(
+      headers =>
+        this.http
+          .post<ApiResponse<CreateUserResponse>>(this.baseUrl, payload, { headers })
+          .pipe(
+            map(res => res.data),
+            catchError(err => this.handleError(err))
+          ),
+      true
     );
   }
 
-  /** Eliminar usuario por ID */
-  deleteUser(id: string): Observable<void> {
-    return this.loadUsers().pipe(
-      map(list => {
-        const idx = list.findIndex(u => u.id === id);
-        if (idx < 0) throw new Error('Usuario no encontrado');
-        list.splice(idx, 1);
-      }),
-      delay(500)
+  updateUserAttributes(userId: string, payload: UpdateUserAttributesPayload): Observable<void> {
+    return this.executeWithHeaders(
+      headers =>
+        this.http
+          .put<ApiResponse<{ id: string }>>(`${this.baseUrl}/${userId}`, payload, { headers })
+          .pipe(
+            map(() => void 0),
+            catchError(err => this.handleError(err))
+          ),
+      true
     );
+  }
+
+  updateUserStatus(userId: string, payload: UpdateUserStatusPayload): Observable<void> {
+    return this.executeWithHeaders(
+      headers =>
+        this.http
+          .put<ApiResponse<{ id: string; enabled: boolean }>>(`${this.baseUrl}/${userId}/status`, payload, {
+            headers
+          })
+          .pipe(
+            map(() => void 0),
+            catchError(err => this.handleError(err))
+          ),
+      true
+    );
+  }
+
+  deleteUser(userId: string): Observable<void> {
+    return this.executeWithHeaders(headers =>
+      this.http
+        .delete<ApiResponse<{ id: string }>>(`${this.baseUrl}/${userId}`, { headers })
+        .pipe(
+          map(() => void 0),
+          catchError(err => this.handleError(err))
+        )
+    );
+  }
+
+  private executeWithHeaders<T>(fn: (headers: HttpHeaders) => Observable<T>, includeJson = false): Observable<T> {
+    try {
+      const headers = this.buildHeaders(includeJson);
+      return fn(headers);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudo establecer la sesión.';
+      return throwError(() => new Error(message));
+    }
+  }
+
+  private buildHeaders(includeJson = false): HttpHeaders {
+    const token = this.authService.getAccessToken();
+    if (!token) {
+      throw new Error('No existe una sesión activa para ejecutar esta operación.');
+    }
+    let headers = new HttpHeaders().set('X-Auth-Signly', `Bearer ${token}`);
+    if (includeJson) {
+      headers = headers.set('Content-Type', 'application/json');
+    }
+    return headers;
+  }
+
+  private handleError(error: any) {
+    const message = error?.error?.message || error?.message || 'Ocurrió un error al procesar la solicitud.';
+    return throwError(() => new Error(message));
   }
 }

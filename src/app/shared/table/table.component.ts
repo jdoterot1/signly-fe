@@ -253,6 +253,12 @@ export class TableComponent<T = any> implements OnChanges {
     this.create.emit();
   }
 
+  onActionClick(action: TableCellAction, row: T, event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    action.handler(row);
+  }
+
   trackByFn(index: number, row: T): any {
     const cfg = this.model?.tableConfig;
     const key = cfg?.trackByField;

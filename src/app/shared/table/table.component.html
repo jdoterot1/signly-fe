@@ -89,12 +89,14 @@
                   <ng-container *ngSwitchCase="'action'">
                     <div class="inline-flex space-x-4 justify-center">
                       <ng-container *ngFor="let action of col.actions">
-                        <a *ngIf="!isActionDisabled(action, row)"
-                           (click)="action.handler(row)"
-                           title="{{ action.tooltip }}">
+                        <button *ngIf="!isActionDisabled(action, row)"
+                                type="button"
+                                class="p-0 bg-transparent border-none"
+                                (click)="onActionClick(action, row, $event)"
+                                title="{{ action.tooltip }}">
                           <img [src]="action.icon" [alt]="action.tooltip"
                                class="w-6 h-6 hover:opacity-75" />
-                        </a>
+                        </button>
                         <img *ngIf="isActionDisabled(action, row)"
                              [src]="action.icon" [alt]="action.tooltip"
                              class="w-6 h-6 opacity-50" />

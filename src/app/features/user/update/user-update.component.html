@@ -1,9 +1,7 @@
 <!-- src/app/features/users/user-update/user-update.component.html -->
 <app-form
   [config]="formConfig"
-  [initialData]="initialData"
-  [showImageUpload]="true"
+  [form]="form"
   (submitForm)="onSubmit($event)"
   (cancelForm)="onCancel()"
-  (fileSelected)="onFileSelected($event)"
 ></app-form>
