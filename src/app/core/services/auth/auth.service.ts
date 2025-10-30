@@ -1,60 +1,262 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, of, throwError } from 'rxjs';
-import { map, catchError, delay } from 'rxjs/operators';
-import { User } from '../../models/auth/user.model';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
 
-interface MockUsersResponse {
-  users: User[];
+import { environment } from '../../../../environments/environment';
+import {
+  ApiResponse,
+  AuthSession,
+  AuthUserPayload,
+  LoginSuccessPayload,
+  MePayload,
+  RefreshTokenPayload
+} from '../../models/auth/auth-session.model';
+
+interface PasswordSuccessPayload {
+  status: string;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private mockUrl = 'assets/mock-users.json';
+  private readonly baseUrl = environment.apiBaseUrl;
+  private readonly storageKey = 'signly.auth.session';
+  private session: AuthSession | null;
+  private recoveryEmail: string | null = null;
+  private recoveryOtp: string | null = null;
 
-  constructor(private http: HttpClient) {}
-
-  login(email: string, password: string): Observable<User> {
-    return this.http.get<MockUsersResponse>(this.mockUrl).pipe(
-      delay(500),
-      map(res => {
-        const user = res.users.find(u => u.email === email && u.password === password);
-        if (!user) {
-          throw new Error('Credenciales inválidas');
-        }
-        return user;
-      }),
-      catchError(err => {
-        return throwError(() => new Error(err.message || 'Email o contraseña incorrectos'));
-      })
-    );
+  constructor(private http: HttpClient) {
+    this.session = this.loadSession();
   }
 
-
-  forgotPassword(email: string): Observable<void> {
-    // Aquí podrías hacer una llamada real al backend que envíe un correo.
-    // Para mock, validamos que exista el usuario en mock-users.json:
-    return this.http.get<MockUsersResponse>(this.mockUrl).pipe(
-      delay(500),
-      map(res => {
-        const found = res.users.some(u => u.email === email);
-        if (!found) {
-          throw new Error('Ese correo no está registrado');
-        }
-        // Si existe, simulamos que se envía el correo
-        return;
-      }),
-      catchError(err => {
-        // Propagamos el error al componente
-        return throwError(() => new Error(err.message || 'Error al procesar Forgot Password'));
-      })
-    );
+  login(email: string, password: string): Observable<AuthSession> {
+    const url = `${this.baseUrl}/auth/login`;
+    return this.http
+      .post<ApiResponse<LoginSuccessPayload>>(url, { email, password })
+      .pipe(
+        map(res => this.mapSession(res.data)),
+        tap(session => this.persistSession(session)),
+        catchError(err => this.handleError(err))
+      );
   }
 
-  verifyOtp(otp: string): Observable<void> {
-    // Simulamos una llamada al backend que siempre responde OK tras 500 ms.
-    return of(void 0).pipe(delay(500));
+  logout(): Observable<void> {
+    const url = `${this.baseUrl}/auth/logout`;
+    return this.http
+      .post<ApiResponse<{ status: string }>>(url, {}, { headers: this.buildSignlyHeaders() })
+      .pipe(
+        map(() => void 0),
+        tap(() => this.persistSession(null)),
+        catchError(err => {
+          this.persistSession(null);
+          return this.handleError(err);
+        })
+      );
+  }
+
+  refreshToken(refreshToken?: string): Observable<AuthSession> {
+    const token = refreshToken || this.session?.refreshToken;
+    if (!token) {
+      return throwError(() => new Error('No hay token de actualización disponible'));
+    }
+
+    const url = `${this.baseUrl}/auth/token/refresh`;
+    return this.http
+      .post<ApiResponse<RefreshTokenPayload>>(url, { refresh_token: token })
+      .pipe(
+        map(res => this.mergeRefreshTokens(res.data)),
+        tap(session => this.persistSession(session)),
+        catchError(err => this.handleError(err))
+      );
+  }
+
+  forgotPassword(email: string): Observable<ApiResponse<unknown>> {
+    const url = `${this.baseUrl}/auth/password/forgot`;
+    return this.http
+      .post<ApiResponse<unknown>>(url, { email })
+      .pipe(
+        tap(() => {
+          this.recoveryEmail = email;
+          this.recoveryOtp = null;
+        }),
+        catchError(err => this.handleError(err))
+      );
+  }
+
+  confirmPassword(email: string, otpCode: string, newPassword: string): Observable<ApiResponse<PasswordSuccessPayload>> {
+    const url = `${this.baseUrl}/auth/password/confirm`;
+    return this.http
+      .post<ApiResponse<PasswordSuccessPayload>>(url, {
+        email,
+        otp_code: otpCode,
+        new_password: newPassword
+      })
+      .pipe(catchError(err => this.handleError(err)));
+  }
+
+  completePassword(email: string, session: string, newPassword: string): Observable<AuthSession> {
+    const url = `${this.baseUrl}/auth/password/complete`;
+    return this.http
+      .post<ApiResponse<LoginSuccessPayload>>(url, {
+        email,
+        session,
+        new_password: newPassword
+      })
+      .pipe(
+        map(res => this.mapSession(res.data)),
+        tap(authSession => this.persistSession(authSession)),
+        catchError(err => this.handleError(err))
+      );
+  }
+
+  changePassword(oldPassword: string, newPassword: string): Observable<ApiResponse<PasswordSuccessPayload>> {
+    const url = `${this.baseUrl}/auth/password/change`;
+    return this.http
+      .post<ApiResponse<PasswordSuccessPayload>>(
+        url,
+        { old_password: oldPassword, new_password: newPassword },
+        { headers: this.buildAuthorizationHeaders() }
+      )
+      .pipe(catchError(err => this.handleError(err)));
+  }
+
+  me(): Observable<MePayload> {
+    const url = `${this.baseUrl}/auth/me`;
+    return this.http
+      .post<ApiResponse<MePayload>>(url, {}, { headers: this.buildSignlyHeaders() })
+      .pipe(
+        map(res => res.data),
+        catchError(err => this.handleError(err))
+      );
+  }
+
+  verifyOtp(email: string, otpCode: string, newPassword: string): Observable<ApiResponse<PasswordSuccessPayload>> {
+    return this.confirmPassword(email, otpCode, newPassword);
+  }
+
+  setRecoveryEmail(email: string): void {
+    this.recoveryEmail = email;
+  }
+
+  getRecoveryEmail(): string | null {
+    return this.recoveryEmail;
+  }
+
+  clearRecoveryEmail(): void {
+    this.recoveryEmail = null;
+    this.recoveryOtp = null;
+  }
+
+  setRecoveryOtp(otp: string): void {
+    this.recoveryOtp = otp;
+  }
+
+  getRecoveryOtp(): string | null {
+    return this.recoveryOtp;
+  }
+
+  clearRecoveryOtp(): void {
+    this.recoveryOtp = null;
+  }
+
+  getSession(): AuthSession | null {
+    return this.session;
+  }
+
+  getAccessToken(): string | null {
+    return this.session?.accessToken || null;
+  }
+
+  getRefreshToken(): string | null {
+    return this.session?.refreshToken || null;
+  }
+
+  isAuthenticated(): boolean {
+    return !!this.session?.accessToken;
+  }
+
+  private mapSession(payload: LoginSuccessPayload): AuthSession {
+    const userPayload = payload.user;
+    return {
+      accessToken: payload.access_token,
+      refreshToken: payload.refresh_token,
+      idToken: payload.id_token,
+      tokenType: payload.token_type,
+      expiresIn: payload.expires_in,
+      user: this.mapUser(userPayload)
+    };
+  }
+
+  private mergeRefreshTokens(payload: RefreshTokenPayload): AuthSession {
+    if (!this.session) {
+      throw new Error('No hay sesión activa para actualizar');
+    }
+
+    return {
+      ...this.session,
+      accessToken: payload.access_token,
+      refreshToken: payload.refresh_token,
+      idToken: payload.id_token,
+      tokenType: payload.token_type,
+      expiresIn: payload.expires_in
+    };
+  }
+
+  private mapUser(user: AuthUserPayload) {
+    return {
+      email: user.email,
+      name: user.name,
+      picture: user.picture,
+      tenantId: user.tenant_id,
+      userId: user.user_id
+    };
+  }
+
+  private buildSignlyHeaders(): HttpHeaders {
+    const token = this.session?.accessToken;
+    let headers = new HttpHeaders();
+    if (token) {
+      headers = headers.set('X-Auth-Signly', `Bearer ${token}`);
+    }
+    return headers;
+  }
+
+  private buildAuthorizationHeaders(): HttpHeaders {
+    const token = this.session?.accessToken;
+    let headers = new HttpHeaders();
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    return headers;
+  }
+
+  private loadSession(): AuthSession | null {
+    try {
+      const raw = localStorage.getItem(this.storageKey);
+      return raw ? (JSON.parse(raw) as AuthSession) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private persistSession(session: AuthSession | null): void {
+    this.session = session;
+    if (!session) {
+      localStorage.removeItem(this.storageKey);
+      return;
+    }
+    localStorage.setItem(this.storageKey, JSON.stringify(session));
+    this.clearRecoveryEmail();
+    this.clearRecoveryOtp();
+  }
+
+  private handleError(error: unknown) {
+    const message =
+      (error as { error?: { message?: string; error?: { details?: { message?: string } } } }).error?.message ||
+      (error as { message?: string }).message ||
+      'Error de autenticación';
+    return throwError(() => new Error(message));
   }
 }

@@ -12,7 +12,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 
 import { AuthService } from '../../../core/services/auth/auth.service';
-import { User } from '../../../core/models/auth/user.model';
+import { AuthSession } from '../../../core/models/auth/auth-session.model';
 
 @Component({
   selector: 'app-login',
@@ -26,6 +26,7 @@ export class LoginComponent implements OnInit {
   submitted = false;
   errorMessage: string | null = null;
   loading = false;
+  showPassword = false;
 
   constructor(
     private fb: FormBuilder,
@@ -36,13 +37,16 @@ export class LoginComponent implements OnInit {
   ngOnInit(): void {
     this.loginForm = this.fb.group({
       email:    ['', [Validators.required, Validators.email]],
-      password: ['', Validators.required],
-      remember: [false]
+      password: ['', Validators.required]
     });
   }
 
   get f() {
     return this.loginForm.controls;
+  }
+
+  togglePassword(): void {
+    this.showPassword = !this.showPassword;
   }
 
   onSubmit(): void {
@@ -57,8 +61,7 @@ export class LoginComponent implements OnInit {
     const { email, password } = this.loginForm.value;
 
     this.authService.login(email, password).subscribe({
-      next: (user: User) => {
-        // Aquí pones this.loading = false antes de redirigir
+      next: (_session: AuthSession) => {
         this.loading = false;
         this.router.navigate(['/dashboard']);
       },
@@ -71,7 +74,7 @@ export class LoginComponent implements OnInit {
 
 
 
-  // Método para navegar a Forgot Password
+  // Método para navegar a la pantalla de recuperación
   goToForgotPassword(): void {
     this.router.navigate(['/forgot-password']);
   }

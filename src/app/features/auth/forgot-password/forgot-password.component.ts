@@ -51,9 +51,8 @@ export class ForgotPasswordComponent implements OnInit {
 
     this.authService.forgotPassword(email).subscribe({
       next: () => {
-        // En lugar de quedarse aquí, navega a /otp
         this.loading = false;
-        this.router.navigate(['/otp']);
+        this.router.navigate(['/otp'], { state: { email } });
       },
       error: (err) => {
         this.errorMessage = err.message || 'Error al procesar la solicitud';

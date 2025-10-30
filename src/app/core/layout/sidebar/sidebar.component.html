@@ -41,7 +41,7 @@
       class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
     >
       <img src="assets/icons/sidebar/Dashboard.svg" alt="Dashboard" class="w-6 h-6 mr-3" />
-      Dashboard
+      Inicio
     </a>
     <a
       routerLink="/templates"
@@ -115,12 +115,15 @@
       <img src="assets/icons/sidebar/Settings.svg" alt="Settings" class="w-6 h-6 mr-3" />
       Settings
     </a>
-    <a
-      routerLink="/logout"
-      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
+    <button
+      type="button"
+      (click)="logout()"
+      [disabled]="isLoggingOut"
+      class="w-full flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-left text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       <img src="assets/icons/sidebar/LogOut.svg" alt="Logout" class="w-6 h-6 mr-3" />
-      Logout
-    </a>
+      <span *ngIf="!isLoggingOut">Logout</span>
+      <span *ngIf="isLoggingOut">Closing session...</span>
+    </button>
   </nav>
 </div>
