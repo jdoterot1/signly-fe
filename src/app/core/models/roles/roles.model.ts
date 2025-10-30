@@ -1,7 +1,10 @@
 export interface Role {
-  id: string;
-  name: string;
+  roleId: string;
+  roleName: string;
   description?: string;
-  status: string;
-permits: string;
+  permissions: string[];
+  tenantId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  version?: number | string;
 }

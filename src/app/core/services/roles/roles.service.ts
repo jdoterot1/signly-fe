@@ -1,85 +1,242 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, of, throwError } from 'rxjs';
-import { map, catchError, delay } from 'rxjs/operators';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
+
+import { environment } from '../../../../environments/environment';
+import { AuthService } from '../auth/auth.service';
+import { ApiResponse } from '../../models/auth/auth-session.model';
 import { Role } from '../../models/roles/roles.model';
 
-interface MockRolesResponse {
-  roles: Role[];
+interface CreateRoleRequest {
+  roleId: string;
+  roleName: string;
+  description?: string;
+  permissions: string[];
+}
+
+interface UpdateRoleRequest {
+  roleName?: string;
+  description?: string;
+  permissions?: string[];
+}
+
+interface RolePermissionsResponse {
+  roleId: string;
+  permissions: string[];
+}
+
+interface RoleUserResponse {
+  userSub: string;
+  roles: string[];
+  createdAt: string;
+  updatedAt: string;
+  tenantId: string;
+}
+
+interface AssignRoleRequest {
+  userSub: string;
+}
+
+interface PatchPermissionsRequest {
+  add?: string[];
+  remove?: string[];
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class RoleService {
-  private mockUrl = 'assets/mock-roles.json';
-  private cache: Role[] = [];
+  private readonly baseUrl = `${environment.apiBaseUrl}/roles`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private authService: AuthService) {}
 
-  private loadRoles(): Observable<Role[]> {
-    if (this.cache.length) {
-      return of(this.cache);
+  getRoles(limit = 20, nextToken?: string): Observable<Role[]> {
+    let params = new HttpParams().set('limit', String(limit));
+    if (nextToken) {
+      params = params.set('nextToken', nextToken);
     }
-    return this.http.get<MockRolesResponse>(this.mockUrl).pipe(
-      delay(500),
-      map(res => {
-        this.cache = res.roles.map(r => ({ ...r }));
-        return this.cache;
-      })
+
+    return this.executeWithHeaders(headers =>
+      this.http
+        .get<ApiResponse<Role[]>>(this.baseUrl, {
+          headers,
+          params
+        })
+      .pipe(
+        map(res => res.data ?? []),
+        catchError(err => this.handleError(err))
+      )
     );
   }
 
-  /** Obtener todos los roles */
-  getAllRoles(): Observable<Role[]> {
-    return this.loadRoles();
-  }
-
-  /** Obtener un rol por ID */
-  getRoleById(id: string): Observable<Role> {
-    return this.loadRoles().pipe(
-      map(list => {
-        const found = list.find(r => r.id === id);
-        if (!found) throw new Error('Rol no encontrado');
-        return found;
-      }),
-      catchError(err => throwError(() => new Error(err.message)))
+  getRoleById(roleId: string): Observable<Role> {
+    return this.executeWithHeaders(headers =>
+      this.http
+        .get<ApiResponse<Role>>(`${this.baseUrl}/${roleId}`, {
+          headers
+        })
+      .pipe(
+        map(res => res.data),
+        catchError(err => this.handleError(err))
+      )
     );
   }
 
-  /** Crear nuevo rol */
-  createRole(role: Role): Observable<Role> {
-    const newRole: Role = {
-      ...role,
-      id: (Math.random() * 1e6).toFixed(0)
-    };
-    this.cache.push(newRole);
-    return of(newRole).pipe(delay(500));
-  }
-
-  /** Actualizar rol existente */
-  updateRole(updatedRole: Role): Observable<Role> {
-    return this.loadRoles().pipe(
-      map(list => {
-        const idx = list.findIndex(r => r.id === updatedRole.id);
-        if (idx < 0) throw new Error('Rol no encontrado');
-        const updated = { ...list[idx], ...updatedRole };
-        list[idx] = updated;
-        return updated;
-      }),
-      catchError(err => throwError(() => new Error(err.message)))
+  createRole(payload: CreateRoleRequest): Observable<Role> {
+    return this.executeWithHeaders(headers =>
+      this.http
+        .post<ApiResponse<Role>>(this.baseUrl, payload, {
+          headers
+        })
+      .pipe(
+        map(res => res.data),
+        catchError(err => this.handleError(err))
+      ),
+      true
     );
   }
 
-  /** Eliminar rol por ID */
-  deleteRole(id: string): Observable<void> {
-    return this.loadRoles().pipe(
-      map(list => {
-        const idx = list.findIndex(r => r.id === id);
-        if (idx < 0) throw new Error('Rol no encontrado');
-        list.splice(idx, 1);
-      }),
-      delay(500)
+  updateRole(roleId: string, payload: UpdateRoleRequest): Observable<Role> {
+    return this.executeWithHeaders(headers =>
+      this.http
+        .put<ApiResponse<Role>>(`${this.baseUrl}/${roleId}`, payload, {
+          headers
+        })
+      .pipe(
+        map(res => res.data),
+        catchError(err => this.handleError(err))
+      ),
+      true
     );
+  }
+
+  deleteRole(roleId: string): Observable<void> {
+    return this.executeWithHeaders(headers =>
+      this.http
+        .delete<ApiResponse<{ roleId: string }>>(`${this.baseUrl}/${roleId}`, {
+          headers
+        })
+      .pipe(
+        map(() => void 0),
+        catchError(err => this.handleError(err))
+      )
+    );
+  }
+
+  getRolePermissions(roleId: string): Observable<RolePermissionsResponse> {
+    return this.executeWithHeaders(headers =>
+      this.http
+        .get<ApiResponse<RolePermissionsResponse>>(`${this.baseUrl}/${roleId}/permissions`, {
+          headers
+        })
+      .pipe(
+        map(res => res.data),
+        catchError(err => this.handleError(err))
+      )
+    );
+  }
+
+  putRolePermissions(roleId: string, permissions: string[]): Observable<Role> {
+    return this.executeWithHeaders(headers =>
+      this.http
+        .put<ApiResponse<Role>>(
+          `${this.baseUrl}/${roleId}/permissions`,
+          { permissions },
+          { headers }
+        )
+      .pipe(
+        map(res => res.data),
+        catchError(err => this.handleError(err))
+      ),
+      true
+    );
+  }
+
+  patchRolePermissions(roleId: string, payload: PatchPermissionsRequest): Observable<Role> {
+    return this.executeWithHeaders(headers =>
+      this.http
+        .patch<ApiResponse<Role>>(`${this.baseUrl}/${roleId}/permissions`, payload, {
+          headers
+        })
+      .pipe(
+        map(res => res.data),
+        catchError(err => this.handleError(err))
+      ),
+      true
+    );
+  }
+
+  getRoleUsers(roleId: string, limit = 50): Observable<RoleUserResponse[]> {
+    const params = new HttpParams().set('limit', String(limit));
+    return this.executeWithHeaders(headers =>
+      this.http
+        .get<ApiResponse<RoleUserResponse[]>>(`${this.baseUrl}/${roleId}/users`, {
+          headers,
+          params
+        })
+      .pipe(
+        map(res => res.data ?? []),
+        catchError(err => this.handleError(err))
+      )
+    );
+  }
+
+  assignRoleToUser(roleId: string, payload: AssignRoleRequest): Observable<RoleUserResponse> {
+    return this.executeWithHeaders(headers =>
+      this.http
+        .put<ApiResponse<RoleUserResponse>>(`${this.baseUrl}/${roleId}/users`, payload, {
+          headers
+        })
+      .pipe(
+        map(res => res.data),
+        catchError(err => this.handleError(err))
+      ),
+      true
+    );
+  }
+
+  removeRoleFromUser(roleId: string, userSub: string): Observable<void> {
+    return this.executeWithHeaders(headers =>
+      this.http
+        .delete<ApiResponse<{ userSub: string }>>(`${this.baseUrl}/${roleId}/users/${userSub}`, {
+          headers
+        })
+      .pipe(
+        map(() => void 0),
+        catchError(err => this.handleError(err))
+      )
+    );
+  }
+
+  private getSignlyHeaders(includeJson = false): HttpHeaders {
+    const token = this.authService.getAccessToken();
+    let headers = new HttpHeaders();
+    if (!token) {
+      throw new Error('No existe una sesión activa para ejecutar esta operación.');
+    }
+    headers = headers.set('X-Auth-Signly', `Bearer ${token}`);
+    if (includeJson) {
+      headers = headers.set('Content-Type', 'application/json');
+    }
+    return headers;
+  }
+
+  private executeWithHeaders<T>(fn: (headers: HttpHeaders) => Observable<T>, includeJson = false): Observable<T> {
+    try {
+      const headers = this.getSignlyHeaders(includeJson);
+      return fn(headers);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudo obtener la sesión activa.';
+      return throwError(() => new Error(message));
+    }
+  }
+
+  private handleError(error: any) {
+    const message =
+      error?.error?.message ||
+      error?.message ||
+      'Ocurrió un error al procesar la solicitud.';
+    return throwError(() => new Error(message));
   }
 }

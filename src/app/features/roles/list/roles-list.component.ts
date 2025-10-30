@@ -7,13 +7,13 @@ import { TableComponent }       from '../../../shared/table/table.component';
 import { TableModel }           from '../../../shared/table/table.model';
 import { RoleService } from '../../../core/services/roles/roles.service';
 import { Role } from '../../../core/models/roles/roles.model';
+import { AlertService } from '../../../shared/alert/alert.service';
 
 interface RoleRow {
-  id: string;
-  name: string;
+  roleId: string;
+  roleName: string;
   description?: string;
-  status: string;
-  permits: string;
+  version?: string | number;
 }
 
 @Component({
@@ -33,13 +33,12 @@ export class RolesListComponent implements OnInit {
       showRowSelection: false,
       showIndexColumn: false,
       emptyMessage: 'No se encontraron roles.',
-      trackByField: 'id'
+      trackByField: 'roleId'
     },
     columns: [
-      { key: 'name',        header: 'Nombre del Rol', columnType: 'text', sortable: true, filterable: true, visible: true },
+      { key: 'roleName',        header: 'Nombre del Rol', columnType: 'text', sortable: true, filterable: true, visible: true },
       { key: 'description', header: 'Descripción',     columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'permits', header: 'Permisos', columnType: 'text', sortable: false, filterable: false, visible: true },
-      { key: 'status', header: 'Estado', columnType: 'text', sortable: true, filterable: true, visible: true },
+      { key: 'version', header: 'Versión', columnType: 'text', sortable: true, filterable: false, visible: true },
       {
         key: 'actions',
         header: 'Acciones',
@@ -50,13 +49,13 @@ export class RolesListComponent implements OnInit {
             label: '',
             icon: 'assets/icons/tables/Edit.svg',
             tooltip: 'Editar',
-            handler: row => this.onEdit(row)
+          handler: row => this.onEdit(row)
           },
           {
             label: '',
             icon: 'assets/icons/tables/Delete.svg',
             tooltip: 'Eliminar',
-            handler: row => this.onDelete(row)
+          handler: row => this.onDelete(row)
           }
         ]
       }
@@ -64,7 +63,7 @@ export class RolesListComponent implements OnInit {
     data: []
   };
 
-  constructor(private roleService: RoleService, private router: Router) {}
+  constructor(private roleService: RoleService, private router: Router, private alertService: AlertService) {}
   
 
   ngOnInit(): void {
@@ -72,29 +71,38 @@ export class RolesListComponent implements OnInit {
   }
 
   private loadRoles(): void {
-    this.roleService.getAllRoles()
-      .subscribe((roles: Role[]) => {
-        const rows: RoleRow[] = roles.map(r => ({
-          id: r.id!,
-          name: r.name,
-          description: r.description,
-          status: r.status,
-          permits: r.permits
+    this.roleService.getRoles().subscribe({
+      next: (roles: Role[]) => {
+        const rows: RoleRow[] = roles.map(role => ({
+          roleId: role.roleId,
+          roleName: role.roleName,
+          description: role.description,
+          version: role.version ?? '-'
         }));
         this.tableModel = { ...this.tableModel, data: rows };
-      });
+      },
+      error: err => {
+        this.alertService.showError('No se pudieron cargar los roles.', 'Error');
+        console.error('Error al cargar roles', err);
+      }
+    });
   }
 
   
   onEdit(row: RoleRow): void {
-    this.router.navigate(['/roles', row.id, 'update']);
-    // Puedes navegar al formulario de edición o abrir un modal
+    this.router.navigate(['/roles', row.roleId, 'update']);
   }
 
   onDelete(row: RoleRow): void {
-    if (confirm(`¿Seguro que deseas eliminar el rol "${row.name}"?`)) {
-      this.roleService.deleteRole(row.id)
-        .subscribe(() => this.loadRoles());
+    if (confirm(`¿Seguro que deseas eliminar el rol "${row.roleName}"?`)) {
+      this.roleService.deleteRole(row.roleId)
+        .subscribe({
+          next: () => this.loadRoles(),
+          error: err => {
+            this.alertService.showError('No se pudo eliminar el rol.', 'Error');
+            console.error('Error al eliminar rol', err);
+          }
+        });
     }
   }
   onCreate(): void {

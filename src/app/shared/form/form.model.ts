@@ -20,6 +20,7 @@ export interface FormField {
   required?: boolean;                           // muestra asterisco y agrega Validators.required
   validators?: ValidatorFn[];                   // otros validadotes
   children?: FormField[];                       // solo para type = 'group'
+  disabled?: boolean;
 }
 
 export interface FormConfig {

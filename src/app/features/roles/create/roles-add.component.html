@@ -1,6 +1,22 @@
 <!-- src/app/features/roles/create/roles-add.component.html -->
+<ng-template #permissionsTemplate>
+  <div class="space-y-6">
+    <h3 class="text-lg font-semibold text-gray-800">Permisos del rol</h3>
+    <p class="text-sm text-gray-500">
+      Selecciona los permisos que definirán el alcance de este rol dentro de la plataforma.
+    </p>
+    <app-permission-matrix
+      [rows]="permissionRows"
+      [value]="selectedPermissions"
+      (valueChange)="onPermissionsChange($event)"
+    ></app-permission-matrix>
+  </div>
+</ng-template>
+
 <app-form
   [config]="formConfig"
+  [form]="form"
+  [extraTemplate]="permissionsTemplate"
   (submitForm)="onSubmit($event)"
   (cancelForm)="onCancel()"
 ></app-form>

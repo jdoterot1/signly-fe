@@ -16,7 +16,9 @@ const routes: Routes = [
 @NgModule({
   imports: [
     RouterModule.forChild(routes),
-    RolesListComponent
+    RolesListComponent,
+    RolesCreateComponent,
+    RolesUpdateComponent
   ]
 })
 export class RolesModule {}

@@ -1,5 +1,5 @@
 // src/app/shared/form/form.component.ts
-import { Component, Input, Output, EventEmitter, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, ViewChild, ElementRef, TemplateRef, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormGroup, FormBuilder, Validators } from '@angular/forms';
 
@@ -27,12 +27,13 @@ import { FormConfig, FormField } from './form.model';
   ],
   templateUrl: './form.component.html'
 })
-export class FormComponent implements OnInit {
+export class FormComponent implements OnInit, OnChanges {
   @Input() config!: FormConfig;
   @Input() form!: FormGroup;
   @Input() initialData: any; // <-- NUEVO INPUT para precargar datos
 
   @Input() showImageUpload = false;
+  @Input() extraTemplate: TemplateRef<unknown> | null = null;
   @Output() fileSelected = new EventEmitter<File>();
   @Output() submitForm  = new EventEmitter<any>();
   @Output() cancelForm  = new EventEmitter<void>();
@@ -53,6 +54,16 @@ export class FormComponent implements OnInit {
     }
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['form']?.currentValue && !changes['form'].previousValue && !this.form) {
+      this.form = changes['form'].currentValue as FormGroup;
+    }
+
+    if (changes['initialData'] && this.form && this.initialData) {
+      this.form.patchValue(this.initialData, { emitEvent: false });
+    }
+  }
+
   private buildFormGroup(fields: FormField[]): FormGroup {
     const group: any = {};
     fields.forEach(field => {
@@ -62,7 +73,7 @@ export class FormComponent implements OnInit {
       if (field.type === 'group' && field.children) {
         group[field.key] = this.buildFormGroup(field.children);
       } else {
-        group[field.key] = this.fb.control('', validators);
+        group[field.key] = this.fb.control({ value: '', disabled: field.disabled ?? false }, validators);
       }
     });
     return this.fb.group(group);
@@ -95,7 +106,7 @@ export class FormComponent implements OnInit {
 
   onSubmit() {
     if (this.form.valid) {
-      this.submitForm.emit(this.form.value);
+      this.submitForm.emit(this.form.getRawValue());
     } else {
       this.form.markAllAsTouched();
     }
