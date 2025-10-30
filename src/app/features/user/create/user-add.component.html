@@ -1,0 +1,8 @@
+<!-- src/app/features/users/user-add/user-add.component.html -->
+<app-form
+  [config]="formConfig"
+  [showImageUpload]="true"
+  (submitForm)="onSubmit($event)"
+  (cancelForm)="onCancel()"
+  (fileSelected)="onFileSelected($event)"
+></app-form>

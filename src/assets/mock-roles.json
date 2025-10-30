@@ -1,0 +1,32 @@
+{
+  "roles": [
+    {
+      "id": "1",
+      "name": "admin",
+      "description": "Acceso total al sistema, incluyendo gestión de usuarios, configuraciones y contenido.",
+      "status": "Active",
+      "permits": "add, edit, view"
+    },
+    {
+      "id": "2",
+      "name": "editor",
+      "description": "Puede modificar contenido existente, pero no gestionar usuarios ni configuraciones.",
+      "status": "Active",
+      "permits": "view"
+    },
+    {
+      "id": "3",
+      "name": "usuario",
+      "description": "Acceso limitado al contenido según permisos asignados, sin capacidad de edición global.",
+      "status": "Inactive",
+      "permits": "edit, view"
+    },
+    {
+      "id": "4",
+      "name": "soporte",
+      "description": "Puede ver reportes y asistir a usuarios, pero sin permisos de edición.",
+      "status": "Active",
+      "permits": "add, edit, view"
+    }
+  ]
+}

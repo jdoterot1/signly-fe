@@ -1,0 +1,17 @@
+<!-- src/app/core/layout/layout/layout.component.html -->
+<div class="flex h-screen">
+  <!-- Sidebar: el width lo maneja app-sidebar -->
+  <aside class="bg-white overflow-y-auto">
+    <app-sidebar></app-sidebar>
+  </aside>
+
+  <div class="flex flex-col flex-1">
+    <app-header></app-header>
+    <main class="flex-1 bg-gray-100 p-6 overflow-auto">
+      <router-outlet></router-outlet>
+    </main>
+    <footer class="flex-shrink-0 bg-white shadow p-4">
+      <app-footer></app-footer>
+    </footer>
+  </div>
+</div>

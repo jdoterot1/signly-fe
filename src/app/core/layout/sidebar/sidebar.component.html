@@ -1,0 +1,126 @@
+<!-- src/app/core/layout/sidebar/sidebar.component.html -->
+<div
+  [class.w-16]="isCollapsed"
+  [class.w-64]="!isCollapsed"
+  class="flex flex-col h-full bg-white transition-all duration-300 overflow-hidden"
+>
+  <!-- Encabezado: logo y toggle -->
+  <div class="flex items-center justify-between h-24 px-4">
+    <div class="flex items-center">
+      <img
+        *ngIf="!isCollapsed"
+        src="assets/icons/sidebar/ApoloLogo.svg"
+        alt="Apolo Logo"
+        class="h-14 w-auto"
+      />
+      <span
+        *ngIf="!isCollapsed"
+        class="ml-3 text-xl font-normal text-gray-800"
+        style="font-family: 'Roboto', sans-serif;"
+      >
+        APOLO
+      </span>
+    </div>
+    <button (click)="toggle()" class="p-2 focus:outline-none">
+      <img
+        src="assets/icons/sidebar/HamburgerMenu.svg"
+        alt="Toggle sidebar"
+        class="h-6 w-6"
+      />
+    </button>
+  </div>
+
+  <!-- Menú -->
+  <nav
+    *ngIf="!isCollapsed"
+    class="flex-1 overflow-y-auto px-4 pt-6 space-y-2"
+  >
+    <a
+      routerLink="/dashboard"
+      routerLinkActive="bg-gray-200"
+      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
+    >
+      <img src="assets/icons/sidebar/Dashboard.svg" alt="Dashboard" class="w-6 h-6 mr-3" />
+      Dashboard
+    </a>
+    <a
+      routerLink="/templates"
+      routerLinkActive="bg-gray-200"
+      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
+    >
+      <img src="assets/icons/sidebar/DocumentTemplate.svg" alt="Plantillas" class="w-6 h-6 mr-3" />
+      Plantillas de Documentos
+    </a>
+    <a
+      routerLink="/documents"
+      routerLinkActive="bg-gray-200"
+      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
+    >
+      <img src="assets/icons/sidebar/files.svg" alt="Documentos" class="w-6 h-6 mr-3" />
+      Documentos y Procesos de Firma
+    </a>
+    <a
+      routerLink="/users"
+      routerLinkActive="bg-gray-200"
+      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
+    >
+      <img src="assets/icons/header/User.svg" alt="Usuarios" class="w-6 h-6 mr-3" />
+      Usuarios
+    </a>
+    <a
+      routerLink="/roles"
+      routerLinkActive="bg-gray-200"
+      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
+    >
+      <img src="assets/icons/sidebar/Roles.svg" alt="Roles" class="w-6 h-6 mr-3" />
+      Roles y Permisos
+    </a>
+    <a
+      routerLink="/audit"
+      routerLinkActive="bg-gray-200"
+      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
+    >
+      <img src="assets/icons/sidebar/Audit.svg" alt="Auditoría" class="w-6 h-6 mr-3" />
+      Auditoría de Acciones
+    </a>
+    <a
+      routerLink="/uploads"
+      routerLinkActive="bg-gray-200"
+      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
+    >
+      <img src="assets/icons/sidebar/files.svg" alt="Archivos subidos" class="w-6 h-6 mr-3" />
+      Archivos subidos
+    </a>
+    <a
+      routerLink="/dark-mode"
+      routerLinkActive="bg-gray-200"
+      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
+    >
+      <img src="assets/icons/sidebar/Moon.svg" alt="Dark Mode" class="w-6 h-6 mr-3" />
+      Dark Mode
+    </a>
+    <a
+      routerLink="/notifications"
+      routerLinkActive="bg-gray-200"
+      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
+    >
+      <img src="assets/icons/sidebar/Bell.svg" alt="Notifications" class="w-6 h-6 mr-3" />
+      Notifications
+    </a>
+    <a
+      routerLink="/settings"
+      routerLinkActive="bg-gray-200"
+      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
+    >
+      <img src="assets/icons/sidebar/Settings.svg" alt="Settings" class="w-6 h-6 mr-3" />
+      Settings
+    </a>
+    <a
+      routerLink="/logout"
+      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
+    >
+      <img src="assets/icons/sidebar/LogOut.svg" alt="Logout" class="w-6 h-6 mr-3" />
+      Logout
+    </a>
+  </nav>
+</div>
