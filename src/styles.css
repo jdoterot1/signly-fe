@@ -1,4 +1,5 @@
 @use "primeicons/primeicons.css";
+@import "quill/dist/quill.snow.css";
 @plugin 'tailwindcss-primeui';
 @layer tailwind, primeng;
 

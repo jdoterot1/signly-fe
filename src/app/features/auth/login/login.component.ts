@@ -11,7 +11,7 @@ import { RouterModule, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 
-import { AuthService } from '../../../core/services/auth/auth.service';
+import { AuthService, AuthError } from '../../../core/services/auth/auth.service';
 import { AuthSession } from '../../../core/models/auth/auth-session.model';
 
 @Component({
@@ -65,9 +65,24 @@ export class LoginComponent implements OnInit {
         this.loading = false;
         this.router.navigate(['/dashboard']);
       },
-      error: (err) => {
-        this.errorMessage = err.message || 'Error al iniciar sesión';
+      error: (err: AuthError) => {
         this.loading = false;
+
+        if (err?.code === 'new_password_required') {
+          const details = (err.details ?? {}) as { session?: string };
+          const session = details?.session;
+
+          if (session) {
+            this.authService.setPasswordChallenge({ email, session });
+            this.router.navigate(['/complete-password']);
+            return;
+          }
+
+          this.errorMessage = 'Necesitas establecer una nueva contraseña, pero no pudimos iniciar el proceso.';
+          return;
+        }
+
+        this.errorMessage = err.message || 'Error al iniciar sesión';
       }
     });
   }

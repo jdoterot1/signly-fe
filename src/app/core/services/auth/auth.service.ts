@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 
@@ -17,6 +17,17 @@ interface PasswordSuccessPayload {
   status: string;
 }
 
+export interface AuthError extends Error {
+  code?: string;
+  status?: number;
+  details?: unknown;
+}
+
+interface PasswordChallenge {
+  email: string;
+  session: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -26,6 +37,7 @@ export class AuthService {
   private session: AuthSession | null;
   private recoveryEmail: string | null = null;
   private recoveryOtp: string | null = null;
+  private passwordChallenge: PasswordChallenge | null = null;
 
   constructor(private http: HttpClient) {
     this.session = this.loadSession();
@@ -161,6 +173,18 @@ export class AuthService {
     this.recoveryOtp = null;
   }
 
+  setPasswordChallenge(challenge: PasswordChallenge): void {
+    this.passwordChallenge = challenge;
+  }
+
+  getPasswordChallenge(): PasswordChallenge | null {
+    return this.passwordChallenge;
+  }
+
+  clearPasswordChallenge(): void {
+    this.passwordChallenge = null;
+  }
+
   getSession(): AuthSession | null {
     return this.session;
   }
@@ -250,13 +274,37 @@ export class AuthService {
     localStorage.setItem(this.storageKey, JSON.stringify(session));
     this.clearRecoveryEmail();
     this.clearRecoveryOtp();
+    this.clearPasswordChallenge();
   }
 
   private handleError(error: unknown) {
+    const httpError = error as HttpErrorResponse;
+    const backend = (httpError?.error ?? {}) as {
+      code?: string;
+      message?: string;
+      error?: { details?: unknown };
+      details?: unknown;
+      status?: number;
+    };
+    const details =
+      backend?.error?.details ??
+      backend?.details ??
+      null;
     const message =
-      (error as { error?: { message?: string; error?: { details?: { message?: string } } } }).error?.message ||
-      (error as { message?: string }).message ||
+      backend?.message ||
+      (details as { message?: string } | null)?.message ||
+      httpError?.message ||
       'Error de autenticación';
-    return throwError(() => new Error(message));
+    const code =
+      backend?.code ||
+      (details as { reason?: string } | null)?.reason ||
+      undefined;
+
+    const authError = new Error(message) as AuthError;
+    authError.code = code;
+    authError.status = httpError?.status;
+    authError.details = details;
+
+    return throwError(() => authError);
   }
 }

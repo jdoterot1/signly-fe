@@ -1,0 +1,31 @@
+.editor-container .ql-toolbar {
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+
+.editor-container .ql-container {
+  height: 520px;
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+
+.editor-container.editor-drop-active {
+  outline: 2px dashed #6366f1;
+  outline-offset: -10px;
+  background-color: rgba(99, 102, 241, 0.05);
+}
+
+.preview {
+  min-height: 520px;
+  background-color: #fafafa;
+}
+
+.preview .prose h1,
+.preview .prose h2,
+.preview .prose h3 {
+  margin-top: 1.5rem;
+  font-weight: 600;
+}
+
+.preview .prose p {
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+}
