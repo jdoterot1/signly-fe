@@ -1,7 +1,7 @@
 // src/app/features/documents/list/document-list.component.ts
-import { Component, OnInit }      from '@angular/core';
+import { Component, Input, OnInit }      from '@angular/core';
 import { CommonModule }           from '@angular/common';
-import { RouterModule, Router }   from '@angular/router';
+import { RouterModule, Router, NavigationExtras }   from '@angular/router';
 import { FormsModule }            from '@angular/forms';
 
 import { TableComponent }         from '../../../shared/table/table.component';
@@ -31,6 +31,7 @@ interface DocumentRow {
   templateUrl: './document-list.component.html',
 })
 export class DocumentListComponent implements OnInit {
+  @Input() returnTo: string | null = null;
   tableModel: TableModel<DocumentRow> = {
     entityName: 'Lista de Documentos',
     tableConfig: {
@@ -118,6 +119,13 @@ export class DocumentListComponent implements OnInit {
   }
 
   onCreate(): void {
-    this.router.navigate(['/documents/create']);
+    this.router.navigate(['/documents/create'], this.navigationExtras());
+  }
+
+  private navigationExtras(): NavigationExtras {
+    if (!this.returnTo) {
+      return {};
+    }
+    return { queryParams: { returnTo: this.returnTo } };
   }
 }

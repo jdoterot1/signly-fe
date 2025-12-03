@@ -1,57 +1,92 @@
 // src/app/features/templates/create/template-add.component.ts
+import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 
-import { FormComponent } from '../../../shared/form/form.component';
-import { TEMPLATE_CREATE_FORM_CONFIG } from '../../../core/constants/templates/create/templates-create.constant';
 import { TemplateService } from '../../../core/services/templates/template.service';
 import { Template } from '../../../core/models/templates/template.model';
-
-import { AlertService } from '../../../shared/alert/alert.service'; 
+import { AlertService } from '../../../shared/alert/alert.service';
+import { DocumentMapperComponent } from '../../document-mapper/document-mapper.component';
 
 @Component({
   selector: 'app-template-create',
   standalone: true,
-  imports: [FormComponent],
+  imports: [CommonModule, ReactiveFormsModule, DocumentMapperComponent],
   templateUrl: './template-add.component.html'
 })
 export class TemplateCreateComponent {
-  formConfig = TEMPLATE_CREATE_FORM_CONFIG;
+  readonly stepForm: FormGroup;
+
+  currentStep: 1 | 2 = 1;
+  isSaving = false;
+  private readonly returnTo: string | null;
 
   constructor(
+    private fb: FormBuilder,
     private templateService: TemplateService,
     private router: Router,
-    private alertService: AlertService 
-  ) {}
+    private route: ActivatedRoute,
+    private alertService: AlertService
+  ) {
+    this.returnTo = this.route.snapshot.queryParamMap.get('returnTo');
+    this.stepForm = this.fb.nonNullable.group({
+      name: ['', [Validators.required, Validators.maxLength(120)]],
+      description: ['', [Validators.maxLength(500)]]
+    });
+  }
 
-  onSubmit(formValue: {
-    name: string;
-    description: string;
-    language: { name: string; code: string };
-    status: { name: string; code: string };
-  }) {
+  goToStepTwo(): void {
+    if (this.stepForm.invalid) {
+      this.stepForm.markAllAsTouched();
+      return;
+    }
+    this.currentStep = 2;
+  }
+
+  goBackToStepOne(): void {
+    this.currentStep = 1;
+  }
+
+  saveTemplate(): void {
+    if (this.stepForm.invalid || this.isSaving) {
+      this.stepForm.markAllAsTouched();
+      return;
+    }
+
+    const { name, description } = this.stepForm.getRawValue();
     const payload: Template = {
-      name:        formValue.name,
-      description: formValue.description,
-      language:    formValue.language.code,
-      status:      formValue.status.code,
+      name,
+      description,
+      language: 'Spanish',
+      status: 'Pending',
       creationDate: new Date(),
-      createdBy:    'System Admin' // Aquí podrías usar el usuario logueado si lo tienes
+      createdBy: 'System Admin'
     } as Template;
 
+    this.isSaving = true;
     this.templateService.createTemplate(payload).subscribe({
       next: () => {
         this.alertService.showSuccess('La plantilla fue creada exitosamente', '¡Plantilla creada!');
-        setTimeout(() => this.router.navigate(['/templates']), 2600);
+        setTimeout(() => this.navigateBack(), 2600);
       },
       error: err => {
+        this.isSaving = false;
         this.alertService.showError('No se pudo crear la plantilla', 'Error');
         console.error('Error al crear la plantilla', err);
+      },
+      complete: () => {
+        this.isSaving = false;
       }
     });
   }
 
-  onCancel() {
-    this.router.navigate(['/templates']);
+  onCancel(): void {
+    this.navigateBack();
+  }
+
+  private navigateBack(): void {
+    const target = this.returnTo || '/templates';
+    this.router.navigateByUrl(target);
   }
 }

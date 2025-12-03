@@ -1,0 +1,43 @@
+<div class="min-h-[calc(100vh-8rem)] py-10 px-4 lg:px-10">
+  <div class="flex flex-col lg:flex-row gap-8 items-start">
+    <app-admin-sidebar
+      class="w-full lg:w-auto"
+      [ownerName]="ownerName"
+      [accountId]="accountId"
+      [sections]="sidebarSections"
+      [selectedOption]="selectedOption"
+      (optionSelected)="onOptionSelected($event)"
+    ></app-admin-sidebar>
+
+    <section class="flex-1 space-y-6 w-full">
+      <div class="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-indigo-50/60 p-8">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">Centro de reportes</p>
+            <h1 class="text-3xl font-semibold heading-brand mt-3">{{ selectedOption }}</h1>
+            <p class="text-gray-600 mt-3 leading-relaxed max-w-2xl">
+              {{ currentDescription }}
+            </p>
+          </div>
+          <div class="shrink-0 text-right">
+            <p class="text-sm text-gray-400">Reportes recientes</p>
+            <p class="text-lg font-semibold heading-brand">32</p>
+            <span class="inline-flex items-center gap-2 text-xs font-semibold text-emerald-600 mt-2">
+              <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+              Última exportación hace 1h
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="showReportsTable" class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-2">
+        <app-audit-list></app-audit-list>
+      </div>
+      <div *ngIf="!showReportsTable" class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-8">
+        <p class="text-sm text-gray-600">
+          Aún no hay contenido específico para esta vista. Selecciona otra opción del panel lateral para ver reportes disponibles.
+        </p>
+      </div>
+    </section>
+  </div>
+</div>

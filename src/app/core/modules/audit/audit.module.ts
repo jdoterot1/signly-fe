@@ -1,16 +1,16 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-import { AuditListComponent } from '../../../features/audit/list/audit-list.component';
+import { ReportsCenterComponent } from '../../../features/audit/center/reports-center.component';
 
 const routes: Routes = [
-  { path: '', component: AuditListComponent }
+  { path: '', component: ReportsCenterComponent }
 ];
 
 @NgModule({
   imports: [
     RouterModule.forChild(routes),
-    AuditListComponent
+    ReportsCenterComponent
   ]
 })
 export class AuditModule {}

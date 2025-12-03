@@ -1,6 +1,6 @@
 // src/app/features/documents/create/document-add.component.ts
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { DocumentService } from '../../../core/services/documents/document.service';
 import { Document } from '../../../core/models/documents/document.model';
@@ -18,12 +18,16 @@ import { AlertService } from '../../../shared/alert/alert.service'; // ✅ Impor
 export class DocumentCreateComponent {
   formConfig = DOCUMENT_CREATE_FORM_CONFIG;
   selectedFile?: File;
+  private readonly returnTo: string | null;
 
   constructor(
     private documentService: DocumentService,
     private router: Router,
+    private route: ActivatedRoute,
     private alertService: AlertService // ✅ Inyectar servicio
-  ) {}
+  ) {
+    this.returnTo = this.route.snapshot.queryParamMap.get('returnTo');
+  }
 
   onFileSelected(file: File) {
     this.selectedFile = file;
@@ -56,7 +60,7 @@ export class DocumentCreateComponent {
     this.documentService.createDocument(payload).subscribe({
       next: () => {
         this.alertService.showSuccess('El documento fue creado exitosamente', '¡Documento creado!');
-        setTimeout(() => this.router.navigate(['/documents']), 2600);
+        setTimeout(() => this.navigateBack(), 2600);
       },
       error: err => {
         this.alertService.showError('No se pudo crear el documento', 'Error');
@@ -66,6 +70,11 @@ export class DocumentCreateComponent {
   }
 
   onCancel() {
-    this.router.navigate(['/documents']);
+    this.navigateBack();
+  }
+
+  private navigateBack(): void {
+    const target = this.returnTo || '/documents';
+    this.router.navigateByUrl(target);
   }
 }
