@@ -70,6 +70,11 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./core/modules/webhooks/webhooks.module').then(m => m.WebhooksModule)
       },
+      {
+        path: 'company',
+        loadChildren: () =>
+          import('./core/modules/company/company.module').then(m => m.CompanyModule)
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: '**', redirectTo: 'dashboard' }
     ]

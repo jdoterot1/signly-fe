@@ -1,38 +1,113 @@
-<!-- src/app/core/layout/header/header.component.html -->
-<div class="flex items-center justify-end bg-white shadow pl-4 pr-10 py-4 space-x-12">
-  <!-- Campana -->
-  <button class="focus:outline-none">
-    <img
-      src="assets/icons/header/Notification.svg"
-      alt="Notifications"
-      class="w-10 h-10"
-    />
-  </button>
+<div class="relative z-40 bg-white">
+  <div class="w-full h-16 flex items-center justify-between px-8 lg:px-16 text-base text-[#4b3c69]">
+    <div class="flex items-center gap-7">
+      <a routerLink="/dashboard" class="flex items-center gap-2 text-xl font-semibold text-[#1b1034]">
+        <img src="assets/icons/sidebar/ApoloLogo.svg" alt="Signly" class="w-9 h-9" />
+        <span>Signly</span>
+      </a>
+      <nav class="hidden md:flex items-center gap-4 text-[15px]">
+        <a
+          *ngFor="let link of navLinks"
+          [routerLink]="link.path"
+          routerLinkActive="text-[#361681] font-semibold"
+          #rla="routerLinkActive"
+          class="relative px-4 py-2 rounded-full transition hover:text-[#1b1034] hover:bg-[#f0f0f7] hover:shadow-sm"
+        >
+          {{ link.label }}
+          <span
+            class="absolute left-0 -bottom-0.5 h-0.5 w-full bg-[#361681] rounded-full transition opacity-0"
+            [ngClass]="{ 'opacity-100': rla.isActive }"
+          ></span>
+        </a>
+      </nav>
+    </div>
 
-  <!-- Usuario -->
-  <button class="flex items-center space-x-4 focus:outline-none">
-    <img
-      src="assets/icons/sidebar/User.svg"
-      class="w-10 h-10 rounded-full object-cover"
-    />
-    <span
-      class="text-base font-normal text-gray-800"
-      style="font-family: 'Roboto', sans-serif;"
-    >
-      Juan David Otero
-    </span>
-    <svg
-      class="w-5 h-5 text-gray-500"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M19 9l-7 7-7-7"
-      />
-    </svg>
-  </button>
+    <div class="flex items-center gap-5">
+      <button
+        type="button"
+        class="inline-flex items-center gap-2 rounded-full border border-[#361681] px-4 py-1.5 text-[#361681] text-xs font-semibold hover:bg-[#361681] hover:text-white transition shadow-sm"
+        (click)="openPricingModal()"
+      >
+        Ver planes
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7 7 7-7 7" />
+        </svg>
+      </button>
+      <div class="hidden lg:flex flex-col text-right leading-tight justify-center pr-3">
+        <span class="text-[11px] uppercase tracking-[0.2em] text-[#9b93b8]">Plan vigente</span>
+        <span class="text-sm font-semibold text-[#361681]">{{ planStatus }}</span>
+      </div>
+
+      <div class="relative">
+        <button
+          type="button"
+          (click)="toggleNotifications($event)"
+          class="relative flex items-center justify-center rounded-full border border-[#e0d7f4] bg-white p-2 transition hover:border-[#361681]"
+          [attr.aria-expanded]="isNotificationsOpen"
+        >
+          <img src="assets/icons/header/Notification.svg" alt="Notificaciones" class="w-5 h-5" />
+          <span class="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#ff6b81] ring-2 ring-white"></span>
+        </button>
+
+        <div *ngIf="isNotificationsOpen" class="absolute right-0 mt-3 w-80 rounded-3xl border border-gray-200 bg-white shadow-2xl">
+          <div class="px-5 py-4 border-b border-gray-100">
+            <p class="text-sm font-semibold text-gray-900">Centro de notificaciones</p>
+            <p class="text-xs text-gray-500">{{ notifications.length }} nuevas</p>
+          </div>
+          <div class="max-h-80 overflow-y-auto divide-y divide-gray-100">
+            <div *ngFor="let notification of notifications" class="px-5 py-4 hover:bg-gray-50">
+              <p class="text-sm font-semibold text-gray-900">{{ notification.title }}</p>
+              <p class="text-xs text-gray-600 mt-1">{{ notification.description }}</p>
+              <span class="text-[11px] text-gray-400">{{ notification.time }}</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="w-full px-5 py-3 text-sm font-semibold text-[#361681] border-t border-gray-100 hover:bg-gray-50"
+            (click)="closeMenus()"
+          >
+            Ver todas
+          </button>
+        </div>
+      </div>
+
+      <div class="relative">
+        <button
+          type="button"
+          (click)="toggleUserMenu($event)"
+          class="flex items-center gap-3 rounded-full border border-[#e0d7f4] bg-white px-3 py-1.5 transition hover:border-[#361681]"
+          [attr.aria-expanded]="isUserMenuOpen"
+        >
+          <div class="w-9 h-9 rounded-full bg-[#c5e5f4] flex items-center justify-center text-[#1b1034] font-semibold">
+            JO
+          </div>
+          <div class="hidden md:flex flex-col leading-tight text-left">
+            <span class="text-xs text-[#9b93b8] uppercase tracking-wide">Cuenta</span>
+            <span class="text-sm font-semibold text-[#1b1034]">Juan David Otero</span>
+          </div>
+          <svg
+            class="w-4 h-4 text-[#6d5ca8] transition-transform duration-200"
+            [ngClass]="isUserMenuOpen ? 'rotate-180' : ''"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        <app-user-profile-dropdown
+          *ngIf="isUserMenuOpen"
+          class="absolute right-0 mt-3"
+          [userName]="'Juan David Otero'"
+          [userEmail]="'juandavid@signly.com'"
+          [accountInfo]="'Cuenta empresarial'"
+          [displayName]="'Juan David Otero'"
+          (logOut)="handleLogout()"
+          (manageProfile)="handleManageProfile()"
+        ></app-user-profile-dropdown>
+      </div>
+    </div>
+  </div>
+
 </div>

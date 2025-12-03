@@ -1,5 +1,6 @@
 @use "primeicons/primeicons.css";
 @import "quill/dist/quill.snow.css";
+
 @plugin 'tailwindcss-primeui';
 @layer tailwind, primeng;
 
@@ -9,26 +10,28 @@
 
 @layer base {
   :root {
-    --brand-primary: #1f75fe;
-    --brand-primary-strong: #1557b0;
-    --brand-surface: #f6f8fb;
-    --brand-ink: #0f172a;
-    --brand-muted: #526071;
+    --brand-primary: #2b0f60;
+    --brand-primary-strong: #5d28e0;
+    --brand-surface: #f7f5fb;
+    --brand-ink: #1b1034;
+    --brand-muted: #7b6aa3;
   }
 
   * {
-    font-family: "Roboto", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: "Source Sans 3", system-ui, -apple-system,
+      BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
 
   body {
     color: var(--brand-ink);
-    background: var(--brand-surface);
+    background-color: var(--brand-surface);
     font-size: 15px;
     letter-spacing: -0.01em;
   }
 
   ::selection {
-    background-color: rgba(31, 117, 254, 0.12);
+    background-color: rgba(45, 12, 96, 0.15);
     color: var(--brand-ink);
   }
+
 }

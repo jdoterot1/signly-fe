@@ -1,68 +1,47 @@
-// src/app/features/dashboard/dashboard.component.ts
-
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth/auth.service';
 
-interface Shortcut {
-  label: string;
-  description: string;
-  path: string;
-  color: 'indigo' | 'violet' | 'emerald' | 'teal' | 'cyan' | 'amber' | 'rose' | 'sky';
-  icon: 'users' | 'shield' | 'office' | 'doc' | 'wallet' | 'bolt' | 'chart' | 'link';
+interface TemplateCard {
+  title: string
+  description: string
+  tag: string
+  path: string
 }
 
 @Component({
-  selector: 'app-dashboard',
+  selector: "app-dashboard",
   standalone: true,
   imports: [CommonModule, RouterModule],
-  templateUrl: './dashboard.component.html',
-  styleUrls: []
+  templateUrl: "./dashboard.component.html",
+  styleUrls: [],
 })
 export class DashboardComponent {
-  readonly shortcuts: Shortcut[] = [
+  readonly onboardingProgress = {
+    title: 'Enviar documentos para firma',
+    current: 0,
+    total: 4
+  };
+
+  readonly starterTemplates: TemplateCard[] = [
     {
-      label: 'Usuarios',
-      description: 'Gestiona perfiles y accesos del equipo',
-      path: '/users',
-      color: 'indigo',
-      icon: 'users'
+      title: 'Verificación de elegibilidad I-9',
+      description: 'Recolecta la información fiscal de tus colaboradores en minutos.',
+      tag: 'Plantilla inicial',
+      path: '/templates'
     },
     {
-      label: 'Roles y permisos',
-      description: 'Configura los roles y privilegios',
-      path: '/roles',
-      color: 'violet',
-      icon: 'shield'
+      title: 'Formato W-9 de ejemplo',
+      description: 'Solicita datos tributarios a proveedores y contratistas.',
+      tag: 'Plantilla inicial',
+      path: '/templates'
     },
     {
-      label: 'Plantillas',
-      description: 'Administra plantillas de firma electrónica',
-      path: '/templates',
-      color: 'emerald',
-      icon: 'doc'
-    },
-    {
-      label: 'Documentos',
-      description: 'Revisa procesos y documentos en curso',
-      path: '/documents',
-      color: 'teal',
-      icon: 'office'
-    },
-    {
-      label: 'Auditoría',
-      description: 'Monitorea las actividades recientes',
-      path: '/audit',
-      color: 'amber',
-      icon: 'chart'
-    },
-    {
-      label: 'Historial de auditoría',
-      description: 'Explora registros históricos',
-      path: '/audit-logs',
-      color: 'rose',
-      icon: 'bolt'
+      title: 'Carta de oferta laboral',
+      description: 'Formaliza contrataciones y envía solicitudes de firma electrónica.',
+      tag: 'Plantilla inicial',
+      path: '/templates'
     }
   ];
 
@@ -74,14 +53,21 @@ export class DashboardComponent {
     const name = session?.user.name ?? '';
 
     const resolvedName = name || email;
-    const hour = new Date().getHours();
-    const greeting =
-      hour >= 5 && hour < 12
-        ? 'Buenos días'
-        : hour >= 12 && hour < 19
-          ? 'Buenas tardes'
-          : 'Buenas noches';
+    return resolvedName || 'Usuario';
+  }
 
-    return resolvedName ? `${greeting}, ${resolvedName}` : greeting;
+  getInitials(): string {
+    const session = this.authService.getSession();
+    const name = session?.user.name ?? '';
+    const email = session?.user.email ?? '';
+    const resolvedName = name || email;
+
+    if (!resolvedName) return 'U';
+
+    const parts = resolvedName.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return resolvedName.substring(0, 2).toUpperCase();
   }
 }

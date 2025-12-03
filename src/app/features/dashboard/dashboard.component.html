@@ -1,68 +1,73 @@
-<!-- src/app/features/dashboard/dashboard.component.html -->
-<div class="p-8 space-y-6">
-  <div class="flex items-center justify-between">
-    <div>
-      <h1 class="text-2xl sm:text-3xl font-semibold text-gray-900">{{ displayName }}</h1>
-      <p class="text-sm text-gray-500">Accesos rápidos a los módulos</p>
-    </div>
-  </div>
-
-  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-    <a
-      *ngFor="let shortcut of shortcuts"
-      [routerLink]="shortcut.path"
-      class="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 hover:shadow-md transition-shadow flex flex-col items-center text-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
-      role="button"
-      tabindex="0"
-      [attr.aria-label]="shortcut.label"
-    >
-      <div class="flex flex-col items-center gap-3">
-        <div
-          class="rounded-xl p-3 text-white"
-          [ngClass]="{
-            'bg-indigo-500': shortcut.color === 'indigo',
-            'bg-violet-500': shortcut.color === 'violet',
-            'bg-emerald-500': shortcut.color === 'emerald',
-            'bg-teal-500': shortcut.color === 'teal',
-            'bg-cyan-500': shortcut.color === 'cyan',
-            'bg-amber-500': shortcut.color === 'amber',
-            'bg-rose-500': shortcut.color === 'rose',
-            'bg-sky-500': shortcut.color === 'sky'
-          }"
-        >
-          <ng-container [ngSwitch]="shortcut.icon">
-            <svg *ngSwitchCase="'users'" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M16 11c1.657 0 3-1.79 3-4s-1.343-4-3-4-3 1.79-3 4 1.343 4 3 4zM8 11c1.657 0 3-1.79 3-4S9.657 3 8 3 5 4.79 5 7s1.343 4 3 4zm0 2c-2.761 0-8 1.343-8 4v2h10v-2c0-2.657 1.343-4 4-4h2c-1.125-1.183-3.105-2-6-2H8zm8 0c-3.314 0-6 1.343-6 4v2h12v-2c0-2.657-2.686-4-6-4z" />
-            </svg>
-            <svg *ngSwitchCase="'shield'" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2l8 4v6c0 5-3.58 9.74-8 10-4.42-.26-8-5-8-10V6l8-4zm0 2.18L6 6.5V12c0 3.86 2.69 7.35 6 7.73 3.31-.38 6-3.87 6-7.73V6.5l-6-2.32z" />
-            </svg>
-            <svg *ngSwitchCase="'office'" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M4 22V2h10v5h6v15h-3v-3h-6v3H4zm2-2h2v-3h6v3h2V9h-4V4H6v16zm2-5h2v-2H8v2zm0-4h2v-2H8v2z" />
-            </svg>
-            <svg *ngSwitchCase="'doc'" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12V8l-4-6zm0 2l3 4h-3V4z" />
-            </svg>
-            <svg *ngSwitchCase="'wallet'" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M21 7H3V5a2 2 0 012-2h12a2 2 0 012 2v2zm0 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V9h18zm-4 3a2 2 0 100 4 2 2 0 000-4z" />
-            </svg>
-            <svg *ngSwitchCase="'bolt'" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M11 21l1-8H7l6-10h-1l-1 8h5l-6 10z" />
-            </svg>
-            <svg *ngSwitchCase="'chart'" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M3 3h2v18H3V3zm4 10h2v8H7v-8zm4-6h2v14h-2V7zm4 4h2v10h-2V11zm4-8h2v18h-2V3z" />
-            </svg>
-            <svg *ngSwitchDefault class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M10 17l5-5-5-5v10z" />
-            </svg>
-          </ng-container>
+<div class="bg-white min-h-screen flex flex-col">
+  <section class="bg-[#2b0f60] text-white">
+    <div class="max-w-6xl mx-auto px-6 lg:px-10 py-10">
+      <div class="flex flex-col md:flex-row items-center md:items-center justify-between gap-6">
+        <div class="flex items-center gap-4 text-white">
+          <div class="w-12 h-12 rounded-full bg-white text-[#2b0f60] flex items-center justify-center text-2xl font-semibold shadow">
+            {{ getInitials() }}
+          </div>
+          <div>
+            <h1 class="text-3xl font-semibold">Bienvenido de nuevo</h1>
+            <p class="text-sm text-white/80 tracking-wide">{{ displayName }}</p>
+          </div>
         </div>
 
-        <div class="min-w-0">
-          <h3 class="text-base font-semibold text-gray-900">{{ shortcut.label }}</h3>
-          <p class="text-sm text-gray-500 line-clamp-2">{{ shortcut.description }}</p>
+        <div class="w-full md:max-w-xl md:ml-auto">
+          <p class="text-xs uppercase tracking-[0.3em] text-white/70 mb-2">Primeros pasos</p>
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div class="text-left">
+              <h3 class="text-xl font-semibold text-white">Comienza: envía documentos para firma</h3>
+              <p class="text-sm text-white/80 mt-1">{{ onboardingProgress.current }} de {{ onboardingProgress.total }} completado</p>
+            </div>
+            <button
+              type="button"
+              class="inline-flex items-center justify-center px-4 py-2 bg-white text-[#2b0f60] rounded-full text-sm font-semibold hover:bg-[#f4efff] transition"
+            >
+              Guíame
+            </button>
+          </div>
+          <div class="mt-3 h-2 rounded-full bg-white/20">
+            <div
+              class="h-full rounded-full bg-white"
+              [style.width]="(onboardingProgress.current / onboardingProgress.total) * 100 + '%'"
+            ></div>
+          </div>
         </div>
       </div>
-    </a>
-  </div>
+    </div>
+  </section>
+
+  <section class="flex-1 bg-white">
+    <div class="max-w-7xl mx-auto px-6 lg:px-10 py-4 mt-8">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-2xl font-semibold text-[#1b1034]">Comienza o usa plantillas</h2>
+        <a
+          routerLink="/templates"
+          class="text-sm font-semibold text-[#2b0f60] hover:text-[#5d28e0] flex items-center gap-2 transition"
+        >
+          Ver todas las plantillas
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7 7 7-7 7" />
+          </svg>
+        </a>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-6">
+        <a
+          *ngFor="let template of starterTemplates"
+          [routerLink]="template.path"
+          class="rounded-xl border border-[#e5dff2] bg-white p-5 hover:shadow-md hover:border-[#d9cff6] transition"
+        >
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-xs uppercase tracking-[0.15em] text-[#8b7aa3] font-semibold">{{ template.tag }}</span>
+          </div>
+          <div class="h-32 rounded-lg border border-dashed border-[#d9cff6] bg-[#f9f7ff] flex items-center justify-center mb-4">
+            <span class="text-xs text-[#a091c8]">Vista previa</span>
+          </div>
+          <h3 class="text-base font-semibold text-[#1b1034] mb-2">{{ template.title }}</h3>
+          <p class="text-sm text-[#7b6aa3] line-clamp-2">{{ template.description }}</p>
+        </a>
+      </div>
+    </div>
+  </section>
 </div>

@@ -1,0 +1,181 @@
+<div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+  <div class="bg-white rounded-3xl shadow-2xl max-w-5xl w-full overflow-hidden">
+    <!-- Header -->
+    <div class="flex items-start justify-between px-8 py-6 border-b border-gray-200">
+      <div>
+        <h2 class="text-2xl font-semibold text-gray-900">Tu prueba termina en 30 días</h2>
+        <p class="text-sm text-gray-600 mt-1">Elige tu plan Signly</p>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <!-- Toggle Annual / Monthly -->
+        <div class="flex flex-col items-end">
+          <div class="inline-flex items-center rounded-full bg-gray-100 p-1 text-sm font-medium">
+            <button
+              type="button"
+              class="px-4 py-1 rounded-full transition"
+              [ngClass]="isAnnual ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-800'"
+              (click)="setBillingType('annual')"
+            >
+              Annual
+            </button>
+            <button
+              type="button"
+              class="px-4 py-1 rounded-full transition"
+              [ngClass]="!isAnnual ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-800'"
+              (click)="setBillingType('monthly')"
+            >
+              Monthly
+            </button>
+          </div>
+          <span class="text-xs text-emerald-600 font-semibold mt-1" *ngIf="isAnnual">
+            {{ savingsText }}
+          </span>
+          <span class="text-xs text-gray-500 mt-1" *ngIf="!isAnnual">
+            {{ savingsText }}
+          </span>
+        </div>
+
+        <!-- Close button -->
+        <button
+          type="button"
+          class="text-gray-400 hover:text-gray-600 transition ml-2"
+          (click)="closeModal()"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="px-8 py-6 space-y-6">
+      <!-- Promo bar (similar a la verde de arriba en el ejemplo) -->
+      <div
+        class="text-xs md:text-sm font-medium px-4 py-3 rounded-md inline-flex items-center gap-2"
+        [ngClass]="isAnnual ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-50 text-gray-700 border border-gray-200'"
+      >
+        <span *ngIf="isAnnual">Ahorra 20% adicional con el código <strong>CYBERWEEK40</strong></span>
+        <span *ngIf="!isAnnual">Cambia a pago anual para obtener hasta un 45% de ahorro</span>
+      </div>
+
+      <!-- Plans -->
+      <div class="grid md:grid-cols-2 gap-6">
+        <!-- Personal -->
+        <div
+          class="border-2 rounded-2xl p-6 cursor-pointer transition flex flex-col justify-between"
+          [ngClass]="selectedPlan === 'personal'
+            ? 'border-indigo-600 shadow-sm bg-indigo-50/60'
+            : 'border-gray-200 hover:border-gray-400'"
+          (click)="selectPlan('personal')"
+        >
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-sm font-semibold text-gray-700">Personal</span>
+              <span class="bg-indigo-600 text-white text-[11px] font-semibold px-3 py-1 rounded-full uppercase tracking-wide">
+                Recomendado
+              </span>
+            </div>
+
+            <div class="mb-1">
+              <span class="text-4xl font-semibold text-gray-900">{{ personalPrice }}</span>
+              <span class="ml-1 text-base font-medium text-gray-700">/mes</span>
+            </div>
+            <p class="text-xs text-gray-500 mb-1">Pueden aplicar impuestos adicionales</p>
+            <p class="text-xs text-gray-600 mb-4">
+              {{ personalBillingNote }}
+            </p>
+
+            <div class="h-px bg-gray-200 mb-4"></div>
+
+            <ul class="space-y-2 text-sm text-gray-700">
+              <li class="flex items-start gap-2">
+                <span class="mt-1 w-4 h-4 rounded-full border border-emerald-500 flex items-center justify-center">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                </span>
+                <span>Envía hasta 5 sobres por mes</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="mt-1 w-4 h-4 rounded-full border border-emerald-500 flex items-center justify-center">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                </span>
+                <span>Ahorra horas configurando plantillas reutilizables</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="mt-1 w-4 h-4 rounded-full border border-emerald-500 flex items-center justify-center">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                </span>
+                <span>Conecta tu flujo con más de 900 integraciones</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Standard -->
+        <div
+          class="border-2 rounded-2xl p-6 cursor-pointer transition flex flex-col justify-between"
+          [ngClass]="selectedPlan === 'standard'
+            ? 'border-indigo-600 shadow-sm bg-indigo-50/60'
+            : 'border-gray-200 hover:border-gray-400'"
+          (click)="selectPlan('standard')"
+        >
+          <div>
+            <div class="flex items-center mb-4">
+              <span class="text-sm font-semibold text-gray-700">Standard</span>
+            </div>
+
+            <div class="mb-1">
+              <span class="text-4xl font-semibold text-gray-900">{{ standardPrice }}</span>
+              <span class="ml-1 text-base font-medium text-gray-700">/mes por usuario</span>
+            </div>
+            <p class="text-xs text-gray-500 mb-1">Pueden aplicar impuestos adicionales</p>
+            <p class="text-xs text-gray-600 mb-4">
+              {{ standardBillingNote }}
+            </p>
+
+            <div class="h-px bg-gray-200 mb-4"></div>
+
+            <ul class="space-y-2 text-sm text-gray-700">
+              <li class="flex items-start gap-2">
+                <span class="mt-1 w-4 h-4 rounded-full border border-emerald-500 flex items-center justify-center">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                </span>
+                <span>Hasta 100 sobres por usuario al año</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="mt-1 w-4 h-4 rounded-full border border-emerald-500 flex items-center justify-center">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                </span>
+                <span>Comparte plantillas fácilmente con tu equipo</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="mt-1 w-4 h-4 rounded-full border border-emerald-500 flex items-center justify-center">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                </span>
+                <span>Comentarios colaborativos en tiempo real</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+        <button
+          type="button"
+          class="text-sm font-semibold text-indigo-600 hover:underline"
+        >
+          Ver todos los planes
+        </button>
+
+        <button
+          type="button"
+          class="px-8 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition"
+        >
+          Siguiente
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

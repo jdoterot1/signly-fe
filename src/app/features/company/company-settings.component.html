@@ -1,0 +1,521 @@
+<div class="min-h-full bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-6xl mx-auto space-y-8">
+    <section class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-3xl p-8 shadow-lg flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div>
+        <p class="uppercase tracking-wide text-xs font-semibold text-white/70 mb-2">Compañía</p>
+        <h1 class="text-3xl font-bold">Identidad de Apolo Systems</h1>
+        <p class="text-white/80 mt-2 max-w-2xl">
+          Administra la información legal, la imagen de marca y las preferencias de facturación que verán tus clientes.
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="loadAll()"
+        class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white/20 hover:bg-white/30 transition text-sm font-semibold"
+        [disabled]="isLoadingGeneral || isLoadingBranding || isLoadingBilling"
+      >
+        {{ (isLoadingGeneral || isLoadingBranding || isLoadingBilling) ? 'Sincronizando...' : 'Recargar todo' }}
+      </button>
+    </section>
+
+    <!-- Información general -->
+    <section class="bg-white rounded-3xl shadow px-6 py-8">
+      <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900">Información general</h2>
+          <p class="text-sm text-gray-500">Datos legales y de contacto visibles en los documentos y notificaciones.</p>
+        </div>
+        <button
+          type="button"
+          class="text-sm text-indigo-600 font-medium hover:text-indigo-800"
+          (click)="loadGeneralInfo()"
+          [disabled]="isLoadingGeneral"
+        >
+          {{ isLoadingGeneral ? 'Actualizando...' : 'Restaurar valores' }}
+        </button>
+      </div>
+
+      <div *ngIf="isLoadingGeneral" class="mt-6 text-sm text-gray-500 animate-pulse">
+        Cargando información de la compañía...
+      </div>
+
+      <form
+        *ngIf="!isLoadingGeneral"
+        class="mt-6 space-y-6"
+        [formGroup]="generalForm"
+        (ngSubmit)="onSaveGeneral()"
+      >
+        <div class="grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Nombre comercial</label>
+            <input
+              type="text"
+              formControlName="display_name"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Apolo Systems Co."
+            />
+            <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('display_name')?.invalid && generalForm.get('display_name')?.touched">
+              Ingresa el nombre con el que se mostrará tu compañía.
+            </p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Razón social</label>
+            <input
+              type="text"
+              formControlName="legal_name"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Apolo Systems Company S.A.S."
+            />
+            <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('legal_name')?.invalid && generalForm.get('legal_name')?.touched">
+              La razón social es obligatoria.
+            </p>
+          </div>
+        </div>
+
+        <div class="grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">País</label>
+            <input
+              type="text"
+              formControlName="country"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="CO"
+            />
+            <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('country')?.invalid && generalForm.get('country')?.touched">
+              Indica el país desde donde operas.
+            </p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Ciudad</label>
+            <input
+              type="text"
+              formControlName="city"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Bogotá"
+            />
+            <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('city')?.invalid && generalForm.get('city')?.touched">
+              La ciudad es requerida.
+            </p>
+          </div>
+        </div>
+
+        <div class="grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Industria</label>
+            <input
+              type="text"
+              formControlName="industry"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Software & Cloud"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Número de empleados</label>
+            <input
+              type="number"
+              min="1"
+              formControlName="size"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="25"
+            />
+          </div>
+        </div>
+
+        <div class="grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Sitio web</label>
+            <input
+              type="url"
+              formControlName="website"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="https://www.apolosystems.co"
+            />
+            <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('website')?.invalid && generalForm.get('website')?.touched">
+              Agrega el sitio web principal.
+            </p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">NIT / Tax ID</label>
+            <input
+              type="text"
+              formControlName="tax_id"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="901234567-8"
+            />
+            <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('tax_id')?.invalid && generalForm.get('tax_id')?.touched">
+              Ingresa el NIT que aparecerá en los documentos.
+            </p>
+          </div>
+        </div>
+
+        <div class="grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Locale</label>
+            <select
+              formControlName="locale"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="" disabled>Selecciona un locale</option>
+              <option
+                *ngIf="generalForm.value.locale && !localeOptions.includes(generalForm.value.locale)"
+                [value]="generalForm.value.locale"
+              >
+                {{ generalForm.value.locale }} (actual)
+              </option>
+              <option *ngFor="let locale of localeOptions" [value]="locale">{{ locale }}</option>
+            </select>
+            <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('locale')?.invalid && generalForm.get('locale')?.touched">
+              Define el locale predeterminado.
+            </p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Zona horaria (IANA)</label>
+            <input
+              type="text"
+              formControlName="timezone"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="America/Bogota"
+            />
+            <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('timezone')?.invalid && generalForm.get('timezone')?.touched">
+              Ejemplo: America/Bogota.
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Descripción</label>
+          <textarea
+            rows="3"
+            formControlName="about"
+            class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            placeholder="We build modern SaaS for LATAM."
+          ></textarea>
+        </div>
+
+        <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            class="px-4 py-2 rounded-xl border text-sm text-gray-600 hover:bg-gray-50"
+            (click)="loadGeneralInfo()"
+            [disabled]="isSavingGeneral"
+          >
+            Descartar cambios
+          </button>
+          <button
+            type="submit"
+            class="px-5 py-2 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 disabled:opacity-60"
+            [disabled]="isSavingGeneral"
+          >
+            {{ isSavingGeneral ? 'Guardando...' : 'Guardar cambios' }}
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Branding -->
+    <section class="bg-white rounded-3xl shadow px-6 py-8">
+      <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900">Branding y correos</h2>
+          <p class="text-sm text-gray-500">Colores y recursos visuales que verán los firmantes.</p>
+        </div>
+        <button
+          type="button"
+          class="text-sm text-indigo-600 font-medium hover:text-indigo-800"
+          (click)="loadBranding()"
+          [disabled]="isLoadingBranding"
+        >
+          {{ isLoadingBranding ? 'Actualizando...' : 'Restaurar valores' }}
+        </button>
+      </div>
+
+      <div *ngIf="isLoadingBranding" class="mt-6 text-sm text-gray-500 animate-pulse">
+        Trayendo los colores y logos configurados...
+      </div>
+
+      <form
+        *ngIf="!isLoadingBranding"
+        class="mt-6 space-y-6"
+        [formGroup]="brandingForm"
+        (ngSubmit)="onSaveBranding()"
+      >
+        <div class="grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Color primario</label>
+            <div class="flex items-center gap-3">
+              <input
+                type="color"
+                formControlName="primary_color"
+                class="h-12 w-16 rounded-xl border border-gray-200"
+              />
+              <span class="font-mono text-sm text-gray-600">{{ brandingForm.get('primary_color')?.value }}</span>
+            </div>
+            <p class="mt-1 text-xs text-red-500" *ngIf="brandingForm.get('primary_color')?.invalid && brandingForm.get('primary_color')?.touched">
+              Usa un color HEX válido.
+            </p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Color secundario</label>
+            <div class="flex items-center gap-3">
+              <input
+                type="color"
+                formControlName="secondary_color"
+                class="h-12 w-16 rounded-xl border border-gray-200"
+              />
+              <span class="font-mono text-sm text-gray-600">{{ brandingForm.get('secondary_color')?.value }}</span>
+            </div>
+            <p class="mt-1 text-xs text-red-500" *ngIf="brandingForm.get('secondary_color')?.invalid && brandingForm.get('secondary_color')?.touched">
+              Usa un color HEX válido.
+            </p>
+          </div>
+        </div>
+
+        <div class="grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Logo (URL)</label>
+            <input
+              type="url"
+              formControlName="logo_url"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="https://cdn.signly.app/logo.svg"
+            />
+            <p class="mt-1 text-xs text-red-500" *ngIf="brandingForm.get('logo_url')?.invalid && brandingForm.get('logo_url')?.touched">
+              Agrega una URL válida para el logo.
+            </p>
+            <img
+              *ngIf="brandingForm.value.logo_url"
+              [src]="brandingForm.value.logo_url"
+              alt="Logo preview"
+              class="mt-4 max-h-16 object-contain"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Favicon (URL)</label>
+            <input
+              type="url"
+              formControlName="favicon_url"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="https://cdn.signly.app/favicon.ico"
+            />
+            <p class="mt-1 text-xs text-red-500" *ngIf="brandingForm.get('favicon_url')?.invalid && brandingForm.get('favicon_url')?.touched">
+              Agrega una URL válida para el favicon.
+            </p>
+            <img
+              *ngIf="brandingForm.value.favicon_url"
+              [src]="brandingForm.value.favicon_url"
+              alt="Favicon preview"
+              class="mt-4 h-12 w-12 rounded"
+            />
+          </div>
+        </div>
+
+        <div class="grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Nombre remitente (emails)</label>
+            <input
+              type="text"
+              formControlName="email_sender_name"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Apolo Systems"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Correo remitente</label>
+            <input
+              type="email"
+              formControlName="email_sender_addr"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="noreply@apolosystems.co"
+            />
+            <p class="mt-1 text-xs text-red-500" *ngIf="brandingForm.get('email_sender_addr')?.invalid && brandingForm.get('email_sender_addr')?.touched">
+              Ingresa un correo válido.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            class="px-4 py-2 rounded-xl border text-sm text-gray-600 hover:bg-gray-50"
+            (click)="loadBranding()"
+            [disabled]="isSavingBranding"
+          >
+            Descartar cambios
+          </button>
+          <button
+            type="submit"
+            class="px-5 py-2 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 disabled:opacity-60"
+            [disabled]="isSavingBranding"
+          >
+            {{ isSavingBranding ? 'Guardando...' : 'Actualizar branding' }}
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Facturación -->
+    <section class="bg-white rounded-3xl shadow px-6 py-8">
+      <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900">Facturación</h2>
+          <p class="text-sm text-gray-500">Controla cómo Signly emitirá facturas y recordatorios.</p>
+        </div>
+        <button
+          type="button"
+          class="text-sm text-indigo-600 font-medium hover:text-indigo-800"
+          (click)="loadBillingPreferences()"
+          [disabled]="isLoadingBilling"
+        >
+          {{ isLoadingBilling ? 'Actualizando...' : 'Restaurar valores' }}
+        </button>
+      </div>
+
+      <div *ngIf="isLoadingBilling" class="mt-6 text-sm text-gray-500 animate-pulse">
+        Consultando preferencias de facturación...
+      </div>
+
+      <form
+        *ngIf="!isLoadingBilling"
+        class="mt-6 space-y-6"
+        [formGroup]="billingForm"
+        (ngSubmit)="onSaveBilling()"
+      >
+        <div class="grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Correo de facturación</label>
+            <input
+              type="email"
+              formControlName="billing_email"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="billing@apolosystems.co"
+            />
+            <p class="mt-1 text-xs text-red-500" *ngIf="billingForm.get('billing_email')?.invalid && billingForm.get('billing_email')?.touched">
+              Ingresa un correo válido.
+            </p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Modelo de cobro</label>
+            <select
+              formControlName="billing_model"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="" disabled>Selecciona un modelo</option>
+              <option *ngIf="showBillingModelFallback" [value]="billingModelValue">
+                {{ billingModelValue }} (actual)
+              </option>
+              <option *ngFor="let model of billingModelOptions" [value]="model.value">{{ model.label }}</option>
+            </select>
+            <p class="mt-1 text-xs text-red-500" *ngIf="billingForm.get('billing_model')?.invalid && billingForm.get('billing_model')?.touched">
+              Selecciona el modelo de facturación.
+            </p>
+          </div>
+        </div>
+
+        <div class="grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Moneda</label>
+            <select
+              formControlName="currency"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="" disabled>Selecciona la moneda</option>
+              <option *ngIf="showCurrencyFallback" [value]="currencyValue">
+                {{ currencyValue }} (actual)
+              </option>
+              <option *ngFor="let currency of currencyOptions" [value]="currency">{{ currency }}</option>
+            </select>
+            <p class="mt-1 text-xs text-red-500" *ngIf="billingForm.get('currency')?.invalid && billingForm.get('currency')?.touched">
+              Selecciona una moneda.
+            </p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Día de facturación</label>
+            <input
+              type="number"
+              min="1"
+              max="31"
+              formControlName="invoice_day"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="10"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Dirección legal para facturas</label>
+          <textarea
+            rows="2"
+            formControlName="legal_address"
+            class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            placeholder="Cra 1 # 23-45, Bogotá D.C., Colombia"
+          ></textarea>
+        </div>
+
+        <div class="grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Términos de pago (días)</label>
+            <input
+              type="number"
+              min="0"
+              formControlName="net_terms_days"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="30"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Proveedor de pago</label>
+            <select
+              formControlName="payment_provider"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="" disabled>Selecciona una opción</option>
+              <option *ngIf="showPaymentProviderFallback" [value]="paymentProviderValue">
+                {{ paymentProviderValue }} (actual)
+              </option>
+              <option *ngFor="let provider of paymentProviderOptions" [value]="provider.value">{{ provider.label }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Referencia método de pago</label>
+            <input
+              type="text"
+              formControlName="payment_method_ref"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="ID de oferta o referencia externa"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Notas internas</label>
+            <textarea
+              rows="2"
+              formControlName="notes"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Preferencias especiales del cliente"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            class="px-4 py-2 rounded-xl border text-sm text-gray-600 hover:bg-gray-50"
+            (click)="loadBillingPreferences()"
+            [disabled]="isSavingBilling"
+          >
+            Descartar cambios
+          </button>
+          <button
+            type="submit"
+            class="px-5 py-2 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 disabled:opacity-60"
+            [disabled]="isSavingBilling"
+          >
+            {{ isSavingBilling ? 'Guardando...' : 'Actualizar facturación' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>
