@@ -1,0 +1,164 @@
+<div class="min-h-[calc(100vh-8rem)] py-10 px-4 lg:px-10">
+  <div class="flex flex-col lg:flex-row gap-8 items-start">
+    <app-admin-sidebar
+      class="w-full lg:w-auto"
+      [ownerName]="ownerName"
+      [accountId]="accountId"
+      [sections]="sidebarSections"
+      [selectedOption]="selectedOption"
+      (optionSelected)="onOptionSelected($event)"
+    ></app-admin-sidebar>
+
+    <section class="flex-1 space-y-6 w-full">
+      <div class="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-indigo-50/60 p-8">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">Centro de administración</p>
+            <h1 class="text-3xl font-semibold heading-brand mt-3">{{ selectedOption }}</h1>
+            <p class="text-gray-600 mt-3 leading-relaxed max-w-2xl">
+              {{ currentDescription }}
+            </p>
+          </div>
+          <div class="shrink-0 text-right">
+            <p class="text-sm text-gray-400">Última acción</p>
+            <p class="text-lg font-semibold heading-brand">Hace 2 horas</p>
+            <span class="inline-flex items-center gap-2 text-xs font-semibold text-emerald-600 mt-2">
+              <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+              Estado saludable
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      <ng-container *ngIf="selectedOption === 'Información general'; else configurationPanel">
+        <div class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-6 space-y-6">
+          <div class="flex items-center justify-between">
+            <span class="text-xl font-semibold text-[#2b0f60]">Notificaciones</span>
+            <button
+              type="button"
+              class="p-2 rounded-full border border-gray-200 text-[#2b0f60] hover:bg-[#f3ecff]"
+              (click)="openPreferencesModal()"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z"
+                />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="grid gap-4 md:grid-cols-3">
+            <div
+              *ngFor="let shortcut of quickAccess"
+              class="p-4 rounded-2xl border border-gray-100 bg-indigo-50/40 hover:border-indigo-200 transition cursor-pointer"
+              (click)="onOptionSelected(shortcut.target)"
+            >
+              <p class="text-xs uppercase tracking-[0.25em] text-[#2b0f60] font-semibold">{{ shortcut.label }}</p>
+              <p class="text-sm text-gray-600 mt-2">{{ shortcut.description }}</p>
+              <span class="inline-flex items-center gap-1 text-sm font-semibold text-[#2b0f60] mt-3">
+                Abrir
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7 7 7-7 7" />
+                </svg>
+              </span>
+            </div>
+          </div>
+
+          <app-table [model]="notificationTableModel"></app-table>
+        </div>
+      </ng-container>
+
+      <ng-template #configurationPanel>
+        <ng-container [ngSwitch]="selectedOption">
+          <app-users-list
+            *ngSwitchCase="'Usuarios'"
+            [returnTo]="'/administration?section=Usuarios'"
+          ></app-users-list>
+          <app-roles-list
+            *ngSwitchCase="'Perfiles de permisos'"
+            [returnTo]="'/administration?section=Perfiles de permisos'"
+          ></app-roles-list>
+          <div *ngSwitchDefault class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-6">
+            <p class="text-sm font-semibold heading-brand">Acciones rápidas</p>
+            <p class="text-sm text-gray-500">Decide qué actualizar según la sección seleccionada.</p>
+            <div class="mt-4 grid gap-4 md:grid-cols-2">
+              <div class="p-4 rounded-2xl border border-gray-100 hover:border-indigo-200 transition">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-[0.2em]">Configura</p>
+                <p class="text-lg font-semibold heading-brand mt-2">{{ selectedOption }}</p>
+                <p class="text-sm text-gray-500 mt-1">Revisa campos requeridos y personaliza los detalles clave.</p>
+                <button type="button" class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-indigo-600">
+                  Abrir configuración
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7 7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+              <div class="p-4 rounded-2xl border border-gray-100 hover:border-indigo-200 transition">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-[0.2em]">Historial</p>
+                <p class="text-lg font-semibold heading-brand mt-2">Auditoría contextual</p>
+                <p class="text-sm text-gray-500 mt-1">Consulta todos los cambios y responsables por sección.</p>
+                <button type="button" class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-indigo-600">
+                  Ver registro
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7 7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </ng-template>
+    </section>
+  </div>
+</div>
+
+<div
+  *ngIf="showPreferencesModal"
+  class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4"
+>
+  <div class="bg-white rounded-3xl max-w-xl w-full shadow-2xl p-8">
+    <div class="flex items-start justify-between">
+      <div>
+        <h2 class="text-2xl font-semibold text-[#2b0f60]">Preferencias de notificación</h2>
+        <p class="text-sm text-gray-600 mt-2">
+          Las notificaciones siempre aparecen en la página Información general de la configuración de eSignature.
+          Además, puede optar por recibir notificaciones por correo electrónico sobre:
+        </p>
+      </div>
+      <button type="button" class="text-gray-400 hover:text-gray-600" (click)="closePreferencesModal()">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="mt-6 space-y-4 text-sm text-gray-700">
+      <label class="flex items-start gap-3 cursor-pointer">
+        <input type="checkbox" class="mt-1 h-4 w-4 rounded border-gray-300 text-[#2b0f60] focus:ring-[#2b0f60]" />
+        <span><strong>Estado de la cuenta:</strong> manténgase al tanto de las actividades importantes en su cuenta.</span>
+      </label>
+      <label class="flex items-start gap-3 cursor-pointer">
+        <input type="checkbox" class="mt-1 h-4 w-4 rounded border-gray-300 text-[#2b0f60] focus:ring-[#2b0f60]" />
+        <span><strong>Actualización de productos:</strong> conozca los nuevos productos o mejoras.</span>
+      </label>
+      <label class="flex items-start gap-3 cursor-pointer">
+        <input type="checkbox" class="mt-1 h-4 w-4 rounded border-gray-300 text-[#2b0f60] focus:ring-[#2b0f60]" />
+        <span><strong>Formación y aprendizaje:</strong> descubra los próximos entrenamientos, seminarios web y conferencias.</span>
+      </label>
+    </div>
+
+    <div class="mt-8 flex justify-end gap-3">
+      <button type="button" class="px-5 py-2 rounded-xl border border-gray-200 text-[#2b0f60] font-semibold" (click)="closePreferencesModal()">
+        Cancelar
+      </button>
+      <button type="button" class="px-5 py-2 rounded-xl bg-[#ded6f6] text-white font-semibold opacity-60 cursor-not-allowed">
+        Guardar
+      </button>
+    </div>
+  </div>
+</div>

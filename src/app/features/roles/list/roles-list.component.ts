@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, NavigationExtras } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
 import { TableComponent }       from '../../../shared/table/table.component';
@@ -23,6 +23,7 @@ interface RoleRow {
   templateUrl: './roles-list.component.html'
 })
 export class RolesListComponent implements OnInit {
+  @Input() returnTo: string | null = null;
   tableModel: TableModel<RoleRow> = {
     entityName: 'Lista de Roles',
     tableConfig: {
@@ -90,7 +91,7 @@ export class RolesListComponent implements OnInit {
 
   
   onEdit(row: RoleRow): void {
-    this.router.navigate(['/roles', row.roleId, 'update']);
+    this.router.navigate(['/roles', row.roleId, 'update'], this.navigationExtras());
   }
 
   onDelete(row: RoleRow): void {
@@ -106,6 +107,13 @@ export class RolesListComponent implements OnInit {
     }
   }
   onCreate(): void {
-    this.router.navigate(['/roles/create']);
+    this.router.navigate(['/roles/create'], this.navigationExtras());
+  }
+
+  private navigationExtras(): NavigationExtras {
+    if (!this.returnTo) {
+      return {};
+    }
+    return { queryParams: { returnTo: this.returnTo } };
   }
 }

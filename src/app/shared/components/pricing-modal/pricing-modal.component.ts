@@ -29,7 +29,7 @@ export class PricingModalComponent {
     return this.billingType === 'annual';
   }
 
-  // Precios y textos dinámicos para parecerse al modal de DocuSign
+  // Precios y textos dinámicos para parecerse al modal de Signly
   get personalPrice(): string {
     return this.isAnnual ? 'CO$45,000' : 'CO$65,000';
   }

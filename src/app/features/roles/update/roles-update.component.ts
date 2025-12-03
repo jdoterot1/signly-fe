@@ -23,6 +23,7 @@ export class RolesUpdateComponent implements OnInit {
   selectedPermissions: string[] = [];
 
   private roleId!: string;
+  private returnTo: string | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -40,6 +41,7 @@ export class RolesUpdateComponent implements OnInit {
 
   ngOnInit(): void {
     this.roleId = this.route.snapshot.params['id'];
+    this.returnTo = this.route.snapshot.queryParamMap.get('returnTo');
     this.loadRole();
   }
 
@@ -58,7 +60,7 @@ export class RolesUpdateComponent implements OnInit {
     this.roleService.updateRole(this.roleId, payload).subscribe({
       next: () => {
         this.alertService.showSuccess('El rol fue actualizado correctamente', '¡Rol actualizado!');
-        setTimeout(() => this.router.navigate(['/roles']), 2600);
+        setTimeout(() => this.navigateBack(), 2600);
       },
       error: err => {
         this.alertService.showError('No se pudo actualizar el rol', 'Error');
@@ -68,7 +70,7 @@ export class RolesUpdateComponent implements OnInit {
   }
 
   onCancel(): void {
-    this.router.navigate(['/roles']);
+    this.navigateBack();
   }
 
   onPermissionsChange(permissions: string[]): void {
@@ -90,5 +92,10 @@ export class RolesUpdateComponent implements OnInit {
         console.error('Error al cargar rol', err);
       }
     });
+  }
+
+  private navigateBack(): void {
+    const target = this.returnTo || '/roles';
+    this.router.navigateByUrl(target);
   }
 }

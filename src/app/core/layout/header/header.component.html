@@ -79,11 +79,11 @@
           [attr.aria-expanded]="isUserMenuOpen"
         >
           <div class="w-9 h-9 rounded-full bg-[#c5e5f4] flex items-center justify-center text-[#1b1034] font-semibold">
-            JO
+            {{ userInitials }}
           </div>
           <div class="hidden md:flex flex-col leading-tight text-left">
             <span class="text-xs text-[#9b93b8] uppercase tracking-wide">Cuenta</span>
-            <span class="text-sm font-semibold text-[#1b1034]">Juan David Otero</span>
+            <span class="text-sm font-semibold text-[#1b1034]">{{ dropdownDisplayName }}</span>
           </div>
           <svg
             class="w-4 h-4 text-[#6d5ca8] transition-transform duration-200"
@@ -99,10 +99,10 @@
         <app-user-profile-dropdown
           *ngIf="isUserMenuOpen"
           class="absolute right-0 mt-3"
-          [userName]="'Juan David Otero'"
-          [userEmail]="'juandavid@signly.com'"
-          [accountInfo]="'Cuenta empresarial'"
-          [displayName]="'Juan David Otero'"
+          [userName]="dropdownUserName"
+          [userEmail]="dropdownUserEmail"
+          [accountInfo]="dropdownAccountInfo"
+          [displayName]="dropdownDisplayName"
           (logOut)="handleLogout()"
           (manageProfile)="handleManageProfile()"
         ></app-user-profile-dropdown>

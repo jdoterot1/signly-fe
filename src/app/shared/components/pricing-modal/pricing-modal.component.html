@@ -10,30 +10,32 @@
       <div class="flex items-center gap-4">
         <!-- Toggle Annual / Monthly -->
         <div class="flex flex-col items-end">
-          <div class="inline-flex items-center rounded-full bg-gray-100 p-1 text-sm font-medium">
-            <button
-              type="button"
-              class="px-4 py-1 rounded-full transition"
-              [ngClass]="isAnnual ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-800'"
-              (click)="setBillingType('annual')"
+          <div class="rounded-2xl border border-[#d6cdf4] shadow-sm overflow-hidden w-48">
+            <div class="flex bg-[#efe9ff]">
+              <button
+                type="button"
+                class="w-1/2 px-3 py-2 text-sm font-semibold transition"
+                [ngClass]="isAnnual ? 'bg-white text-[#2b0f60] shadow-sm' : 'text-[#6b5a94]'"
+                (click)="setBillingType('annual')"
+              >
+                Annual
+              </button>
+              <button
+                type="button"
+                class="w-1/2 px-3 py-2 text-sm font-semibold transition"
+                [ngClass]="!isAnnual ? 'bg-white text-[#2b0f60] shadow-sm' : 'text-[#6b5a94]'"
+                (click)="setBillingType('monthly')"
+              >
+                Monthly
+              </button>
+            </div>
+            <div
+              class="text-xs font-semibold text-center py-2"
+              [ngClass]="isAnnual ? 'bg-[#41f7c9] text-[#1b1034]' : 'bg-gray-100 text-gray-500'"
             >
-              Annual
-            </button>
-            <button
-              type="button"
-              class="px-4 py-1 rounded-full transition"
-              [ngClass]="!isAnnual ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-800'"
-              (click)="setBillingType('monthly')"
-            >
-              Monthly
-            </button>
+              {{ savingsText }}
+            </div>
           </div>
-          <span class="text-xs text-emerald-600 font-semibold mt-1" *ngIf="isAnnual">
-            {{ savingsText }}
-          </span>
-          <span class="text-xs text-gray-500 mt-1" *ngIf="!isAnnual">
-            {{ savingsText }}
-          </span>
         </div>
 
         <!-- Close button -->

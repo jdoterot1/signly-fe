@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, NavigationExtras } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
 import { TableComponent } from '../../../shared/table/table.component';
@@ -26,6 +26,8 @@ interface UserRow {
   templateUrl: './user-list.component.html'
 })
 export class UsersListComponent implements OnInit {
+  @Input() returnTo: string | null = null;
+
   tableModel: TableModel<UserRow> = {
     entityName: 'Lista de Usuarios',
     tableConfig: {
@@ -111,7 +113,7 @@ export class UsersListComponent implements OnInit {
       this.alertService.showError('No se pudo determinar el identificador del usuario.', 'Error');
       return;
     }
-    this.router.navigate(['/users', row.sub, 'view']);
+    this.router.navigate(['/users', row.sub, 'view'], this.navigationExtras());
   }
 
   onEdit(row: UserRow): void {
@@ -119,7 +121,7 @@ export class UsersListComponent implements OnInit {
       this.alertService.showError('No se pudo determinar el identificador del usuario.', 'Error');
       return;
     }
-    this.router.navigate(['/users', row.sub, 'update']);
+    this.router.navigate(['/users', row.sub, 'update'], this.navigationExtras());
   }
 
 
@@ -139,7 +141,14 @@ export class UsersListComponent implements OnInit {
     }
   }
   onCreate(): void {
-    this.router.navigate(['/users/create']);
+    this.router.navigate(['/users/create'], this.navigationExtras());
+  }
+
+  private navigationExtras(): NavigationExtras {
+    if (!this.returnTo) {
+      return {};
+    }
+    return { queryParams: { returnTo: this.returnTo } };
   }
 
   private extractDisplayName(user: UserSummary): string {

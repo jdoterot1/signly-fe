@@ -1,7 +1,11 @@
-import { Component, ElementRef, EventEmitter, HostListener, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { take } from 'rxjs/operators';
+
 import { UserProfileDropdownComponent } from '../../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
+import { AuthService } from '../../services/auth/auth.service';
+import { CompanyService } from '../../services/company/company.service';
 
 interface NotificationItem {
   title: string
@@ -19,17 +23,35 @@ interface NavLink {
   path: string
 }
 
+interface HeaderUserProfile {
+  name: string
+  email: string
+  displayName: string
+  accountInfo: string
+}
+
 @Component({
   selector: 'app-header',
   standalone: true,
   imports: [CommonModule, RouterModule, UserProfileDropdownComponent],
   templateUrl: './header.component.html'
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit {
   isNotificationsOpen = false
   isUserMenuOpen = false
 
   @Output() pricingModalRequested = new EventEmitter<void>()
+
+  private readonly fallbackName = 'Usuario'
+  private readonly fallbackEmail = 'correo@signly.com'
+  private readonly fallbackAccountInfo = 'Cuenta empresarial'
+
+  userProfile: HeaderUserProfile = {
+    name: '',
+    email: '',
+    displayName: '',
+    accountInfo: ''
+  }
 
   readonly planStatus = "30 días restantes"
 
@@ -38,7 +60,7 @@ export class HeaderComponent {
     { label: "Acuerdos", path: "/documents" },
     { label: "Plantillas", path: "/templates" },
     { label: "Reportes", path: "/audit" },
-    { label: "Administración", path: "/users" },
+    { label: "Administración", path: "/administration" },
   ]
 
   readonly notifications: NotificationItem[] = [
@@ -65,7 +87,17 @@ export class HeaderComponent {
     { label: "Notificaciones", path: "/notifications" },
   ]
 
-  constructor(private elementRef: ElementRef) {}
+  constructor(
+    private elementRef: ElementRef,
+    private authService: AuthService,
+    private companyService: CompanyService
+  ) {}
+
+  ngOnInit(): void {
+    this.hydrateUserFromSession()
+    this.fetchUserProfile()
+    this.fetchAccountInfo()
+  }
 
   toggleNotifications(event: Event): void {
     event.stopPropagation()
@@ -105,5 +137,95 @@ export class HeaderComponent {
     if (!this.elementRef.nativeElement.contains(event.target)) {
       this.closeMenus()
     }
+  }
+
+  get dropdownUserName(): string {
+    return this.userProfile.name || this.userProfile.displayName || this.fallbackName
+  }
+
+  get dropdownUserEmail(): string {
+    return this.userProfile.email || this.fallbackEmail
+  }
+
+  get dropdownAccountInfo(): string {
+    return this.userProfile.accountInfo || this.fallbackAccountInfo
+  }
+
+  get dropdownDisplayName(): string {
+    return this.userProfile.displayName || this.userProfile.name || this.fallbackName
+  }
+
+  get userInitials(): string {
+    const source = this.dropdownDisplayName || this.dropdownUserEmail
+    if (!source) {
+      return this.fallbackName.substring(0, 2).toUpperCase()
+    }
+
+    const normalized = source.trim()
+    if (!normalized) {
+      return this.fallbackName.substring(0, 2).toUpperCase()
+    }
+
+    const parts = normalized.split(' ')
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+
+    return normalized.substring(0, Math.min(2, normalized.length)).toUpperCase()
+  }
+
+  private hydrateUserFromSession(): void {
+    const session = this.authService.getSession()
+    if (!session?.user) {
+      return
+    }
+
+    const { name, email } = session.user
+    this.userProfile = {
+      ...this.userProfile,
+      name: name || this.userProfile.name,
+      displayName: name || this.userProfile.displayName || email || '',
+      email: email || this.userProfile.email
+    }
+  }
+
+  private fetchUserProfile(): void {
+    this.authService
+      .me()
+      .pipe(take(1))
+      .subscribe({
+        next: payload => {
+          const resolvedName = payload.username || this.userProfile.name
+          const resolvedEmail = payload.attributes?.email || this.userProfile.email
+
+          this.userProfile = {
+            ...this.userProfile,
+            name: resolvedName,
+            displayName: resolvedName || this.userProfile.displayName,
+            email: resolvedEmail
+          }
+        },
+        error: error => {
+          console.error('No se pudo cargar la información del usuario', error)
+        }
+      })
+  }
+
+  private fetchAccountInfo(): void {
+    this.companyService
+      .getGeneralInfo()
+      .pipe(take(1))
+      .subscribe({
+        next: info => {
+          const accountDisplay = info.display_name || info.legal_name || this.userProfile.accountInfo
+          this.userProfile = {
+            ...this.userProfile,
+            accountInfo: accountDisplay
+          }
+        },
+        error: error => {
+          console.error('No se pudo cargar la información de la compañía', error)
+        }
+      })
   }
 }

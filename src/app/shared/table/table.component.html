@@ -26,9 +26,11 @@
         <img src="assets/icons/tables/ChevronDown.svg" alt="Toggle sort"
              class="w-4 h-4 ml-2" />
       </div>
-      <button type="button"
-              (click)="onCreate()"
-              class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+      <button
+        *ngIf="config.showCreateButton !== false"
+        type="button"
+        (click)="onCreate()"
+        class="bg-[#2b0f60] text-white px-4 py-2 rounded hover:bg-[#1b1034]">
         Crear
       </button>
     </div>
@@ -140,9 +142,9 @@
            class="w-8 h-8 mx-1" />
       <ul class="inline-flex">
         <li *ngFor="let p of state.data.pages">
-          <button (click)="goToPage(p)"
+                  <button (click)="goToPage(p)"
                   [ngClass]="{
-                    'bg-blue-500 text-white': state.data.currentPage === p,
+                    'bg-[#2b0f60] text-white': state.data.currentPage === p,
                     'border border-gray-300 text-gray-700 hover:bg-gray-200': state.data.currentPage !== p
                   }"
                   class="px-3 py-1 mx-1 rounded">

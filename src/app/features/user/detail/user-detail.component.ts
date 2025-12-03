@@ -17,6 +17,7 @@ export class UserDetailComponent implements OnInit {
   loading = false;
 
   private userId!: string;
+  private returnTo: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -27,6 +28,7 @@ export class UserDetailComponent implements OnInit {
 
   ngOnInit(): void {
     this.userId = this.route.snapshot.paramMap.get('id') || '';
+    this.returnTo = this.route.snapshot.queryParamMap.get('returnTo');
     if (!this.userId) {
       this.alertService.showError('Identificador de usuario inválido.', 'Error');
       this.goBack();
@@ -51,11 +53,13 @@ export class UserDetailComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/users']);
+    const target = this.returnTo || '/users';
+    this.router.navigateByUrl(target);
   }
 
   goToEdit(): void {
-    this.router.navigate(['/users', this.userId, 'update']);
+    const extras = this.returnTo ? { queryParams: { returnTo: this.returnTo } } : {};
+    this.router.navigate(['/users', this.userId, 'update'], extras);
   }
 
   getDisplayName(user: UserSummary): string {

@@ -21,6 +21,7 @@ export class UserUpdateComponent implements OnInit {
   form: FormGroup;
   private userId!: string;
   private currentEnabled = true;
+  private returnTo: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -39,6 +40,7 @@ export class UserUpdateComponent implements OnInit {
 
   ngOnInit(): void {
     this.userId = this.route.snapshot.paramMap.get('id')!;
+    this.returnTo = this.route.snapshot.queryParamMap.get('returnTo');
     this.loadUserData();
   }
 
@@ -101,11 +103,16 @@ export class UserUpdateComponent implements OnInit {
   }
 
   onCancel() {
-    this.router.navigate(['/users']);
+    this.navigateBack();
   }
 
   private handleSuccess(): void {
     this.alertService.showSuccess('El usuario fue actualizado correctamente', '¡Usuario actualizado!');
-    setTimeout(() => this.router.navigate(['/users']), 2600);
+    setTimeout(() => this.navigateBack(), 2600);
+  }
+
+  private navigateBack(): void {
+    const target = this.returnTo || '/users';
+    this.router.navigateByUrl(target);
   }
 }

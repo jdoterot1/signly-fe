@@ -75,6 +75,11 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./core/modules/company/company.module').then(m => m.CompanyModule)
       },
+      {
+        path: 'administration',
+        loadComponent: () =>
+          import('./features/administration/administration.component').then(m => m.AdministrationComponent)
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: '**', redirectTo: 'dashboard' }
     ]

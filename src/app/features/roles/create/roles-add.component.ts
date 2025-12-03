@@ -1,6 +1,6 @@
 // src/app/features/roles/create/roles-create.component.ts
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 import { RoleService } from '../../../core/services/roles/roles.service';
@@ -22,13 +22,16 @@ export class RolesCreateComponent {
   permissionRows = ROLE_PERMISSION_MATRIX;
   selectedPermissions: string[] = [];
   form: FormGroup;
+  private readonly returnTo: string | null;
 
   constructor(
     private fb: FormBuilder,
     private roleService: RoleService,
     private router: Router,
+    private route: ActivatedRoute,
     private alertService: AlertService
   ) {
+    this.returnTo = this.route.snapshot.queryParamMap.get('returnTo');
     this.form = this.fb.group({
       roleId: ['', [Validators.required]],
       roleName: ['', [Validators.required]],
@@ -62,7 +65,7 @@ export class RolesCreateComponent {
     this.roleService.createRole(payload).subscribe({
       next: () => {
         this.alertService.showSuccess('El rol fue creado exitosamente', '¡Rol creado!');
-        setTimeout(() => this.router.navigate(['/roles']), 2600);
+        setTimeout(() => this.navigateBack(), 2600);
       },
       error: err => {
         this.alertService.showError('No se pudo crear el rol', 'Error');
@@ -72,7 +75,7 @@ export class RolesCreateComponent {
   }
 
   onCancel() {
-    this.router.navigate(['/roles']);
+    this.navigateBack();
   }
 
   onPermissionsChange(permissions: string[]): void {
@@ -81,5 +84,10 @@ export class RolesCreateComponent {
 
   private normalizeRoleId(roleId: string): string {
     return (roleId || '').trim().toLowerCase().replace(/\s+/g, '-');
+  }
+
+  private navigateBack(): void {
+    const target = this.returnTo || '/roles';
+    this.router.navigateByUrl(target);
   }
 }

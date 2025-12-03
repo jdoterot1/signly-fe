@@ -34,4 +34,8 @@
     color: var(--brand-ink);
   }
 
+  .heading-brand {
+    color: var(--brand-primary);
+  }
+
 }

@@ -1,6 +1,6 @@
 // src/app/features/users/user-add/user-add.component.ts
 import { Component } from '@angular/core';
-import { Router }    from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { UserService }             from '../../../core/services/user/user.service';
 import { CreateUserPayload } from '../../../core/models/auth/user.model';
@@ -17,12 +17,16 @@ import { AlertService } from '../../../shared/alert/alert.service';
 })
 export class UserCreateComponent {
   formConfig = USER_CREATE_FORM_CONFIG;
+  private readonly returnTo: string | null;
 
   constructor(
     private userService: UserService,
     private router: Router,
+    private route: ActivatedRoute,
     private alertService: AlertService 
-  ) {}
+  ) {
+    this.returnTo = this.route.snapshot.queryParamMap.get('returnTo');
+  }
 
   /** Al enviar el formulario montamos el objeto User */
   onSubmit(formValue: any) {
@@ -38,7 +42,7 @@ export class UserCreateComponent {
     this.userService.createUser(payload).subscribe({
       next: () => {
         this.alertService.showSuccess('El usuario fue creado exitosamente', '¡Usuario creado!');
-        setTimeout(() => this.router.navigate(['/users']), 2600);
+        setTimeout(() => this.navigateBack(), 2600);
       },
       error: err => {
         this.alertService.showError('No se pudo crear el usuario', 'Error');
@@ -48,6 +52,11 @@ export class UserCreateComponent {
   }
 
   onCancel() {
-    this.router.navigate(['/users']);
+    this.navigateBack();
+  }
+
+  private navigateBack(): void {
+    const target = this.returnTo || '/users';
+    this.router.navigateByUrl(target);
   }
 }
