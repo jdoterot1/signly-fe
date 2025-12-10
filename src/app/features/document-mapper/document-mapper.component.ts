@@ -4,23 +4,15 @@ import {
   ElementRef,
   OnDestroy,
   ViewChild,
+  EventEmitter,
+  Output,
   inject
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import Quill from 'quill';
 
-import {
-  DocumentMapperService,
-  DocumentConversionResult
-} from '../../core/services/document-mapper/document-mapper.service';
+import { DocumentMapperService } from '../../core/services/document-mapper/document-mapper.service';
 import { FIELD_TYPES } from '../../core/constants/form-builder/field-types.constant';
 import type { FormFieldType } from '../../core/models/form-builder/field.model';
-
-type QuillToolbar =
-  | string
-  | Record<string, unknown>
-  | (string | Record<string, unknown>)[];
 
 @Component({
   selector: 'app-document-mapper',
@@ -30,63 +22,43 @@ type QuillToolbar =
   styleUrl: './document-mapper.component.css'
 })
 export class DocumentMapperComponent implements OnDestroy {
-  private quillEditorRef?: ElementRef<HTMLDivElement>;
+  private editorCanvas?: ElementRef<HTMLDivElement>;
 
-  @ViewChild('quillEditor')
-  set quillEditor(value: ElementRef<HTMLDivElement> | undefined) {
-    if (value?.nativeElement === this.quillEditorRef?.nativeElement) {
+  @ViewChild('fileInput')
+  private fileInputRef?: ElementRef<HTMLInputElement>;
+
+  @ViewChild('editorCanvas')
+  set editorCanvasRef(value: ElementRef<HTMLDivElement> | undefined) {
+    if (value === this.editorCanvas) {
       return;
     }
-
-    this.destroyQuill();
-    this.quillEditorRef = value;
-
-    if (this.quillEditorRef) {
-      this.initQuill();
+    this.editorCanvas = value;
+    if (this.editorCanvas) {
+      this.renderDocumentHtml();
     }
   }
 
   private readonly fb = inject(FormBuilder);
   private readonly mapperService = inject(DocumentMapperService);
-  private readonly sanitizer = inject(DomSanitizer);
 
   form = this.fb.nonNullable.group({
     documentName: ['', [Validators.required, Validators.maxLength(120)]]
   });
 
   loading = false;
-  dragActive = false;
-  selectedFile?: File;
-  conversionWarnings: string[] = [];
-  metadata?: DocumentConversionResult['metadata'];
-  previewHtml?: SafeHtml;
-  errorMessage = '';
   editorDropActive = false;
+  @Output() fileSelected = new EventEmitter<File | undefined>();
 
-  private pendingHtml = '';
-  private quill?: Quill;
-  private readonly toolbarOptions: QuillToolbar[] = [
-    [{ header: [1, 2, 3, false] }],
-    ['bold', 'italic', 'underline', 'strike'],
-    [{ color: [] }, { background: [] }],
-    [{ list: 'ordered' }, { list: 'bullet' }],
-    [{ align: [] }],
-    ['link', 'blockquote', 'code-block'],
-    ['clean']
-  ];
-
-  private readonly textChangeHandler = () => {
-    if (!this.quill) {
-      return;
-    }
-    const html = this.quill.root.innerHTML;
-    this.previewHtml = this.sanitizer.bypassSecurityTrustHtml(html);
-  };
+  selectedFile?: File;
+  errorMessage = '';
   readonly fieldPalette = FIELD_TYPES;
+
+  private documentHtml = '<p></p>';
+  private currentRange?: Range | null;
   private draggedFieldType?: FormFieldType;
 
   ngOnDestroy(): void {
-    this.destroyQuill();
+    // Nothing to clean up for now
   }
 
   onPaletteDragStart(event: DragEvent, type: FormFieldType): void {
@@ -103,59 +75,53 @@ export class DocumentMapperComponent implements OnDestroy {
   }
 
   onEditorDragOver(event: DragEvent): void {
-    if (!this.canHandleDrop(event)) {
+    const type = this.getDragType(event);
+    if (!type) {
       return;
     }
     event.preventDefault();
     this.editorDropActive = true;
-    this.updateCursorFromEvent(event);
-    if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = 'copy';
+    const range = this.getRangeFromPoint(event.clientX, event.clientY);
+    if (range) {
+      this.currentRange = range;
     }
   }
 
   onEditorDragLeave(event: DragEvent): void {
-    if (!this.belongsToEditor(event)) {
+    if (!this.isEventInsideEditor(event)) {
       this.editorDropActive = false;
     }
   }
 
   onEditorDrop(event: DragEvent): void {
-    if (!this.canHandleDrop(event)) {
-      return;
-    }
-    event.preventDefault();
-    this.editorDropActive = false;
-
     const type = this.getDragType(event);
     if (!type) {
       return;
     }
-    const dropIndex = this.updateCursorFromEvent(event);
-    this.insertFieldPlaceholder(type, dropIndex);
+    event.preventDefault();
+    this.editorDropActive = false;
+    const dropRange = this.getRangeFromPoint(event.clientX, event.clientY);
+    if (dropRange) {
+      this.currentRange = dropRange;
+    }
+    this.insertFieldPlaceholder(type);
   }
 
   onPaletteClick(type: FormFieldType): void {
     this.insertFieldPlaceholder(type);
   }
 
-  onDragOver(event: DragEvent): void {
-    event.preventDefault();
-    this.dragActive = true;
+  onEditorInput(): void {
+    this.captureSelection();
+    this.syncDocumentHtml();
   }
 
-  onDragLeave(event: DragEvent): void {
-    event.preventDefault();
-    this.dragActive = false;
+  onEditorSelectionChange(): void {
+    this.captureSelection();
   }
 
-  onDrop(event: DragEvent): void {
-    event.preventDefault();
-    this.dragActive = false;
-    const file = event.dataTransfer?.files?.[0];
-    if (file) {
-      this.processFile(file);
-    }
+  onEditorFocus(): void {
+    this.captureSelection();
   }
 
   async onFileSelected(event: Event): Promise<void> {
@@ -170,21 +136,21 @@ export class DocumentMapperComponent implements OnDestroy {
   async processFile(file: File): Promise<void> {
     this.loading = true;
     this.errorMessage = '';
-    this.conversionWarnings = [];
 
     try {
       this.selectedFile = file;
+      this.fileSelected.emit(file);
       const suggestedName = file.name.replace(/\.[^.]+$/, '');
       this.form.patchValue({ documentName: suggestedName });
 
       const result = await this.mapperService.convertFileToHtml(file);
-      this.metadata = result.metadata;
-      this.conversionWarnings = result.warnings;
       this.setEditorContent(result.content);
     } catch (error) {
       this.errorMessage =
         error instanceof Error ? error.message : 'No se pudo procesar el archivo.';
       this.selectedFile = undefined;
+      this.fileSelected.emit(undefined);
+      this.setEditorContent('<p></p>');
     } finally {
       this.loading = false;
     }
@@ -192,16 +158,20 @@ export class DocumentMapperComponent implements OnDestroy {
 
   clearDocument(): void {
     this.selectedFile = undefined;
-    this.conversionWarnings = [];
-    this.metadata = undefined;
+    this.fileSelected.emit(undefined);
     this.errorMessage = '';
     this.form.reset();
-    this.setEditorContent('<p></p>');
+    this.documentHtml = '<p></p>';
+    this.renderDocumentHtml();
+    this.currentRange = undefined;
+    if (this.fileInputRef) {
+      this.fileInputRef.nativeElement.value = '';
+    }
   }
 
   downloadHtml(): void {
     const name = this.form.controls.documentName.value?.trim() || 'documento-mapeado';
-    const html = this.quill?.root.innerHTML ?? '';
+    const html = this.editorCanvas?.nativeElement.innerHTML ?? this.documentHtml;
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -211,58 +181,81 @@ export class DocumentMapperComponent implements OnDestroy {
     URL.revokeObjectURL(url);
   }
 
-  private initQuill(): void {
-    if (!this.quillEditorRef) {
-      return;
-    }
-
-    this.quill = new Quill(this.quillEditorRef.nativeElement, {
-      theme: 'snow',
-      modules: {
-        toolbar: this.toolbarOptions,
-        history: {
-          delay: 1500,
-          maxStack: 150,
-          userOnly: true
-        }
-      }
-    });
-
-    this.quill.on('text-change', this.textChangeHandler);
-
-    if (this.pendingHtml) {
-      this.setEditorContent(this.pendingHtml);
-      this.pendingHtml = '';
-    } else {
-      this.setEditorContent('<p></p>');
-    }
-  }
-
-  private destroyQuill(): void {
-    if (!this.quill) {
-      return;
-    }
-
-    this.quill.off('text-change', this.textChangeHandler);
-    this.quill = undefined;
+  openFilePicker(): void {
+    this.fileInputRef?.nativeElement.click();
   }
 
   private setEditorContent(html: string): void {
-    if (!this.quill) {
-      this.pendingHtml = html;
+    this.documentHtml = html && html.trim().length ? html : '<p></p>';
+    this.renderDocumentHtml();
+    this.captureSelection();
+    this.syncDocumentHtml();
+  }
+
+  private renderDocumentHtml(): void {
+    if (!this.editorCanvas) {
+      return;
+    }
+    this.editorCanvas.nativeElement.innerHTML = this.documentHtml;
+  }
+
+  private captureSelection(): void {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) {
+      this.currentRange = undefined;
+      return;
+    }
+    const range = selection.getRangeAt(0);
+    if (this.editorCanvas?.nativeElement.contains(range.commonAncestorContainer)) {
+      this.currentRange = range;
+    }
+  }
+
+  private syncDocumentHtml(): void {
+    if (this.editorCanvas) {
+      this.documentHtml = this.editorCanvas.nativeElement.innerHTML;
+    }
+  }
+
+  private insertFieldPlaceholder(type: FormFieldType): void {
+    const placeholder = document.createElement('span');
+    placeholder.textContent = this.buildPlaceholder(type);
+    placeholder.className = 'placeholder-chip';
+    this.insertNodeAtRange(placeholder);
+  }
+
+  private insertNodeAtRange(node: Node): void {
+    const editorElement = this.editorCanvas?.nativeElement;
+    if (!editorElement) {
       return;
     }
 
-    const delta = this.quill.clipboard.convert({ html: html || '<p></p>' });
-    this.quill.setContents(delta, 'silent');
-    this.previewHtml = this.sanitizer.bypassSecurityTrustHtml(
-      this.quill.root.innerHTML
-    );
+    editorElement.focus({ preventScroll: true });
+
+    let range = this.currentRange;
+    if (!range || !editorElement.contains(range.commonAncestorContainer)) {
+      range = document.createRange();
+      range.selectNodeContents(editorElement);
+      range.collapse(false);
+    }
+
+    range.deleteContents();
+    range.insertNode(node);
+    this.placeCaretAfter(node);
+    this.syncDocumentHtml();
   }
 
-  private canHandleDrop(event: DragEvent): boolean {
-    const type = this.getDragType(event);
-    return Boolean(type && this.quill && this.isEventInsideEditor(event));
+  private placeCaretAfter(node: Node): void {
+    const selection = window.getSelection();
+    if (!selection) {
+      return;
+    }
+    const range = document.createRange();
+    range.setStartAfter(node);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    this.currentRange = range;
   }
 
   private getDragType(event: DragEvent): FormFieldType | undefined {
@@ -276,98 +269,14 @@ export class DocumentMapperComponent implements OnDestroy {
     return this.fieldPalette.find(item => item.type === data)?.type;
   }
 
-  private belongsToEditor(event: DragEvent): boolean {
-    if (!this.quillEditorRef) {
-      return false;
-    }
-    const target = (event.relatedTarget ?? event.target) as Node | null;
-    return !!target && this.quillEditorRef.nativeElement.contains(target);
-  }
-
-  private isEventInsideEditor(event: DragEvent): boolean {
-    if (!this.quillEditorRef) {
-      return false;
-    }
-    const target = event.target as Node | null;
-    return !!target && this.quillEditorRef.nativeElement.contains(target);
-  }
-
-  private insertFieldPlaceholder(type: FormFieldType, atIndex?: number): void {
-    if (!this.quill) {
-      this.pendingHtml = `${this.pendingHtml}${this.buildPlaceholderSpan(type)}`;
-      return;
-    }
-
-    const placeholder = this.buildPlaceholder(type);
-    const index = atIndex ?? this.quill.getSelection(true)?.index ?? this.quill.getLength();
-    this.quill.focus();
-    this.quill.insertText(
-      index,
-      placeholder,
-      {
-        bold: true,
-        color: '#4338ca',
-        background: '#eef2ff'
-      },
-      Quill.sources.USER
-    );
-    this.quill.setSelection(index + placeholder.length, 0, 'silent');
-  }
-
-  private buildPlaceholder(type: FormFieldType): string {
-    const item = this.fieldPalette.find(ft => ft.type === type);
-    const slug = this.slugify(item?.label || type);
-    return `{{${slug}}}`;
-  }
-
-  private buildPlaceholderSpan(type: FormFieldType): string {
-    const placeholder = this.buildPlaceholder(type);
-    return `<strong style="color:#4338ca;background:#eef2ff;">${placeholder}</strong>`;
-  }
-
-  private updateCursorFromEvent(event: DragEvent): number | undefined {
-    if (!this.quill) {
-      return undefined;
-    }
-
-    const nativeRange = this.getNativeRangeFromPoint(event);
-    if (!nativeRange) {
-      return undefined;
-    }
-
-    const root = this.quill.root;
-    if (!root.contains(nativeRange.startContainer)) {
-      return undefined;
-    }
-
-    const selectionModule = this.quill.getModule('selection') as {
-      setNativeRange: (
-        startNode: Node,
-        startOffset: number,
-        endNode?: Node,
-        endOffset?: number
-      ) => void;
-    };
-
-    selectionModule?.setNativeRange(
-      nativeRange.startContainer,
-      nativeRange.startOffset,
-      nativeRange.startContainer,
-      nativeRange.startOffset
-    );
-
-    return this.quill.getSelection(true)?.index;
-  }
-
-  private getNativeRangeFromPoint(event: DragEvent): Range | null {
-    const doc = this.quill?.root.ownerDocument || document;
+  private getRangeFromPoint(x: number, y: number): Range | null {
+    const doc = this.editorCanvas?.nativeElement.ownerDocument || document;
     const anyDoc = doc as any;
     if (typeof anyDoc.caretRangeFromPoint === 'function') {
-      return anyDoc.caretRangeFromPoint(event.clientX, event.clientY) ?? null;
+      return anyDoc.caretRangeFromPoint(x, y) ?? null;
     }
-
     if (typeof anyDoc.caretPositionFromPoint === 'function') {
-      const position = anyDoc.caretPositionFromPoint(event.clientX, event.clientY);
+      const position = anyDoc.caretPositionFromPoint(x, y);
       if (position) {
         const range = doc.createRange();
         range.setStart(position.offsetNode, position.offset);
@@ -375,16 +284,26 @@ export class DocumentMapperComponent implements OnDestroy {
         return range;
       }
     }
-
     return null;
   }
 
-  private slugify(value: string): string {
-    return value
+  private isEventInsideEditor(event: DragEvent): boolean {
+    const editorElement = this.editorCanvas?.nativeElement;
+    if (!editorElement) {
+      return false;
+    }
+    const target = (event.relatedTarget ?? event.target) as Node | null;
+    return !!target && editorElement.contains(target);
+  }
+
+  private buildPlaceholder(type: FormFieldType): string {
+    const item = this.fieldPalette.find(ft => ft.type === type);
+    const slug = (item?.label || type)
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .toUpperCase()
       .replace(/[^A-Z0-9]+/g, '_')
       .replace(/^_+|_+$/g, '');
+    return `{{${slug}}}`;
   }
 }

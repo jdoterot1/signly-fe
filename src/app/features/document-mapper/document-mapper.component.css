@@ -1,31 +1,104 @@
-.editor-container .ql-toolbar {
-  border-radius: 0.75rem 0.75rem 0 0;
+.custom-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5f5 transparent;
 }
 
-.editor-container .ql-container {
-  height: 520px;
-  border-radius: 0 0 0.75rem 0.75rem;
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
 }
 
-.editor-container.editor-drop-active {
-  outline: 2px dashed #6366f1;
-  outline-offset: -10px;
-  background-color: rgba(99, 102, 241, 0.05);
+.custom-scroll::-webkit-scrollbar-thumb {
+  background-color: #cbd5f5;
+  border-radius: 999px;
 }
 
-.preview {
-  min-height: 520px;
-  background-color: #fafafa;
+.editor-shell {
+  background: #f4f1fb;
+  border: 1px solid #ebe5f7;
 }
 
-.preview .prose h1,
-.preview .prose h2,
-.preview .prose h3 {
+.editor-shell .editor-scroll {
+  height: 100%;
+  overflow: auto;
+  padding: 16px 0 32px;
+  background: linear-gradient(180deg, #f4f1fb 0%, #f6f7fb 100%);
+}
+
+.editor-document {
+  max-width: 860px;
+  min-height: 620px;
+  margin: 0 auto;
+  padding: 3.25rem 3.5rem;
+  background: #ffffff;
+  border-radius: 1.5rem;
+  box-shadow:
+    0 35px 80px rgba(15, 23, 42, 0.12),
+    0 4px 12px rgba(15, 23, 42, 0.08);
+  font-family: 'Calibri', 'Segoe UI', 'Times New Roman', sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+  color: #111826;
+}
+
+.editor-shell.editor-drop-active .editor-document {
+  outline: 2px dashed #2b0f60;
+  outline-offset: 12px;
+  box-shadow:
+    0 60px 120px rgba(76, 29, 149, 0.15),
+    0 6px 16px rgba(76, 29, 149, 0.1);
+}
+
+.editor-document h1,
+.editor-document h2,
+.editor-document h3,
+.editor-document h4 {
   margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
   font-weight: 600;
+  color: #0f172a;
 }
 
-.preview .prose p {
-  margin-bottom: 0.75rem;
-  line-height: 1.6;
+.editor-document p {
+  margin-bottom: 0.95rem;
+}
+
+.editor-document ul,
+.editor-document ol {
+  padding-left: 1.75rem;
+  margin-bottom: 1rem;
+}
+
+.editor-document table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+}
+
+.editor-document th,
+.editor-document td {
+  border: 1px solid #d7cfee;
+  padding: 0.65rem 0.85rem;
+}
+
+.editor-document tr:nth-child(even) {
+  background-color: #fbf9ff;
+}
+
+.editor-document img {
+  max-width: 100%;
+  display: block;
+  margin: 1rem auto;
+}
+
+.placeholder-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background-color: rgba(87, 73, 173, 0.1);
+  border: 1px solid rgba(87, 73, 173, 0.3);
+  font-size: 0.85em;
+  font-weight: 600;
+  color: #2b0f60;
+  margin: 0 0.2rem;
 }

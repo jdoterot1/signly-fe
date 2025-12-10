@@ -6,8 +6,13 @@ import { Subscription } from 'rxjs';
 import { AdminSidebarComponent, AdminSidebarSection } from '../../shared/components/admin-sidebar/admin-sidebar.component';
 import { UsersListComponent } from '../user/list/user-list.component';
 import { RolesListComponent } from '../roles/list/roles-list.component';
+import { CompanySettingsComponent } from '../company/company-settings.component';
+import { CompanyBrandingComponent } from '../company/company-branding.component';
+import { CompanyBillingComponent } from '../company/company-billing.component';
 import { TableComponent } from '../../shared/table/table.component';
 import { TableModel } from '../../shared/table/table.model';
+import { WebhookListComponent } from '../webhooks/list/webhook-list.component';
+import { AuthService } from '../../core/services/auth/auth.service';
 
 interface QuickAccessItem {
   label: string;
@@ -34,12 +39,22 @@ interface NotificationRow {
 @Component({
   selector: 'app-administration',
   standalone: true,
-  imports: [CommonModule, AdminSidebarComponent, UsersListComponent, RolesListComponent, TableComponent],
+  imports: [
+    CommonModule,
+    AdminSidebarComponent,
+    UsersListComponent,
+    RolesListComponent,
+    CompanySettingsComponent,
+    CompanyBrandingComponent,
+    CompanyBillingComponent,
+    TableComponent,
+    WebhookListComponent
+  ],
   templateUrl: './administration.component.html'
 })
 export class AdministrationComponent implements OnInit, OnDestroy {
-  readonly ownerName = 'Juan Otero';
-  readonly accountId = '224168021';
+  ownerName = 'Usuario';
+  accountId = '000000000';
   showPreferencesModal = false;
 
   readonly sidebarSections: AdminSidebarSection[] = [
@@ -51,6 +66,8 @@ export class AdministrationComponent implements OnInit, OnDestroy {
       label: 'Cuenta',
       items: [
         { label: 'Plan y facturación' },
+        { label: 'Compañía' },
+        { label: 'Branding y correos' },
         { label: 'Perfil de la cuenta' },
         { label: 'Configuración de la seguridad' },
         { label: 'Configuración regional' },
@@ -90,7 +107,8 @@ export class AdministrationComponent implements OnInit, OnDestroy {
         { label: 'Connect' },
         { label: 'Aplicaciones y claves' },
         { label: 'Centro de uso de la API' },
-        { label: 'CORS' }
+        { label: 'CORS' },
+        { label: 'Webhooks' }
       ]
     },
     {
@@ -112,6 +130,8 @@ export class AdministrationComponent implements OnInit, OnDestroy {
   readonly sectionDescriptions: Record<string, string> = {
     'Información general': 'Monitorea novedades del producto, anuncios críticos y accesos rápidos a la configuración.',
     'Plan y facturación': 'Gestiona el plan vigente, métodos de pago, ciclos de facturación y facturas emitidas.',
+    'Branding y correos': 'Configura colores, logos y remitentes para todas las comunicaciones.',
+    'Compañía': 'Actualiza información de la empresa, branding y preferencias globales.',
     'Perfil de la cuenta': 'Actualiza el nombre legal, ID de la cuenta y contactos principales.',
     'Configuración de la seguridad': 'Controla sesiones, autenticación multifactor y políticas de acceso.',
     'Configuración regional': 'Establece el idioma, zona horaria y formato numérico para tu equipo.',
@@ -140,7 +160,8 @@ export class AdministrationComponent implements OnInit, OnDestroy {
     Reglas: 'Automatiza acciones posteriores a la firma.',
     Conexiones: 'Sincroniza tus acuerdos con sistemas externos.',
     'Registros de auditoría': 'Consulta cada acción registrada para auditoría.',
-    'Acciones en bloque': 'Aplica cambios masivos de manera segura.'
+    'Acciones en bloque': 'Aplica cambios masivos de manera segura.',
+    Webhooks: 'Gestiona los endpoints que reciben eventos automáticos de Signly.'
   };
 
   readonly quickAccess: QuickAccessItem[] = [
@@ -190,39 +211,90 @@ export class AdministrationComponent implements OnInit, OnDestroy {
 
   readonly notificationTableModel: TableModel<NotificationRow> = this.buildNotificationsModel();
 
-  selectedOption = this.resolveInitialSelection();
-  private readonly validSections = new Set<string>(
-    this.sidebarSections.reduce<string[]>((acc, section) => {
-      section.items.forEach(item => acc.push(item.label));
-      return acc;
-    }, [])
-  );
-  private querySub?: Subscription;
+  private readonly defaultSection = this.resolveInitialSelection();
+  private readonly slugOverrides: Record<string, string> = {
+    'Información general': 'overview',
+    'Plan y facturación': 'billing',
+    'Compañía': 'company',
+    'Branding y correos': 'branding',
+    'Perfil de la cuenta': 'account-profile',
+    'Configuración de la seguridad': 'security-settings',
+    'Configuración regional': 'regional-settings',
+    Marca: 'branding',
+    Sellos: 'stamps',
+    Actualizaciones: 'updates',
+    'Calculadora del valor': 'value-calculator',
+    Usuarios: 'users',
+    'Perfiles de permisos': 'permission-profiles',
+    Grupos: 'groups',
+    'Configuración de firmas': 'signature-settings',
+    'Configuración de envíos': 'sending-settings',
+    'Preferencias de correo electrónico': 'email-preferences',
+    'Transferencia de la custodia': 'custody-transfer',
+    'Retención de documentos': 'document-retention',
+    'Revelación de información legal': 'legal-disclosure',
+    'Recordatorios y caducidad': 'reminders-expiration',
+    Comentarios: 'comments',
+    'Campos personalizados de documento': 'document-custom-fields',
+    'Campos personalizados del sobre': 'envelope-custom-fields',
+    'App Center': 'app-center',
+    Connect: 'connect',
+    'Aplicaciones y claves': 'apps-and-keys',
+    'Centro de uso de la API': 'api-usage',
+    CORS: 'cors',
+    Webhooks: 'webhooks',
+    Reglas: 'rules',
+    Conexiones: 'connections',
+    'Registros de auditoría': 'audit-logs',
+    'Acciones en bloque': 'bulk-actions'
+  };
+  private readonly labelToSlugMap = this.buildLabelToSlugMap();
+  private readonly slugToLabelMap = this.buildSlugToLabelMap();
 
-  constructor(private router: Router, private route: ActivatedRoute) {}
+  selectedOption = this.defaultSection;
+  private routeSub?: Subscription;
+
+  constructor(
+    private router: Router,
+    private route: ActivatedRoute,
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
-    this.querySub = this.route.queryParamMap.subscribe(params => {
-      const section = params.get('section');
-      if (section && this.validSections.has(section)) {
-        this.selectedOption = section;
-      } else {
-        this.selectedOption = this.resolveInitialSelection();
+    this.hydrateOwnerFromSession();
+    this.routeSub = this.route.paramMap.subscribe(params => {
+      const slug = params.get('section');
+      if (!slug) {
+        this.selectedOption = this.defaultSection;
+        return;
       }
+
+      const resolved = this.slugToLabelMap[slug];
+      if (resolved) {
+        this.selectedOption = resolved;
+        return;
+      }
+
+      this.navigateToSection(this.defaultSection);
     });
   }
 
   ngOnDestroy(): void {
-    this.querySub?.unsubscribe();
+    this.routeSub?.unsubscribe();
+  }
+
+  private hydrateOwnerFromSession(): void {
+    const session = this.authService.getSession();
+    if (!session?.user) {
+      return;
+    }
+    const { name, email, tenantId, userId } = session.user;
+    this.ownerName = name || email || this.ownerName;
+    this.accountId = tenantId || userId || this.accountId;
   }
 
   onOptionSelected(option: string): void {
-    this.selectedOption = option;
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { section: option === 'Información general' ? null : option },
-      queryParamsHandling: 'merge'
-    });
+    this.navigateToSection(option);
   }
 
   openPreferencesModal(): void {
@@ -273,5 +345,46 @@ export class AdministrationComponent implements OnInit, OnDestroy {
       ],
       data
     };
+  }
+  private navigateToSection(option: string): void {
+    this.selectedOption = option;
+    const slug = this.getSlug(option);
+    if (option === this.defaultSection || !slug) {
+      this.router.navigate(['/administration']);
+      return;
+    }
+    this.router.navigate(['/administration', slug]);
+  }
+
+  private buildLabelToSlugMap(): Record<string, string> {
+    return this.sidebarSections.reduce<Record<string, string>>((acc, section) => {
+      section.items.forEach(item => {
+        const slug = this.slugOverrides[item.label] ?? this.slugify(item.label);
+        if (slug) {
+          acc[item.label] = slug;
+        }
+      });
+      return acc;
+    }, {});
+  }
+
+  private buildSlugToLabelMap(): Record<string, string> {
+    return Object.entries(this.labelToSlugMap).reduce<Record<string, string>>((acc, [label, slug]) => {
+      acc[slug] = label;
+      return acc;
+    }, {});
+  }
+
+  private getSlug(label: string): string {
+    return this.labelToSlugMap[label] ?? this.slugify(label);
+  }
+
+  private slugify(label: string): string {
+    return label
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
   }
 }

@@ -65,12 +65,8 @@ export class SidebarComponent {
       icon: 'assets/icons/sidebar/Settings.svg',
       section: 'secondary',
       children: [
-        { label: 'Archivos', path: '/uploads', icon: 'assets/icons/sidebar/files.svg' },
-        { label: 'Notificaciones', path: '/notifications', icon: 'assets/icons/sidebar/Bell.svg' },
         { label: 'Webhooks', path: '/webhooks', icon: 'assets/icons/sidebar/files.svg' },
-        { label: 'Mi compañía', path: '/company', icon: 'assets/icons/sidebar/ApoloLogo.svg' },
-        { label: 'Configuración', path: '/settings', icon: 'assets/icons/sidebar/Settings.svg' },
-        { label: 'Dark Mode', path: '/dark-mode', icon: 'assets/icons/sidebar/Moon.svg' }
+        { label: 'Mi compañía', path: '/company', icon: 'assets/icons/sidebar/ApoloLogo.svg' }
       ]
     }
   ];

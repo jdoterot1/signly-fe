@@ -1,7 +1,7 @@
 // src/app/features/templates/create/template-add.component.ts
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, ViewChild, inject } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { TemplateService } from '../../../core/services/templates/template.service';
@@ -16,24 +16,27 @@ import { DocumentMapperComponent } from '../../document-mapper/document-mapper.c
   templateUrl: './template-add.component.html'
 })
 export class TemplateCreateComponent {
-  readonly stepForm: FormGroup;
+  @ViewChild(DocumentMapperComponent)
+  private mapperComponent?: DocumentMapperComponent;
 
+  private readonly fb = inject(FormBuilder);
+
+  readonly stepForm = this.fb.nonNullable.group({
+    name: ['', [Validators.required, Validators.maxLength(120)]],
+    description: ['', [Validators.maxLength(500)]]
+  });
   currentStep: 1 | 2 = 1;
   isSaving = false;
   private readonly returnTo: string | null;
+  private uploadedFile?: File;
 
   constructor(
-    private fb: FormBuilder,
     private templateService: TemplateService,
     private router: Router,
     private route: ActivatedRoute,
     private alertService: AlertService
   ) {
     this.returnTo = this.route.snapshot.queryParamMap.get('returnTo');
-    this.stepForm = this.fb.nonNullable.group({
-      name: ['', [Validators.required, Validators.maxLength(120)]],
-      description: ['', [Validators.maxLength(500)]]
-    });
   }
 
   goToStepTwo(): void {
@@ -88,5 +91,21 @@ export class TemplateCreateComponent {
   private navigateBack(): void {
     const target = this.returnTo || '/templates';
     this.router.navigateByUrl(target);
+  }
+
+  onFileSelected(file?: File): void {
+    this.uploadedFile = file;
+    if (file && !this.stepForm.get('name')?.dirty) {
+      const suggestedName = file.name.replace(/\.[^.]+$/, '');
+      this.stepForm.patchValue({ name: suggestedName });
+    }
+  }
+
+  openDocumentPicker(): void {
+    this.mapperComponent?.openFilePicker();
+  }
+
+  get selectedFile(): File | undefined {
+    return this.uploadedFile;
   }
 }

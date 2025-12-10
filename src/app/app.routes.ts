@@ -80,6 +80,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/administration/administration.component').then(m => m.AdministrationComponent)
       },
+      {
+        path: 'administration/:section',
+        loadComponent: () =>
+          import('./features/administration/administration.component').then(m => m.AdministrationComponent)
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: '**', redirectTo: 'dashboard' }
     ]

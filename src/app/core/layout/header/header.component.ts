@@ -1,7 +1,7 @@
 import { Component, ElementRef, EventEmitter, HostListener, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
-import { take } from 'rxjs/operators';
+import { Router, RouterModule } from '@angular/router';
+import { finalize, take } from 'rxjs/operators';
 
 import { UserProfileDropdownComponent } from '../../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
 import { AuthService } from '../../services/auth/auth.service';
@@ -39,6 +39,7 @@ interface HeaderUserProfile {
 export class HeaderComponent implements OnInit {
   isNotificationsOpen = false
   isUserMenuOpen = false
+  isLoggingOut = false
 
   @Output() pricingModalRequested = new EventEmitter<void>()
 
@@ -90,7 +91,8 @@ export class HeaderComponent implements OnInit {
   constructor(
     private elementRef: ElementRef,
     private authService: AuthService,
-    private companyService: CompanyService
+    private companyService: CompanyService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -129,7 +131,22 @@ export class HeaderComponent implements OnInit {
   }
 
   handleLogout(): void {
-    console.log('Cerrar sesión');
+    if (this.isLoggingOut) {
+      return
+    }
+
+    this.isLoggingOut = true
+    this.authService
+      .logout()
+      .pipe(finalize(() => (this.isLoggingOut = false)))
+      .subscribe({
+        next: () => {
+          this.router.navigate(['/login'])
+        },
+        error: () => {
+          this.router.navigate(['/login'])
+        }
+      })
   }
 
   @HostListener("document:click", ["$event"])

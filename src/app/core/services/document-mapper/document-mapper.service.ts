@@ -48,28 +48,49 @@ export class DocumentMapperService {
   private async convertDocx(file: File): Promise<DocumentConversionResult> {
     const arrayBuffer = await file.arrayBuffer();
 
-    const result = await mammoth.convertToHtml(
-      { arrayBuffer },
-      {
-        styleMap: [
-          "p[style-name='Heading 1'] => h1:fresh",
-          "p[style-name='Heading 2'] => h2:fresh",
-          "p[style-name='Heading 3'] => h3:fresh",
-          "p[style-name='Normal'] => p:fresh",
-          "p[style-name='Normal (Web)'] => p:fresh"
-        ]
-      }
-    );
+    type MammothBrowser = typeof mammoth & {
+      images: {
+        inline: (handler: (element: any) => Promise<{ src: string }>) => unknown;
+      };
+    };
+
+    const mammothBrowser = mammoth as MammothBrowser;
+    const options: Record<string, unknown> = {
+      includeDefaultStyleMap: true,
+      includeEmbeddedStyleMap: true,
+      ignoreEmptyParagraphs: false,
+      styleMap: [
+        "p[style-name='Heading 1'] => h1:fresh",
+        "p[style-name='Heading 2'] => h2:fresh",
+        "p[style-name='Heading 3'] => h3:fresh",
+        "p[style-name='Title'] => h1:fresh",
+        "p[style-name='Subtitle'] => h2:fresh",
+        "p[style-name='Normal'] => p:fresh",
+        "p[style-name='Normal (Web)'] => p:fresh",
+        "p[style-name='Body Text'] => p:fresh",
+        'table => table.doc-table',
+        'table row => tr',
+        'table cell => td'
+      ],
+      convertImage: mammothBrowser.images.inline(async (element: any) => {
+        const base64: string = await element.read('base64');
+        return { src: `data:${element.contentType};base64,${base64}` };
+      })
+    };
+
+    const result = await mammothBrowser.convertToHtml({ arrayBuffer }, options as any);
 
     const warnings = (result.messages || [])
       .filter(message => message.type === 'warning')
       .map(message => message.message);
+    const paragraphCount = (result.value.match(/<p/gi) || []).length;
 
     return {
       content: result.value,
       warnings,
       metadata: {
-        type: 'docx'
+        type: 'docx',
+        paragraphs: paragraphCount
       }
     };
   }
