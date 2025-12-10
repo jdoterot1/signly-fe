@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
@@ -34,12 +35,13 @@ interface PasswordChallenge {
 export class AuthService {
   private readonly baseUrl = environment.apiBaseUrl;
   private readonly storageKey = 'signly.auth.session';
+  private readonly cookieKey = 'signly.auth.session';
   private session: AuthSession | null;
   private recoveryEmail: string | null = null;
   private recoveryOtp: string | null = null;
   private passwordChallenge: PasswordChallenge | null = null;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, @Inject(DOCUMENT) private document: Document) {
     this.session = this.loadSession();
   }
 
@@ -257,24 +259,95 @@ export class AuthService {
   }
 
   private loadSession(): AuthSession | null {
-    try {
-      const raw = localStorage.getItem(this.storageKey);
-      return raw ? (JSON.parse(raw) as AuthSession) : null;
-    } catch {
-      return null;
+    const cookieValue = this.readCookie(this.cookieKey);
+    if (cookieValue) {
+      try {
+        return JSON.parse(cookieValue) as AuthSession;
+      } catch {
+        this.deleteCookie(this.cookieKey);
+      }
     }
+
+    // Fallback: migrate legacy localStorage session if it exists.
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const raw = localStorage.getItem(this.storageKey);
+        if (raw) {
+          const parsed = JSON.parse(raw) as AuthSession;
+          this.persistSession(parsed);
+          localStorage.removeItem(this.storageKey);
+          return parsed;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    return null;
   }
 
   private persistSession(session: AuthSession | null): void {
     this.session = session;
     if (!session) {
-      localStorage.removeItem(this.storageKey);
+      this.deleteCookie(this.cookieKey);
+      this.removeLegacySession();
       return;
     }
-    localStorage.setItem(this.storageKey, JSON.stringify(session));
+    this.setCookie(this.cookieKey, JSON.stringify(session), session.expiresIn);
+    this.removeLegacySession();
     this.clearRecoveryEmail();
     this.clearRecoveryOtp();
     this.clearPasswordChallenge();
+  }
+
+  private setCookie(key: string, value: string, ttlSeconds?: number): void {
+    if (!this.document) {
+      return;
+    }
+    const encoded = encodeURIComponent(value);
+    let cookie = `${key}=${encoded}; path=/; SameSite=Lax`;
+    if (ttlSeconds && Number.isFinite(ttlSeconds)) {
+      cookie += `; Max-Age=${Math.max(0, Math.trunc(ttlSeconds))}`;
+    }
+    if (this.document.defaultView?.location.protocol === 'https:') {
+      cookie += '; Secure';
+    }
+    this.document.cookie = cookie;
+  }
+
+  private readCookie(key: string): string | null {
+    if (!this.document?.cookie) {
+      return null;
+    }
+    const cookies = this.document.cookie.split(';');
+    for (const entry of cookies) {
+      const [rawName, ...rest] = entry.split('=');
+      if (!rawName) {
+        continue;
+      }
+      const name = rawName.trim();
+      if (name === key) {
+        return decodeURIComponent(rest.join('='));
+      }
+    }
+    return null;
+  }
+
+  private deleteCookie(key: string): void {
+    if (!this.document) {
+      return;
+    }
+    this.document.cookie = `${key}=; path=/; Max-Age=0; SameSite=Lax`;
+  }
+
+  private removeLegacySession(): void {
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.removeItem(this.storageKey);
+      } catch {
+        // ignore
+      }
+    }
   }
 
   private handleError(error: unknown) {

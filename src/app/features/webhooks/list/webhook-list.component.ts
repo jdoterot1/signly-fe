@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, NavigationExtras } from '@angular/router';
 
 import { TableComponent } from '../../../shared/table/table.component';
 import { TableModel } from '../../../shared/table/table.model';
@@ -23,6 +23,8 @@ interface WebhookRow {
   templateUrl: './webhook-list.component.html'
 })
 export class WebhookListComponent implements OnInit {
+  @Input() returnTo: string | null = null;
+
   tableModel: TableModel<WebhookRow> = {
     entityName: 'Webhooks configurados',
     tableConfig: {
@@ -104,7 +106,7 @@ export class WebhookListComponent implements OnInit {
       this.alertService.showError('No se encontró el identificador del webhook.', 'Error');
       return;
     }
-    this.router.navigate(['/webhooks', row.id, 'view']);
+    this.router.navigate(['/webhooks', row.id, 'view'], this.navigationExtras());
   }
 
   onEdit(row: WebhookRow): void {
@@ -112,7 +114,7 @@ export class WebhookListComponent implements OnInit {
       this.alertService.showError('No se encontró el identificador del webhook.', 'Error');
       return;
     }
-    this.router.navigate(['/webhooks', row.id, 'update']);
+    this.router.navigate(['/webhooks', row.id, 'update'], this.navigationExtras());
   }
 
   onDelete(row: WebhookRow): void {
@@ -138,6 +140,13 @@ export class WebhookListComponent implements OnInit {
   }
 
   onCreate(): void {
-    this.router.navigate(['/webhooks/create']);
+    this.router.navigate(['/webhooks/create'], this.navigationExtras());
+  }
+
+  private navigationExtras(): NavigationExtras {
+    if (!this.returnTo) {
+      return {};
+    }
+    return { queryParams: { returnTo: this.returnTo } };
   }
 }

@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { WebhookService } from '../../../core/services/webhooks/webhook.service';
 import { CreateWebhookPayload } from '../../../core/models/webhooks/webhook.model';
@@ -14,13 +14,15 @@ import { WEBHOOK_EVENT_OPTIONS, WEBHOOK_BACKOFF_OPTIONS } from '../../../core/co
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './webhook-create.component.html'
 })
-export class WebhookCreateComponent {
+export class WebhookCreateComponent implements OnInit {
   form: FormGroup;
+  private returnTo: string | null = null;
   readonly eventOptions = WEBHOOK_EVENT_OPTIONS;
   readonly backoffOptions = WEBHOOK_BACKOFF_OPTIONS;
 
   constructor(
     private fb: FormBuilder,
+    private route: ActivatedRoute,
     private webhookService: WebhookService,
     private router: Router,
     private alertService: AlertService
@@ -34,6 +36,10 @@ export class WebhookCreateComponent {
       backoff: ['exponential'],
       httpTimeoutMs: [3000, [Validators.min(0)]]
     });
+  }
+
+  ngOnInit(): void {
+    this.returnTo = this.route.snapshot.queryParamMap.get('returnTo');
   }
 
   toggleEvent(eventName: string, checked: boolean): void {
@@ -83,7 +89,7 @@ export class WebhookCreateComponent {
     this.webhookService.createWebhook(payload).subscribe({
       next: () => {
         this.alertService.showSuccess('Webhook creado correctamente.', 'Webhook creado');
-        setTimeout(() => this.router.navigate(['/webhooks']), 1500);
+        setTimeout(() => this.navigateBack(), 1500);
       },
       error: err => {
         this.alertService.showError('No se pudo crear el webhook.', 'Error');
@@ -93,6 +99,14 @@ export class WebhookCreateComponent {
   }
 
   onCancel(): void {
+    this.navigateBack();
+  }
+
+  private navigateBack(): void {
+    if (this.returnTo) {
+      this.router.navigateByUrl(this.returnTo);
+      return;
+    }
     this.router.navigate(['/webhooks']);
   }
 }

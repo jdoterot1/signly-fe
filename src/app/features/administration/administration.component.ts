@@ -71,7 +71,6 @@ export class AdministrationComponent implements OnInit, OnDestroy {
         { label: 'Perfil de la cuenta' },
         { label: 'Configuración de la seguridad' },
         { label: 'Configuración regional' },
-        { label: 'Marca', icon: 'assets/icons/sidebar/Settings.svg' },
         { label: 'Sellos' },
         { label: 'Actualizaciones' },
         { label: 'Calculadora del valor' }
@@ -135,7 +134,6 @@ export class AdministrationComponent implements OnInit, OnDestroy {
     'Perfil de la cuenta': 'Actualiza el nombre legal, ID de la cuenta y contactos principales.',
     'Configuración de la seguridad': 'Controla sesiones, autenticación multifactor y políticas de acceso.',
     'Configuración regional': 'Establece el idioma, zona horaria y formato numérico para tu equipo.',
-    Marca: 'Sube tu logo, define colores y personaliza la experiencia de firma.',
     Sellos: 'Administra sellos oficiales y asigna permisos de uso.',
     Actualizaciones: 'Activa nuevas funcionalidades y canales beta para tu organización.',
     'Calculadora del valor': 'Mide el impacto financiero de tus flujos de firma digital.',
@@ -220,7 +218,6 @@ export class AdministrationComponent implements OnInit, OnDestroy {
     'Perfil de la cuenta': 'account-profile',
     'Configuración de la seguridad': 'security-settings',
     'Configuración regional': 'regional-settings',
-    Marca: 'branding',
     Sellos: 'stamps',
     Actualizaciones: 'updates',
     'Calculadora del valor': 'value-calculator',

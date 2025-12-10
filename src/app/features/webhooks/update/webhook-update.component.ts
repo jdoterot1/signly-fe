@@ -19,6 +19,7 @@ export class WebhookUpdateComponent implements OnInit {
   webhookId!: string;
   loading = false;
   currentStatus: string | null = null;
+  private returnTo: string | null = null;
 
   readonly eventOptions = WEBHOOK_EVENT_OPTIONS;
   readonly backoffOptions = WEBHOOK_BACKOFF_OPTIONS;
@@ -44,9 +45,10 @@ export class WebhookUpdateComponent implements OnInit {
 
   ngOnInit(): void {
     this.webhookId = this.route.snapshot.paramMap.get('id') || '';
+    this.returnTo = this.route.snapshot.queryParamMap.get('returnTo');
     if (!this.webhookId) {
       this.alertService.showError('Identificador de webhook inválido.', 'Error');
-      this.router.navigate(['/webhooks']);
+      this.navigateBack();
       return;
     }
     this.loadWebhook();
@@ -73,7 +75,7 @@ export class WebhookUpdateComponent implements OnInit {
         this.alertService.showError('No se pudo cargar el webhook.', 'Error');
         console.error('Error al cargar webhook', err);
         this.loading = false;
-        this.router.navigate(['/webhooks']);
+        this.navigateBack();
       }
     });
   }
@@ -147,13 +149,21 @@ export class WebhookUpdateComponent implements OnInit {
   }
 
   onCancel(): void {
-    this.router.navigate(['/webhooks']);
+    this.navigateBack();
   }
 
   private handleSuccess(showSuccess = true): void {
     if (showSuccess) {
       this.alertService.showSuccess('Webhook actualizado correctamente.', 'Webhook actualizado');
     }
-    setTimeout(() => this.router.navigate(['/webhooks']), 1500);
+    setTimeout(() => this.navigateBack(), 1500);
+  }
+
+  private navigateBack(): void {
+    if (this.returnTo) {
+      this.router.navigateByUrl(this.returnTo);
+      return;
+    }
+    this.router.navigate(['/webhooks']);
   }
 }

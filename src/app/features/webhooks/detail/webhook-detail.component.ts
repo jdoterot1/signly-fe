@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, NavigationExtras } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
 import { WebhookService } from '../../../core/services/webhooks/webhook.service';
@@ -17,6 +17,7 @@ export class WebhookDetailComponent implements OnInit {
   loading = false;
 
   private webhookId!: string;
+  private returnTo: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -27,9 +28,10 @@ export class WebhookDetailComponent implements OnInit {
 
   ngOnInit(): void {
     this.webhookId = this.route.snapshot.paramMap.get('id') || '';
+    this.returnTo = this.route.snapshot.queryParamMap.get('returnTo');
     if (!this.webhookId) {
       this.alertService.showError('Identificador de webhook inválido.', 'Error');
-      this.goBack();
+      this.navigateBack();
       return;
     }
     this.loadWebhook();
@@ -46,15 +48,31 @@ export class WebhookDetailComponent implements OnInit {
         this.alertService.showError('No se pudo cargar la información del webhook.', 'Error');
         console.error('Error al cargar webhook', err);
         this.loading = false;
+        this.navigateBack();
       }
     });
   }
 
   goBack(): void {
-    this.router.navigate(['/webhooks']);
+    this.navigateBack();
   }
 
   goToEdit(): void {
-    this.router.navigate(['/webhooks', this.webhookId, 'update']);
+    this.router.navigate(['/webhooks', this.webhookId, 'update'], this.navigationExtras());
+  }
+
+  private navigationExtras(): NavigationExtras {
+    if (!this.returnTo) {
+      return {};
+    }
+    return { queryParams: { returnTo: this.returnTo } };
+  }
+
+  private navigateBack(): void {
+    if (this.returnTo) {
+      this.router.navigateByUrl(this.returnTo);
+      return;
+    }
+    this.router.navigate(['/webhooks']);
   }
 }
