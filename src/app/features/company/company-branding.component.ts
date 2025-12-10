@@ -18,6 +18,10 @@ export class CompanyBrandingComponent implements OnInit {
 
   isLoadingBranding = false;
   isSavingBranding = false;
+  logoPreview = '';
+  faviconPreview = '';
+  readonly senderDomain = 'signly.apologs.co';
+  readonly currentYear = new Date().getFullYear();
 
   constructor(
     private fb: FormBuilder,
@@ -30,7 +34,7 @@ export class CompanyBrandingComponent implements OnInit {
       logo_url: ['', [Validators.required]],
       favicon_url: ['', [Validators.required]],
       email_sender_name: ['', [Validators.required]],
-      email_sender_addr: ['', [Validators.required, Validators.email]]
+      email_sender_alias: ['', [Validators.required, Validators.pattern(/^[a-zA-Z0-9._-]+$/)]]
     });
   }
 
@@ -57,6 +61,7 @@ export class CompanyBrandingComponent implements OnInit {
       this.brandingForm.markAllAsTouched();
       return;
     }
+    const alias = this.normalizeAlias(this.brandingForm.value.email_sender_alias);
 
     const payload: UpdateCompanyBrandingPayload = {
       primary_color: this.requiredColor(this.brandingForm.value.primary_color),
@@ -64,7 +69,7 @@ export class CompanyBrandingComponent implements OnInit {
       logo_url: this.requiredString(this.brandingForm.value.logo_url),
       favicon_url: this.requiredString(this.brandingForm.value.favicon_url),
       email_sender_name: this.requiredString(this.brandingForm.value.email_sender_name),
-      email_sender_addr: this.requiredString(this.brandingForm.value.email_sender_addr)?.toLowerCase()
+      email_sender_addr: `${alias}@${this.senderDomain}`.toLowerCase()
     };
 
     this.isSavingBranding = true;
@@ -83,17 +88,20 @@ export class CompanyBrandingComponent implements OnInit {
       });
   }
 
-  private toBrandingForm(data: CompanyBranding | null): Partial<CompanyBranding> {
+  private toBrandingForm(data: CompanyBranding | null): Record<string, unknown> {
     if (!data) {
       return {};
     }
+    const alias = this.extractAlias(data?.email_sender_addr);
+    this.logoPreview = data?.logo_url ?? '';
+    this.faviconPreview = data?.favicon_url ?? '';
     return {
       primary_color: data.primary_color ?? '#270089',
       secondary_color: data.secondary_color ?? '#FFB600',
       logo_url: data.logo_url ?? '',
       favicon_url: data.favicon_url ?? '',
       email_sender_name: data.email_sender_name ?? '',
-      email_sender_addr: data.email_sender_addr ?? ''
+      email_sender_alias: alias
     };
   }
 
@@ -103,5 +111,57 @@ export class CompanyBrandingComponent implements OnInit {
 
   private requiredColor(value: unknown): string {
     return this.requiredString(value).toUpperCase();
+  }
+
+  updateLogoPreview(): void {
+    this.logoPreview = this.requiredString(this.brandingForm.value.logo_url);
+  }
+
+  updateFaviconPreview(): void {
+    this.faviconPreview = this.requiredString(this.brandingForm.value.favicon_url);
+  }
+
+  onLogoFileSelected(event: Event): void {
+    this.handleFileSelection(event, 'logo_url', preview => (this.logoPreview = preview));
+  }
+
+  onFaviconFileSelected(event: Event): void {
+    this.handleFileSelection(event, 'favicon_url', preview => (this.faviconPreview = preview));
+  }
+
+  get emailPreviewSender(): string {
+    const alias = this.normalizeAlias(this.brandingForm.value.email_sender_alias);
+    return `${alias}@${this.senderDomain}`;
+  }
+
+  private handleFileSelection(event: Event, controlName: string, setter: (preview: string) => void): void {
+    const input = event.target as HTMLInputElement;
+    const file = input?.files?.[0];
+    if (!file) {
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      this.brandingForm.get(controlName)?.setValue(result);
+      setter(result);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  private normalizeAlias(value: string): string {
+    const clean = this.requiredString(value).toLowerCase().replace(/[^a-z0-9._-]/g, '');
+    return clean || 'notificaciones';
+  }
+
+  private extractAlias(email?: string | null): string {
+    if (!email) {
+      return '';
+    }
+    const [alias, domain] = email.split('@');
+    if (domain && domain.toLowerCase() === this.senderDomain) {
+      return alias;
+    }
+    return alias || '';
   }
 }

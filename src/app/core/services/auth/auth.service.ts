@@ -142,6 +142,7 @@ export class AuthService {
       .post<ApiResponse<MePayload>>(url, {}, { headers: this.buildSignlyHeaders() })
       .pipe(
         map(res => res.data),
+        tap(data => this.applyMeToSession(data)),
         catchError(err => this.handleError(err))
       );
   }
@@ -259,23 +260,22 @@ export class AuthService {
   }
 
   private loadSession(): AuthSession | null {
-    const cookieValue = this.readCookie(this.cookieKey);
-    if (cookieValue) {
+    const fromCookie = this.readCookie(this.cookieKey);
+    if (fromCookie) {
       try {
-        return JSON.parse(cookieValue) as AuthSession;
+        return JSON.parse(fromCookie) as AuthSession;
       } catch {
         this.deleteCookie(this.cookieKey);
       }
     }
 
-    // Fallback: migrate legacy localStorage session if it exists.
+    // Fallback: look into storage to restore the session.
     if (typeof localStorage !== 'undefined') {
       try {
         const raw = localStorage.getItem(this.storageKey);
         if (raw) {
           const parsed = JSON.parse(raw) as AuthSession;
           this.persistSession(parsed);
-          localStorage.removeItem(this.storageKey);
           return parsed;
         }
       } catch {
@@ -290,11 +290,11 @@ export class AuthService {
     this.session = session;
     if (!session) {
       this.deleteCookie(this.cookieKey);
-      this.removeLegacySession();
+      this.clearStoredSession();
       return;
     }
     this.setCookie(this.cookieKey, JSON.stringify(session), session.expiresIn);
-    this.removeLegacySession();
+    this.saveToStorage(session);
     this.clearRecoveryEmail();
     this.clearRecoveryOtp();
     this.clearPasswordChallenge();
@@ -340,7 +340,17 @@ export class AuthService {
     this.document.cookie = `${key}=; path=/; Max-Age=0; SameSite=Lax`;
   }
 
-  private removeLegacySession(): void {
+  private saveToStorage(session: AuthSession): void {
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(this.storageKey, JSON.stringify(session));
+      } catch {
+        // ignore storage failures
+      }
+    }
+  }
+
+  private clearStoredSession(): void {
     if (typeof localStorage !== 'undefined') {
       try {
         localStorage.removeItem(this.storageKey);
@@ -348,6 +358,25 @@ export class AuthService {
         // ignore
       }
     }
+  }
+
+  private applyMeToSession(payload: MePayload): void {
+    if (!this.session) {
+      return;
+    }
+    const email = payload.attributes?.email ?? this.session.user.email;
+    const sub = payload.attributes?.sub ?? this.session.user.userId;
+    const merged: AuthSession = {
+      ...this.session,
+      user: {
+        email,
+        name: this.session.user.name,
+        picture: this.session.user.picture,
+        tenantId: payload.tenant_id,
+        userId: sub
+      }
+    };
+    this.persistSession(merged);
   }
 
   private handleError(error: unknown) {

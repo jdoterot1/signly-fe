@@ -42,7 +42,7 @@
 
   <!-- TABLE -->
   <div class="overflow-x-auto w-full">
-    <table class="min-w-full w-full divide-y divide-gray-200">
+    <table class="min-w-full w-full table-fixed divide-y divide-gray-200">
       <thead class="bg-gray-50">
         <!-- fila de headers -->
         <tr>
@@ -80,7 +80,7 @@
               <ng-template #normalCell>
                 <ng-container [ngSwitch]="col.columnType">
                   <ng-container *ngSwitchCase="'action'">
-                    <div class="inline-flex space-x-4 justify-center">
+                    <div class="inline-flex space-x-4 justify-center w-full">
                       <ng-container *ngFor="let action of col.actions">
                         <button *ngIf="!isActionDisabled(action, row)"
                                 type="button"
@@ -97,7 +97,18 @@
                     </div>
                   </ng-container>
                   <ng-container *ngSwitchDefault>
-                    {{ getCellValue(row, col.key) }}
+                    <ng-container *ngIf="col.key === 'path' || col.key === 'actor' || col.key === 'resource'; else defaultCell">
+                      <span
+                        class="inline-block max-w-xs truncate align-middle cursor-help"
+                        [attr.title]="getCellValue(row, col.key)"
+                      >
+                        {{ getCellValue(row, col.key) | slice:0:10 }}
+                        <ng-container *ngIf="(getCellValue(row, col.key) || '').length > 10">...</ng-container>
+                      </span>
+                    </ng-container>
+                    <ng-template #defaultCell>
+                      {{ getCellValue(row, col.key) }}
+                    </ng-template>
                   </ng-container>
                 </ng-container>
               </ng-template>
