@@ -20,20 +20,12 @@ export class TemplatesCenterComponent implements OnInit, OnDestroy {
       label: 'PLANTILLAS DE SOBRES',
       items: [
         { label: 'Mis plantillas' },
-        { label: 'Compartidas conmigo' },
         { label: 'Favoritas' }
       ]
     },
     {
       label: 'Todas las plantillas',
-      items: [
-        { label: 'Todas las plantillas' },
-        { label: 'Eliminado' }
-      ]
-    },
-    {
-      label: 'CARPETAS',
-      items: [{ label: 'CARPETAS COMPARTIDAS' }]
+      items: [{ label: 'Todas las plantillas' }]
     }
   ];
 

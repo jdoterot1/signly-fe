@@ -4,8 +4,12 @@
     <h2 class="text-2xl font-bold">{{ model.entityName }}</h2>
     <div class="flex space-x-3">
       <!-- Toggle fila de filtros -->
-      <button (click)="toggleFiltersRow()" class="flex items-center bg-[#F9FBFF] rounded-full p-2 hover:bg-[#E5EFFF]">
-        <img [src]="showColumnFilters ? 'assets/icons/tables/FilterOff.svg' : 'assets/icons/tables/Filter.svg'"
+      <button
+        (click)="openFiltersModal()"
+        class="flex items-center rounded-full p-2 transition"
+        [ngClass]="hasActiveFilters ? 'bg-[#dbeafe] text-[#1d4ed8]' : 'bg-[#F9FBFF] hover:bg-[#E5EFFF]'"
+      >
+        <img src="assets/icons/tables/Filter.svg"
              alt="Filters"
              class="w-5 h-5" />
       </button>
@@ -37,8 +41,8 @@
   </div>
 
   <!-- TABLE -->
-  <div class="overflow-x-auto">
-    <table class="min-w-full divide-y divide-gray-200">
+  <div class="overflow-x-auto w-full">
+    <table class="min-w-full w-full divide-y divide-gray-200">
       <thead class="bg-gray-50">
         <!-- fila de headers -->
         <tr>
@@ -58,19 +62,6 @@
             </th>
           </ng-container>
         </tr>
-        <!-- fila de filtros por columna -->
-        <tr *ngIf="showColumnFilters" class="bg-gray-100">
-          <th *ngIf="config.showRowSelection"></th>
-          <ng-container *ngFor="let col of columns">
-            <th *ngIf="col.visible" class="px-4 py-2">
-              <input type="text"
-                     [(ngModel)]="columnFilters[col.key]"
-                     (ngModelChange)="onColumnFilterChange(col.key, $event)"
-                     placeholder="Filtrar {{ col.header }}"
-                     class="w-full bg-white border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none" />
-            </th>
-          </ng-container>
-        </tr>
       </thead>
       <tbody class="bg-white divide-y divide-gray-200">
         <tr *ngFor="let row of state.data.filteredData; trackBy: trackByFn">
@@ -78,7 +69,7 @@
             <input type="checkbox" [checked]="isSelected(row)" (change)="toggleRow(row)" />
           </td>
           <ng-container *ngFor="let col of columns">
-            <td *ngIf="col.visible" class="px-4 py-4">
+            <td *ngIf="col.visible" class="px-4 py-4 break-words whitespace-normal">
               <!-- badge estado -->
               <ng-container *ngIf="col.key === 'status'; else normalCell">
                 <span class="inline-flex justify-center items-center w-24 px-2 py-1 rounded-full text-sm text-white"
@@ -159,4 +150,15 @@
            class="w-8 h-8 mx-1" />
     </div>
   </div>
+
+  <app-table-filters-modal
+    [visible]="isFiltersModalOpen"
+    [columns]="filterableColumns"
+    [values]="modalColumnFilters"
+    [hasActiveFilters]="hasActiveFilters"
+    (close)="closeFiltersModal()"
+    (clearFields)="clearModalFilters()"
+    (clearFilters)="clearAllFilters()"
+    (apply)="applyFiltersFromModal()"
+  ></app-table-filters-modal>
 </div>

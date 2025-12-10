@@ -1,83 +1,61 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 
-import { TableComponent } from '../../../shared/table/table.component';
-import { TableModel } from '../../../shared/table/table.model';
-import { AuditlogService } from '../../../core/services/audit/logs/auditlogs.service';
-import { AuditLog } from '../../../core/models/audit/auditlogs.model';
-
-interface AuditLogRow {
-  id: string;
-  name: string;
-  role: string;
-  status: string;
-  action: string;
-  observation: string;
-  method: string;
-}
+import { AuditService } from '../../../core/services/audit/audit.service';
+import { AuditEvent } from '../../../core/models/audit/audit-event.model';
 
 @Component({
   selector: 'app-logs-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, TableComponent],
+  imports: [CommonModule, RouterModule],
   templateUrl: './logs-list.component.html'
 })
 export class LogsListComponent implements OnInit {
-  tableModel: TableModel<AuditLogRow> = {
-    entityName: 'Cargando auditoría...',
-    tableConfig: {
-      pageSize: 8,
-      enableFiltering: true,
-      enableSorting: true,
-      showPagination: true,
-      showRowSelection: false,
-      showIndexColumn: false,
-      emptyMessage: 'No se encontraron registros.',
-      trackByField: 'id'
-    },
-    columns: [
-      { key: 'name',        header: 'Participante', columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'role',        header: 'Rol',          columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'status',      header: 'Estado',       columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'action',      header: 'Acción',       columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'observation', header: 'Observación',  columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'method',      header: 'Método',       columnType: 'text', sortable: true, filterable: true, visible: true }
-    ],
-    data: []
-  };
+  event?: AuditEvent;
+  loading = false;
+  errorMessage?: string;
+  currentId?: string;
 
-  constructor(
-    private auditService: AuditlogService,
-    private route: ActivatedRoute
-  ) {}
+  constructor(private auditService: AuditService, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.loadAuditLogs(id);
+      this.loadAuditEvent(id);
+    } else {
+      this.errorMessage = 'Identificador de auditoría no proporcionado.';
     }
   }
 
-  private loadAuditLogs(id: string): void {
-    this.auditService.getLogsByDocumentId(id)
-      .subscribe((logs: AuditLog[]) => {
-        const rows: AuditLogRow[] = logs.map(log => ({
-          id: log.id,
-          name: log.name,
-          role: log.role,
-          status: log.status,
-          action: log.action,
-          observation: log.observation,
-          method: log.method
-        }));
+  loadAuditEvent(id: string): void {
+    this.currentId = id;
+    this.loading = true;
+    this.errorMessage = undefined;
+    this.auditService.getAuditEventById(id).subscribe({
+      next: event => {
+        this.event = event;
+        this.loading = false;
+      },
+      error: err => {
+        this.errorMessage =
+          err?.message || 'No fue posible obtener la información detallada de la auditoría.';
+        this.loading = false;
+      }
+    });
+  }
 
-        const docName = logs.length ? logs[0].name : 'desconocido';
-        this.tableModel = {
-          ...this.tableModel,
-          entityName: `Auditoría del documento "${docName}" (ID: ${id})`,
-          data: rows
-        };
-      });
+  formatDate(value: string | undefined): string {
+    if (!value) {
+      return 'N/A';
+    }
+    return new Date(value).toLocaleString('es-CO', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
   }
 }

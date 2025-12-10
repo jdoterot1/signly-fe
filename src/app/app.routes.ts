@@ -51,7 +51,7 @@ export const routes: Routes = [
           import('./core/modules/roles/roles.module').then(m => m.RolesModule)
       },
       {
-        path: 'audit',
+        path: 'reports',
         loadChildren: () =>
           import('./core/modules/audit/audit.module').then(m => m.AuditModule)
       },

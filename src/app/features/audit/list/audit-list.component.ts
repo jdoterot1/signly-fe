@@ -6,16 +6,17 @@ import { FormsModule } from '@angular/forms';
 import { TableComponent } from '../../../shared/table/table.component';
 import { TableModel } from '../../../shared/table/table.model';
 import { AuditService } from '../../../core/services/audit/audit.service';
-import { Document, DocumentStatus } from '../../../core/models/documents/document.model';
+import { AuditEvent } from '../../../core/models/audit/audit-event.model';
 
 interface AuditRow {
   id: string;
-  name: string;
-  description?: string;
-  creationDate: string;
-  createdBy: string;
-  language: string;
-  status: DocumentStatus;
+  action: string;
+  actor: string;
+  resource: string;
+  method: string;
+  path: string;
+  ip: string;
+  occurredAt: string;
 }
 
 @Component({
@@ -25,6 +26,9 @@ interface AuditRow {
   templateUrl: './audit-list.component.html'
 })
 export class AuditListComponent implements OnInit {
+  loading = false;
+  errorMessage?: string;
+
   tableModel: TableModel<AuditRow> = {
     entityName: 'Auditorías registradas',
     tableConfig: {
@@ -38,12 +42,13 @@ export class AuditListComponent implements OnInit {
       trackByField: 'id'
     },
     columns: [
-      { key: 'name', header: 'Nombre', columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'description', header: 'Descripción', columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'creationDate', header: 'Fecha de Creación', columnType: 'text', sortable: true, filterable: false, visible: true },
-      { key: 'createdBy', header: 'Creado por', columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'language', header: 'Idioma', columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'status', header: 'Estado', columnType: 'text', sortable: true, filterable: false, visible: true },
+      { key: 'action', header: 'Acción', columnType: 'text', sortable: true, filterable: true, visible: true },
+      { key: 'actor', header: 'Actor', columnType: 'text', sortable: true, filterable: true, visible: true },
+      { key: 'resource', header: 'Recurso', columnType: 'text', sortable: true, filterable: true, visible: true },
+      { key: 'method', header: 'Método', columnType: 'text', sortable: true, filterable: true, visible: true },
+      { key: 'path', header: 'Ruta', columnType: 'text', sortable: true, filterable: true, visible: true },
+      { key: 'ip', header: 'IP', columnType: 'text', sortable: true, filterable: true, visible: true },
+      { key: 'occurredAt', header: 'Ocurrido', columnType: 'text', sortable: true, filterable: true, visible: true },
       {
         key: 'actions',
         header: 'Acciones',
@@ -72,22 +77,53 @@ export class AuditListComponent implements OnInit {
   }
 
   private loadAudits(): void {
-    this.auditService.getAllAudits().subscribe((audits: Document[]) => {
-      const rows: AuditRow[] = audits.map(a => ({
-        id: a.id,
-        name: a.name,
-        description: a.description,
-        creationDate: a.creationDate.toLocaleDateString('es-CO', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        }),
-        createdBy: a.createdBy,
-        language: a.language,
-        status: a.status
-      }));
-      this.tableModel = { ...this.tableModel, data: rows };
+    this.loading = true;
+    this.errorMessage = undefined;
+    this.auditService.getAuditEvents().subscribe({
+      next: events => {
+        const rows = this.mapEventsToRows(events);
+        this.tableModel = { ...this.tableModel, data: rows };
+        this.loading = false;
+      },
+      error: err => {
+        this.errorMessage =
+          err?.message ||
+          'No fue posible obtener los registros de auditoría. Intenta nuevamente en unos minutos.';
+        this.tableModel = { ...this.tableModel, data: [] };
+        this.loading = false;
+      }
     });
+  }
+
+  private mapEventsToRows(events: AuditEvent[]): AuditRow[] {
+    return events.map(event => {
+      const resourceType = event.resource?.type || 'N/A';
+      const resourceId = event.resource?.id ? ` (${event.resource?.id})` : '';
+      return {
+        id: event.id,
+        action: event.action,
+        actor: `${event.actor.type} (${event.actor.id})`,
+        resource: `${resourceType}${resourceId}`,
+        method: event.http.method,
+        path: event.http.path,
+        ip: event.http.ip,
+        occurredAt: this.formatDate(event.occurredAt)
+      };
+    });
+  }
+
+  private formatDate(value: string): string {
+    return new Date(value).toLocaleString('es-CO', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  retry(): void {
+    this.loadAudits();
   }
 
   onView(row: AuditRow): void {

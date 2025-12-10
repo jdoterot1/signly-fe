@@ -5,40 +5,26 @@ import { catchError, map } from 'rxjs/operators';
 
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '../auth/auth.service';
-import { AuditEvent, AuditEventResponse, AuditListResponse } from '../../models/audit/audit-event.model';
+import { UsageSummaryItem, UsageSummaryResponse } from '../../models/usage/usage.model';
 
 @Injectable({
   providedIn: 'root'
 })
-export class AuditService {
+export class UsageService {
   private readonly baseUrl = environment.apiBaseUrl;
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 
-  getAuditEvents(limit = 50): Observable<AuditEvent[]> {
+  getUsageSummary(period: string): Observable<UsageSummaryItem[]> {
     return this.executeWithHeaders(headers => {
-      let params = new HttpParams();
-      if (limit) {
-        params = params.set('limit', limit.toString());
-      }
+      const params = new HttpParams().set('period', period);
       return this.http
-        .get<AuditListResponse>(`${this.baseUrl}/audit`, { headers, params })
+        .get<UsageSummaryResponse>(`${this.baseUrl}/usage/summary`, { headers, params })
         .pipe(
           map(res => res.data),
           catchError(err => this.handleError(err))
         );
     });
-  }
-
-  getAuditEventById(id: string): Observable<AuditEvent> {
-    return this.executeWithHeaders(headers =>
-      this.http
-        .get<AuditEventResponse>(`${this.baseUrl}/audit/${id}`, { headers })
-        .pipe(
-          map(res => res.data),
-          catchError(err => this.handleError(err))
-        )
-    );
   }
 
   private executeWithHeaders<T>(fn: (headers: HttpHeaders) => Observable<T>): Observable<T> {
@@ -60,7 +46,7 @@ export class AuditService {
   }
 
   private handleError(error: any) {
-    const message = error?.error?.message || error?.message || 'Hubo un problema al obtener los registros de auditoría.';
+    const message = error?.error?.message || error?.message || 'No fue posible obtener el uso más reciente.';
     return throwError(() => new Error(message));
   }
 }

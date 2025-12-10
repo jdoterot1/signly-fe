@@ -4,12 +4,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import { AdminSidebarComponent, AdminSidebarSection } from '../../../shared/components/admin-sidebar/admin-sidebar.component';
-import { AuditListComponent } from '../list/audit-list.component';
+import { UsageSummaryComponent } from '../usage/usage-summary.component';
 
 @Component({
   selector: 'app-reports-center',
   standalone: true,
-  imports: [CommonModule, AdminSidebarComponent, AuditListComponent],
+  imports: [CommonModule, AdminSidebarComponent, UsageSummaryComponent],
   templateUrl: './reports-center.component.html'
 })
 export class ReportsCenterComponent implements OnInit, OnDestroy {
@@ -17,39 +17,13 @@ export class ReportsCenterComponent implements OnInit, OnDestroy {
   readonly accountId = 'RPT-8901';
   readonly sidebarSections: AdminSidebarSection[] = [
     {
-      label: 'Paneles de control',
-      items: [
-        { label: 'Mi panel de control' },
-        { label: 'Panel del administrador' }
-      ]
-    },
-    {
-      label: 'Tipo de informe',
-      items: [
-        { label: 'Todos (17)' },
-        { label: 'Sobre (8)' },
-        { label: 'Destinatario (2)' },
-        { label: 'Uso (7)' },
-        { label: 'Personalizado (0)' }
-      ]
-    },
-    {
-      label: 'Descargas',
-      items: [
-        { label: 'Descargas' }
-      ]
+      label: 'Reportes disponibles',
+      items: [{ label: 'Uso' }]
     }
   ];
 
   private readonly defaultOption = this.sidebarSections[0].items[0].label;
-  private readonly validSections = new Set<string>(
-    this.sidebarSections.reduce<string[]>((acc, section) => {
-      section.items.forEach(item => acc.push(item.label));
-      return acc;
-    }, [])
-  );
   private querySub?: Subscription;
-
   selectedOption = this.defaultOption;
 
   constructor(private router: Router, private route: ActivatedRoute) {}
@@ -57,7 +31,7 @@ export class ReportsCenterComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.querySub = this.route.queryParamMap.subscribe(params => {
       const section = params.get('section');
-      if (section && this.validSections.has(section)) {
+      if (section && section === 'Uso') {
         this.selectedOption = section;
       } else {
         this.selectedOption = this.defaultOption;
@@ -70,9 +44,6 @@ export class ReportsCenterComponent implements OnInit, OnDestroy {
   }
 
   onOptionSelected(option: string): void {
-    if (!this.validSections.has(option)) {
-      return;
-    }
     this.selectedOption = option;
     this.router.navigate([], {
       relativeTo: this.route,
@@ -82,16 +53,10 @@ export class ReportsCenterComponent implements OnInit, OnDestroy {
   }
 
   get currentDescription(): string {
-    return `Explora reportes y paneles filtrados por "${this.selectedOption}".`;
+    return 'Consulta métricas y consumo de la plataforma por canal.';
   }
 
-  get showReportsTable(): boolean {
-    return [
-      'Mi panel de control',
-      'Todos (17)',
-      'Sobre (8)',
-      'Destinatario (2)',
-      'Uso (7)'
-    ].includes(this.selectedOption);
+  get showUsageSummary(): boolean {
+    return this.selectedOption === 'Uso';
   }
 }

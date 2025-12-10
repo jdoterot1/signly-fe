@@ -19,24 +19,18 @@
               {{ currentDescription }}
             </p>
           </div>
-          <div class="shrink-0 text-right">
-            <p class="text-sm text-gray-400">Reportes recientes</p>
-            <p class="text-lg font-semibold heading-brand">32</p>
-            <span class="inline-flex items-center gap-2 text-xs font-semibold text-emerald-600 mt-2">
-              <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-              Última exportación hace 1h
-            </span>
-          </div>
         </div>
       </div>
 
-      <div *ngIf="showReportsTable" class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-2">
-        <app-audit-list></app-audit-list>
-      </div>
-      <div *ngIf="!showReportsTable" class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-8">
-        <p class="text-sm text-gray-600">
-          Aún no hay contenido específico para esta vista. Selecciona otra opción del panel lateral para ver reportes disponibles.
-        </p>
+      <div class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-4">
+        <ng-container *ngIf="showUsageSummary; else noContent">
+          <app-usage-summary></app-usage-summary>
+        </ng-container>
+        <ng-template #noContent>
+          <p class="text-sm text-gray-600 p-6">
+            Selecciona un módulo del panel lateral para ver los reportes disponibles.
+          </p>
+        </ng-template>
       </div>
     </section>
   </div>

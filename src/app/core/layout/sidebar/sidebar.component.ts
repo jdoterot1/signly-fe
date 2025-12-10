@@ -58,7 +58,7 @@ export class SidebarComponent {
       label: 'Auditoría',
       icon: 'assets/icons/sidebar/Audit.svg',
       section: 'main',
-      children: [{ label: 'Auditoría', path: '/audit', icon: 'assets/icons/sidebar/Audit.svg' }]
+      children: [{ label: 'Reportes de uso', path: '/reports/usage', icon: 'assets/icons/sidebar/Audit.svg' }]
     },
     {
       label: 'Sistema',

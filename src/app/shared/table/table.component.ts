@@ -16,6 +16,7 @@ import {
   TableColumn,
   TableCellAction,
 } from './table.model';
+import { TableFiltersModalComponent } from './table-filters-modal.component';
 
 interface TableState<T> {
   filteredData: T[];
@@ -28,7 +29,7 @@ interface TableState<T> {
 @Component({
   selector: 'app-table',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TableFiltersModalComponent],
   templateUrl: './table.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -37,12 +38,12 @@ export class TableComponent<T = any> implements OnChanges {
   @Output() selectionChange = new EventEmitter<T[]>();
   @Output() create        = new EventEmitter<void>();
 
-  // búsqueda global
   searchTerm = '';
-  // controla visibilidad de la fila de filtros por columna
-  showColumnFilters = false;
-  // valores de filtro por cada columna
+  // valores de filtro aplicados
   columnFilters: Record<string, string> = {};
+  // control modal de filtros
+  isFiltersModalOpen = false;
+  modalColumnFilters: Record<string, string> = {};
 
   // status interno: orden, paginado, datos filtrados
   state: {
@@ -84,6 +85,9 @@ export class TableComponent<T = any> implements OnChanges {
   get columns(): TableColumn[] {
     return this.model.columns;
   }
+  get filterableColumns(): TableColumn[] {
+    return this.columns.filter(col => (col.visible ?? true) && col.columnType !== 'action');
+  }
   get data(): T[] {
     return this.model.data;
   }
@@ -98,21 +102,35 @@ export class TableComponent<T = any> implements OnChanges {
   }
 
   // muestra/oculta la fila de inputs de filtro
-  toggleFiltersRow(): void {
-    this.showColumnFilters = !this.showColumnFilters;
-    if (!this.showColumnFilters) {
-      // al ocultar, limpiamos filtros y recargamos
-      this.columnFilters = {};
-      this.resetState();
-      this.applyFilters();
-    }
+  openFiltersModal(): void {
+    this.modalColumnFilters = { ...this.columnFilters };
+    this.isFiltersModalOpen = true;
   }
 
-  // manejo de cambio de filtro por columna
-  onColumnFilterChange(key: string, value: string): void {
-    this.columnFilters[key] = value;
-    this.state.data.currentPage = 1;
+  closeFiltersModal(): void {
+    this.isFiltersModalOpen = false;
+  }
+
+  applyFiltersFromModal(): void {
+    this.columnFilters = { ...this.modalColumnFilters };
+    this.resetState();
     this.applyFilters();
+    this.closeFiltersModal();
+  }
+
+  clearModalFilters(): void {
+    this.modalColumnFilters = {};
+  }
+
+  clearAllFilters(): void {
+    this.modalColumnFilters = {};
+    this.columnFilters = {};
+    this.resetState();
+    this.applyFilters();
+  }
+
+  get hasActiveFilters(): boolean {
+    return Object.values(this.columnFilters).some(value => !!value?.toString().trim());
   }
 
   private resetState(): void {
@@ -137,7 +155,7 @@ export class TableComponent<T = any> implements OnChanges {
 
     // 2) filtros por columna
     Object.entries(this.columnFilters).forEach(([key, val]) => {
-      const term = val.toLowerCase();
+      const term = val?.toString().toLowerCase().trim();
       if (term) {
         list = list.filter(r =>
           String((r as any)[key]).toLowerCase().includes(term)

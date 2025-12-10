@@ -58,9 +58,9 @@ export class HeaderComponent implements OnInit {
 
   readonly navLinks: NavLink[] = [
     { label: "Inicio", path: "/dashboard" },
-    { label: "Acuerdos", path: "/documents" },
+    { label: "Documentos", path: "/documents" },
     { label: "Plantillas", path: "/templates" },
-    { label: "Reportes", path: "/audit" },
+    { label: "Reportes", path: "/reports/usage" },
     { label: "Administración", path: "/administration" },
   ]
 

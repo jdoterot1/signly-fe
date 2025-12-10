@@ -12,6 +12,7 @@ import { CompanyBillingComponent } from '../company/company-billing.component';
 import { TableComponent } from '../../shared/table/table.component';
 import { TableModel } from '../../shared/table/table.model';
 import { WebhookListComponent } from '../webhooks/list/webhook-list.component';
+import { AuditListComponent } from '../audit/list/audit-list.component';
 import { AuthService } from '../../core/services/auth/auth.service';
 
 interface QuickAccessItem {
@@ -48,7 +49,8 @@ interface NotificationRow {
     CompanyBrandingComponent,
     CompanyBillingComponent,
     TableComponent,
-    WebhookListComponent
+    WebhookListComponent,
+    AuditListComponent
   ],
   templateUrl: './administration.component.html'
 })
@@ -65,108 +67,69 @@ export class AdministrationComponent implements OnInit, OnDestroy {
     {
       label: 'Cuenta',
       items: [
-        { label: 'Plan y facturación' },
         { label: 'Compañía' },
         { label: 'Branding y correos' },
-        { label: 'Perfil de la cuenta' },
-        { label: 'Configuración de la seguridad' },
-        { label: 'Configuración regional' },
-        { label: 'Sellos' },
-        { label: 'Actualizaciones' },
-        { label: 'Calculadora del valor' }
+        { label: 'Calculadora' }
       ]
     },
     {
-      label: 'Usuarios y grupos',
+      label: 'Facturación y pagos',
+      items: [
+        { label: 'Facturación' },
+        { label: 'Billetera' }
+      ]
+    },
+    {
+      label: 'Gestión de usuarios',
       items: [
         { label: 'Usuarios' },
-        { label: 'Perfiles de permisos' },
-        { label: 'Grupos' }
+        { label: 'Roles' }
       ]
     },
     {
-      label: 'Firma y envío',
-      items: [
-        { label: 'Configuración de firmas' },
-        { label: 'Configuración de envíos' },
-        { label: 'Preferencias de correo electrónico' },
-        { label: 'Transferencia de la custodia' },
-        { label: 'Retención de documentos' },
-        { label: 'Revelación de información legal' },
-        { label: 'Recordatorios y caducidad' },
-        { label: 'Comentarios' },
-        { label: 'Campos personalizados de documento' },
-        { label: 'Campos personalizados del sobre' }
-      ]
+      label: 'Eliminar firmas y envíos',
+      items: [{ label: 'Eliminar firmas y envíos' }]
     },
     {
       label: 'Integraciones',
       items: [
-        { label: 'App Center' },
-        { label: 'Connect' },
         { label: 'Aplicaciones y claves' },
         { label: 'Centro de uso de la API' },
-        { label: 'CORS' },
         { label: 'Webhooks' }
       ]
     },
     {
-      label: 'Acciones de los acuerdos',
-      items: [
-        { label: 'Reglas' },
-        { label: 'Conexiones' }
-      ]
+      label: 'Eliminar acciones de los acuerdos',
+      items: [{ label: 'Eliminar acciones de los acuerdos' }]
     },
     {
       label: 'Auditoría',
-      items: [
-        { label: 'Registros de auditoría' },
-        { label: 'Acciones en bloque' }
-      ]
+      items: [{ label: 'Registro de auditoría' }]
     }
   ];
 
   readonly sectionDescriptions: Record<string, string> = {
     'Información general': 'Monitorea novedades del producto, anuncios críticos y accesos rápidos a la configuración.',
-    'Plan y facturación': 'Gestiona el plan vigente, métodos de pago, ciclos de facturación y facturas emitidas.',
+    'Compañía': 'Actualiza la razón social, domicilios y datos fiscales de la empresa.',
     'Branding y correos': 'Configura colores, logos y remitentes para todas las comunicaciones.',
-    'Compañía': 'Actualiza información de la empresa, branding y preferencias globales.',
-    'Perfil de la cuenta': 'Actualiza el nombre legal, ID de la cuenta y contactos principales.',
-    'Configuración de la seguridad': 'Controla sesiones, autenticación multifactor y políticas de acceso.',
-    'Configuración regional': 'Establece el idioma, zona horaria y formato numérico para tu equipo.',
-    Sellos: 'Administra sellos oficiales y asigna permisos de uso.',
-    Actualizaciones: 'Activa nuevas funcionalidades y canales beta para tu organización.',
-    'Calculadora del valor': 'Mide el impacto financiero de tus flujos de firma digital.',
+    Calculadora: 'Estima el impacto financiero de tus flujos y licencias.',
+    'Facturación': 'Consulta planes, ciclos de pago y comprobantes emitidos.',
+    Billetera: 'Administra saldos prepagados y movimientos en tu billetera.',
     Usuarios: 'Administra usuarios, invita nuevos miembros y define su estado.',
-    'Perfiles de permisos': 'Crea paquetes de permisos reutilizables para tus equipos.',
-    Grupos: 'Organiza usuarios por áreas y controla accesos masivos.',
-    'Configuración de firmas': 'Configura el flujo del firmante y la experiencia de firma.',
-    'Configuración de envíos': 'Define reglas para emisores, plantillas y rutas de envío.',
-    'Preferencias de correo electrónico': 'Personaliza notificaciones transaccionales y recordatorios.',
-    'Transferencia de la custodia': 'Transfiere sobres y plantillas cuando cambian responsables.',
-    'Retención de documentos': 'Aplica políticas de retención y borrado automático.',
-    'Revelación de información legal': 'Gestiona textos legales y consentimientos.',
-    'Recordatorios y caducidad': 'Controla la caducidad de los sobres y recordatorios automáticos.',
-    Comentarios: 'Activa comentarios colaborativos y define quién puede usarlos.',
-    'Campos personalizados de documento': 'Crea campos personalizados reutilizables en documentos.',
-    'Campos personalizados del sobre': 'Define campos personalizados a nivel de sobre.',
-    'App Center': 'Explora integraciones listas para conectar con Signly.',
-    Connect: 'Automatiza eventos y webhooks con Signly Connect.',
+    Roles: 'Determina qué permisos tiene cada equipo en Signly.',
+    'Eliminar firmas y envíos': 'Solicita la depuración controlada de documentos y envíos antiguos.',
     'Aplicaciones y claves': 'Gestiona credenciales para desarrolladores y API keys.',
     'Centro de uso de la API': 'Monitorea uso y límites de tus integraciones.',
-    CORS: 'Configura dominios de origen permitidos para tus apps.',
-    Reglas: 'Automatiza acciones posteriores a la firma.',
-    Conexiones: 'Sincroniza tus acuerdos con sistemas externos.',
-    'Registros de auditoría': 'Consulta cada acción registrada para auditoría.',
-    'Acciones en bloque': 'Aplica cambios masivos de manera segura.',
-    Webhooks: 'Gestiona los endpoints que reciben eventos automáticos de Signly.'
+    Webhooks: 'Gestiona los endpoints que reciben eventos automáticos de Signly.',
+    'Eliminar acciones de los acuerdos': 'Depura entradas históricas asociadas a workflows o reglas obsoletas.',
+    'Registro de auditoría': 'Consulta cada acción registrada para auditoría.'
   };
 
   readonly quickAccess: QuickAccessItem[] = [
     {
-      label: 'Plan y facturación',
-      description: 'Actualiza ciclos y métodos de pago.',
-      target: 'Plan y facturación'
+      label: 'Facturación',
+      description: 'Consulta ciclos, métodos de pago y facturas.',
+      target: 'Facturación'
     },
     {
       label: 'Usuarios',
@@ -174,9 +137,9 @@ export class AdministrationComponent implements OnInit, OnDestroy {
       target: 'Usuarios'
     },
     {
-      label: 'Configuración de firmas',
-      description: 'Define la experiencia de firma.',
-      target: 'Configuración de firmas'
+      label: 'Aplicaciones y claves',
+      description: 'Revisa integraciones y credenciales activas.',
+      target: 'Aplicaciones y claves'
     }
   ];
 
@@ -212,38 +175,19 @@ export class AdministrationComponent implements OnInit, OnDestroy {
   private readonly defaultSection = this.resolveInitialSelection();
   private readonly slugOverrides: Record<string, string> = {
     'Información general': 'overview',
-    'Plan y facturación': 'billing',
     'Compañía': 'company',
     'Branding y correos': 'branding',
-    'Perfil de la cuenta': 'account-profile',
-    'Configuración de la seguridad': 'security-settings',
-    'Configuración regional': 'regional-settings',
-    Sellos: 'stamps',
-    Actualizaciones: 'updates',
-    'Calculadora del valor': 'value-calculator',
+    Calculadora: 'calculator',
+    'Facturación': 'billing',
+    Billetera: 'wallet',
     Usuarios: 'users',
-    'Perfiles de permisos': 'permission-profiles',
-    Grupos: 'groups',
-    'Configuración de firmas': 'signature-settings',
-    'Configuración de envíos': 'sending-settings',
-    'Preferencias de correo electrónico': 'email-preferences',
-    'Transferencia de la custodia': 'custody-transfer',
-    'Retención de documentos': 'document-retention',
-    'Revelación de información legal': 'legal-disclosure',
-    'Recordatorios y caducidad': 'reminders-expiration',
-    Comentarios: 'comments',
-    'Campos personalizados de documento': 'document-custom-fields',
-    'Campos personalizados del sobre': 'envelope-custom-fields',
-    'App Center': 'app-center',
-    Connect: 'connect',
     'Aplicaciones y claves': 'apps-and-keys',
     'Centro de uso de la API': 'api-usage',
-    CORS: 'cors',
     Webhooks: 'webhooks',
-    Reglas: 'rules',
-    Conexiones: 'connections',
-    'Registros de auditoría': 'audit-logs',
-    'Acciones en bloque': 'bulk-actions'
+    Roles: 'roles',
+    'Eliminar firmas y envíos': 'delete-signatures-sends',
+    'Eliminar acciones de los acuerdos': 'delete-agreement-actions',
+    'Registro de auditoría': 'audit-log'
   };
   private readonly labelToSlugMap = this.buildLabelToSlugMap();
   private readonly slugToLabelMap = this.buildSlugToLabelMap();

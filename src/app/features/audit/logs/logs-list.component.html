@@ -1,5 +1,97 @@
+<div class="min-h-[calc(100vh-8rem)] py-10 px-4 lg:px-10">
+  <div class="max-w-5xl mx-auto">
+    <div class="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-indigo-50/60 p-8">
+      <ng-container *ngIf="!loading && !errorMessage && event; else auditEventState">
+        <div class="flex flex-col gap-4">
+          <div>
+            <p class="text-xs uppercase tracking-[0.3em] text-[#9b93b8] font-semibold">Evento de auditoría</p>
+            <h1 class="text-3xl font-semibold heading-brand mt-2">{{ event.action }}</h1>
+            <p class="text-sm text-gray-500 mt-1">
+              Audit ID {{ event.auditId }} • Registrado el {{ formatDate(event.occurredAt) }}
+            </p>
+          </div>
 
-<app-table
-  [model]="tableModel">
-</app-table>
+          <div class="grid gap-6 md:grid-cols-2">
+            <div class="p-5 rounded-2xl border border-gray-100 bg-[#f8f7ff]">
+              <p class="text-xs uppercase tracking-[0.3em] text-[#9b93b8] font-semibold">Actor</p>
+              <p class="text-lg font-semibold text-[#2b0f60] mt-2">{{ event.actor.type }}</p>
+              <p class="text-sm text-gray-500 mt-1">{{ event.actor.id }}</p>
+            </div>
+            <div class="p-5 rounded-2xl border border-gray-100 bg-[#f4fbf8]">
+              <p class="text-xs uppercase tracking-[0.3em] text-emerald-500 font-semibold">Recurso</p>
+              <p class="text-lg font-semibold text-emerald-600 mt-2">{{ event.resource.type || 'N/A' }}</p>
+              <p class="text-sm text-gray-500 mt-1">{{ event.resource.id || 'Sin identificador' }}</p>
+            </div>
+          </div>
 
+          <div class="grid gap-4 md:grid-cols-2">
+            <div class="rounded-2xl border border-gray-100 p-5">
+              <p class="text-xs uppercase tracking-[0.3em] text-gray-400 font-semibold">Detalles HTTP</p>
+              <dl class="mt-4 space-y-3 text-sm text-gray-600">
+                <div class="flex justify-between gap-4">
+                  <dt class="font-semibold text-gray-700">Método</dt>
+                  <dd class="text-right">{{ event.http.method }}</dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <dt class="font-semibold text-gray-700">Ruta</dt>
+                  <dd class="text-right break-all">{{ event.http.path }}</dd>
+                </div>
+                <div class="flex justify-between gap-4" *ngIf="event.http.query">
+                  <dt class="font-semibold text-gray-700">Query</dt>
+                  <dd class="text-right break-all">{{ event.http.query }}</dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <dt class="font-semibold text-gray-700">Request ID</dt>
+                  <dd class="text-right break-all">{{ event.http.requestId }}</dd>
+                </div>
+              </dl>
+            </div>
+            <div class="rounded-2xl border border-gray-100 p-5">
+              <p class="text-xs uppercase tracking-[0.3em] text-gray-400 font-semibold">Origen</p>
+              <dl class="mt-4 space-y-3 text-sm text-gray-600">
+                <div class="flex justify-between gap-4">
+                  <dt class="font-semibold text-gray-700">IP</dt>
+                  <dd class="text-right">{{ event.http.ip }}</dd>
+                </div>
+                <div>
+                  <dt class="font-semibold text-gray-700">User Agent</dt>
+                  <dd class="text-right text-xs text-gray-500 mt-1 break-all">{{ event.http.userAgent }}</dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <dt class="font-semibold text-gray-700">Tenant</dt>
+                  <dd class="text-right">{{ event.tenantId }}</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-template #auditEventState>
+        <div class="flex flex-col items-center justify-center py-12">
+          <ng-container *ngIf="loading; else eventError">
+            <svg class="w-10 h-10 text-[#2b0f60] animate-spin" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+            </svg>
+            <p class="text-sm text-gray-500 mt-4">Cargando información del evento...</p>
+          </ng-container>
+          <ng-template #eventError>
+            <p class="text-sm text-red-500 font-semibold text-center">{{ errorMessage }}</p>
+            <button
+              type="button"
+              class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#2b0f60]"
+              (click)="currentId ? loadAuditEvent(currentId) : null"
+              [disabled]="!currentId"
+            >
+              Reintentar
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M5 19L19 5" />
+              </svg>
+            </button>
+          </ng-template>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</div>
