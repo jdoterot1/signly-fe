@@ -1,11 +1,10 @@
 // src/app/features/roles/create/roles-create.component.ts
 import { Component } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 
 import { RoleService } from '../../../core/services/roles/roles.service';
-import { FormComponent } from '../../../shared/form/form.component';
-import { ROLE_CREATE_FORM_CONFIG } from '../../../core/constants/roles/create/roles-create.constant';
 import { ROLE_PERMISSION_MATRIX } from '../../../core/constants/roles/permissions-map.constant';
 import { PermissionMatrixComponent } from '../../../shared/permissions/permission-matrix/permission-matrix.component';
 
@@ -14,14 +13,15 @@ import { AlertService } from '../../../shared/alert/alert.service';
 @Component({
   selector: 'app-role-create',
   standalone: true,
-  imports: [FormComponent, PermissionMatrixComponent],
+  imports: [PermissionMatrixComponent, ReactiveFormsModule, CommonModule],
   templateUrl: './roles-add.component.html'
 })
 export class RolesCreateComponent {
-  formConfig = ROLE_CREATE_FORM_CONFIG;
   permissionRows = ROLE_PERMISSION_MATRIX;
   selectedPermissions: string[] = [];
   form: FormGroup;
+  currentStep = 1;
+  readonly totalSteps = 2;
   private readonly returnTo: string | null;
 
   constructor(
@@ -33,10 +33,21 @@ export class RolesCreateComponent {
   ) {
     this.returnTo = this.route.snapshot.queryParamMap.get('returnTo');
     this.form = this.fb.group({
-      roleId: ['', [Validators.required]],
       roleName: ['', [Validators.required]],
       description: ['']
     });
+  }
+
+  goNext(): void {
+    this.form.markAllAsTouched();
+    if (this.form.invalid) {
+      return;
+    }
+    this.currentStep = Math.min(this.totalSteps, this.currentStep + 1);
+  }
+
+  goPrev(): void {
+    this.currentStep = Math.max(1, this.currentStep - 1);
   }
 
   onSubmit(formValue: any) {
@@ -45,14 +56,10 @@ export class RolesCreateComponent {
       return;
     }
 
-    const normalizedRoleId = this.normalizeRoleId(formValue.roleId);
+    const normalizedRoleId = this.normalizeRoleId(formValue.roleName);
     if (!normalizedRoleId) {
-      this.alertService.showError('El identificador del rol no puede estar vacío.', 'Datos inválidos');
+      this.alertService.showError('El nombre del rol no puede estar vacío.', 'Datos inválidos');
       return;
-    }
-
-    if (normalizedRoleId !== formValue.roleId) {
-      this.form.patchValue({ roleId: normalizedRoleId }, { emitEvent: false });
     }
 
     const payload = {

@@ -107,7 +107,13 @@ export class RolesListComponent implements OnInit {
     }
   }
   onCreate(): void {
-    this.router.navigate(['/roles/create'], this.navigationExtras());
+    if (this.returnTo) {
+      this.router.navigate([this.returnTo], {
+        queryParams: { view: 'create-role', returnTo: this.returnTo }
+      });
+      return;
+    }
+    this.router.navigate(['/roles/create']);
   }
 
   private navigationExtras(): NavigationExtras {

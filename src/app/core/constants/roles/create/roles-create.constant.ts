@@ -4,13 +4,6 @@ import { FormConfig } from '../../../../shared/form/form.model';
 export const ROLE_CREATE_FORM_CONFIG: FormConfig = {
   fields: [
     {
-      key: 'roleId',
-      type: 'text',
-      label: 'Identificador del rol',
-      placeholder: 'Ej: auditor',
-      required: true
-    },
-    {
       key: 'roleName',
       type: 'text',
       label: 'Nombre del rol',

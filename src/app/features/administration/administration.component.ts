@@ -6,12 +6,14 @@ import { Subscription } from 'rxjs';
 import { AdminSidebarComponent, AdminSidebarSection } from '../../shared/components/admin-sidebar/admin-sidebar.component';
 import { UsersListComponent } from '../user/list/user-list.component';
 import { RolesListComponent } from '../roles/list/roles-list.component';
+import { RolesCreateComponent } from '../roles/create/roles-add.component';
 import { CompanySettingsComponent } from '../company/company-settings.component';
 import { CompanyBrandingComponent } from '../company/company-branding.component';
 import { CompanyBillingComponent } from '../company/company-billing.component';
 import { TableComponent } from '../../shared/table/table.component';
 import { TableModel } from '../../shared/table/table.model';
 import { WebhookListComponent } from '../webhooks/list/webhook-list.component';
+import { WalletComponent } from '../wallet/wallet.component';
 import { AuditListComponent } from '../audit/list/audit-list.component';
 import { AuthService } from '../../core/services/auth/auth.service';
 
@@ -45,11 +47,13 @@ interface NotificationRow {
     AdminSidebarComponent,
     UsersListComponent,
     RolesListComponent,
+    RolesCreateComponent,
     CompanySettingsComponent,
     CompanyBrandingComponent,
     CompanyBillingComponent,
     TableComponent,
     WebhookListComponent,
+    WalletComponent,
     AuditListComponent
   ],
   templateUrl: './administration.component.html'
@@ -193,7 +197,10 @@ export class AdministrationComponent implements OnInit, OnDestroy {
   private readonly slugToLabelMap = this.buildSlugToLabelMap();
 
   selectedOption = this.defaultSection;
+  detailView: string | null = null;
+  readonly rolesReturnTo = '/administration/roles';
   private routeSub?: Subscription;
+  private querySub?: Subscription;
 
   constructor(
     private router: Router,
@@ -218,10 +225,15 @@ export class AdministrationComponent implements OnInit, OnDestroy {
 
       this.navigateToSection(this.defaultSection);
     });
+
+    this.querySub = this.route.queryParamMap.subscribe(params => {
+      this.detailView = params.get('view');
+    });
   }
 
   ngOnDestroy(): void {
     this.routeSub?.unsubscribe();
+    this.querySub?.unsubscribe();
   }
 
   private hydrateOwnerFromSession(): void {
@@ -289,12 +301,23 @@ export class AdministrationComponent implements OnInit, OnDestroy {
   }
   private navigateToSection(option: string): void {
     this.selectedOption = option;
+    this.clearDetailView();
     const slug = this.getSlug(option);
     if (option === this.defaultSection || !slug) {
-      this.router.navigate(['/administration']);
+      this.router.navigate(['/administration'], {
+        queryParams: { view: null, returnTo: null },
+        queryParamsHandling: 'merge'
+      });
       return;
     }
-    this.router.navigate(['/administration', slug]);
+    this.router.navigate(['/administration', slug], {
+      queryParams: { view: null, returnTo: null },
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  private clearDetailView(): void {
+    this.detailView = null;
   }
 
   private buildLabelToSlugMap(): Record<string, string> {

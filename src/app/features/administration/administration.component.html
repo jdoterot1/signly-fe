@@ -72,14 +72,19 @@
             *ngSwitchCase="'Usuarios'"
             [returnTo]="'/administration/users'"
           ></app-users-list>
-          <app-roles-list
-            *ngSwitchCase="'Roles'"
-            [returnTo]="'/administration/roles'"
-          ></app-roles-list>
+          <ng-container *ngSwitchCase="'Roles'">
+            <ng-container *ngIf="detailView === 'create-role'; else rolesListView">
+              <app-role-create></app-role-create>
+            </ng-container>
+            <ng-template #rolesListView>
+              <app-roles-list [returnTo]="rolesReturnTo"></app-roles-list>
+            </ng-template>
+          </ng-container>
           <app-company-billing *ngSwitchCase="'Facturación'"></app-company-billing>
           <app-company-settings *ngSwitchCase="'Compañía'"></app-company-settings>
           <app-company-branding *ngSwitchCase="'Branding y correos'"></app-company-branding>
           <app-webhook-list *ngSwitchCase="'Webhooks'" [returnTo]="'/administration/webhooks'"></app-webhook-list>
+          <app-wallet *ngSwitchCase="'Billetera'"></app-wallet>
           <app-audit-list *ngSwitchCase="'Registro de auditoría'"></app-audit-list>
           <div *ngSwitchDefault class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-6">
             <p class="text-sm font-semibold heading-brand">Acciones rápidas</p>

@@ -1,7 +1,78 @@
-<!-- src/app/features/roles/create/roles-add.component.html -->
-<ng-template #permissionsTemplate>
-  <div class="space-y-6">
-    <h3 class="text-lg font-semibold text-gray-800">Permisos del rol</h3>
+<div class="space-y-8">
+  <div class="flex items-center justify-between bg-white rounded-3xl border border-gray-100 shadow p-4">
+    <div class="flex items-center gap-4">
+      <ng-container *ngFor="let step of [1,2]">
+        <div class="flex items-center gap-2">
+          <div
+            class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
+            [ngClass]="currentStep >= step ? 'bg-[#2b0f60] text-white' : 'bg-gray-200 text-gray-500'"
+          >
+            {{ step }}
+          </div>
+          <span class="text-sm" [ngClass]="currentStep >= step ? 'text-[#2b0f60] font-semibold' : 'text-gray-500'">
+            Paso {{ step }}
+          </span>
+        </div>
+        <div *ngIf="step < totalSteps" class="w-12 h-px bg-gray-200 mx-2"></div>
+      </ng-container>
+    </div>
+    <button type="button" class="text-sm text-gray-500 hover:text-gray-700" (click)="onCancel()">Cancelar</button>
+  </div>
+
+  <div
+    class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-6"
+    *ngIf="currentStep === 1"
+  >
+    <p class="text-xs uppercase tracking-[0.3em] text-[#9b93b8] font-semibold">Paso 1</p>
+    <h2 class="text-2xl font-semibold text-[#2b0f60] mt-1">Información del rol</h2>
+    <p class="text-sm text-gray-500 mt-1">Define el nombre y la descripción del rol.</p>
+
+    <form class="mt-6 space-y-4" [formGroup]="form">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Nombre del rol</label>
+        <input
+          type="text"
+          formControlName="roleName"
+          placeholder="Ej: Administrador de operaciones"
+          class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+        />
+        <p class="mt-1 text-xs text-gray-500">Se usará como referencia visible y para generar el ID interno.</p>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Descripción</label>
+        <textarea
+          rows="3"
+          formControlName="description"
+          class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+          placeholder="Describe brevemente a qué acceso apunta este rol."
+        ></textarea>
+      </div>
+    </form>
+    <div class="flex justify-end gap-3 mt-6">
+      <button
+        type="button"
+        class="px-4 py-2 rounded-xl border text-sm text-gray-600 hover:bg-gray-50"
+        (click)="onCancel()"
+      >
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="px-5 py-2 rounded-xl bg-[#2b0f60] text-white font-semibold hover:bg-[#1a0a40]"
+        (click)="goNext()"
+      >
+        Siguiente
+      </button>
+    </div>
+  </div>
+
+  <div
+    class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-6 space-y-6"
+    *ngIf="currentStep === 2"
+  >
+    <p class="text-xs uppercase tracking-[0.3em] text-[#9b93b8] font-semibold">Paso 2</p>
+    <h2 class="text-2xl font-semibold text-[#2b0f60]">Permisos del rol</h2>
     <p class="text-sm text-gray-500">
       Selecciona los permisos que definirán el alcance de este rol dentro de la plataforma.
     </p>
@@ -10,13 +81,29 @@
       [value]="selectedPermissions"
       (valueChange)="onPermissionsChange($event)"
     ></app-permission-matrix>
-  </div>
-</ng-template>
 
-<app-form
-  [config]="formConfig"
-  [form]="form"
-  [extraTemplate]="permissionsTemplate"
-  (submitForm)="onSubmit($event)"
-  (cancelForm)="onCancel()"
-></app-form>
+    <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+      <button
+        type="button"
+        class="px-4 py-2 rounded-xl border text-sm text-gray-600 hover:bg-gray-50"
+        (click)="goPrev()"
+      >
+        Anterior
+      </button>
+      <button
+        type="button"
+        class="px-4 py-2 rounded-xl border text-sm text-gray-600 hover:bg-gray-50"
+        (click)="onCancel()"
+      >
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="px-5 py-2 rounded-xl bg-[#2b0f60] text-white font-semibold hover:bg-[#1a0a40]"
+        (click)="onSubmit(form.value)"
+      >
+        Crear rol
+      </button>
+    </div>
+  </div>
+</div>
