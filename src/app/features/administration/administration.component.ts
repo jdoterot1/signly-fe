@@ -91,20 +91,12 @@ export class AdministrationComponent implements OnInit, OnDestroy {
       ]
     },
     {
-      label: 'Eliminar firmas y envíos',
-      items: [{ label: 'Eliminar firmas y envíos' }]
-    },
-    {
       label: 'Integraciones',
       items: [
         { label: 'Aplicaciones y claves' },
         { label: 'Centro de uso de la API' },
         { label: 'Webhooks' }
       ]
-    },
-    {
-      label: 'Eliminar acciones de los acuerdos',
-      items: [{ label: 'Eliminar acciones de los acuerdos' }]
     },
     {
       label: 'Auditoría',
@@ -125,7 +117,6 @@ export class AdministrationComponent implements OnInit, OnDestroy {
     'Aplicaciones y claves': 'Gestiona credenciales para desarrolladores y API keys.',
     'Centro de uso de la API': 'Monitorea uso y límites de tus integraciones.',
     Webhooks: 'Gestiona los endpoints que reciben eventos automáticos de Signly.',
-    'Eliminar acciones de los acuerdos': 'Depura entradas históricas asociadas a workflows o reglas obsoletas.',
     'Registro de auditoría': 'Consulta cada acción registrada para auditoría.'
   };
 
@@ -190,7 +181,6 @@ export class AdministrationComponent implements OnInit, OnDestroy {
     Webhooks: 'webhooks',
     Roles: 'roles',
     'Eliminar firmas y envíos': 'delete-signatures-sends',
-    'Eliminar acciones de los acuerdos': 'delete-agreement-actions',
     'Registro de auditoría': 'audit-log'
   };
   private readonly labelToSlugMap = this.buildLabelToSlugMap();
