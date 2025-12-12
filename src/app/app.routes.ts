@@ -7,6 +7,7 @@ import { ForgotPasswordComponent }  from './features/auth/forgot-password/forgot
 import { OtpComponent }             from './features/auth/otp/otp.component';
 import { ResetPasswordComponent }   from './features/auth/reset-password/reset-password.component';
 import { CompletePasswordComponent } from './features/auth/complete-password/complete-password.component';
+import { RegisterComponent }        from './features/auth/register/register.component';
 import { LayoutComponent }          from './core/layout/layout/layout.component';
 import { DashboardComponent }       from './features/dashboard/dashboard.component';
 // importa aquí otros componentes o feature-modules que deban ir bajo el layout
@@ -15,6 +16,7 @@ import { authGuard, authChildGuard } from './core/guards/auth.guard';
 export const routes: Routes = [
   // 1) Rutas públicas (sin layout)
   { path: 'login',           component: LoginComponent },
+  { path: 'register',        component: RegisterComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'otp',             component: OtpComponent },
   { path: 'reset-password',  component: ResetPasswordComponent },

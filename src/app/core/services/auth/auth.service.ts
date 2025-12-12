@@ -14,6 +14,39 @@ import {
   RefreshTokenPayload
 } from '../../models/auth/auth-session.model';
 
+export interface RegistrationRequest {
+  user: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    password: string;
+    locale?: string;
+    timezone?: string;
+  };
+  company: {
+    displayName: string;
+    legalName: string;
+    industry: string;
+    country: string;
+    city: string;
+    size: number;
+    billingEmail: string;
+    about?: string;
+  };
+  security: {
+    captchaToken: string;
+  };
+  consents: {
+    tosAccepted: boolean;
+    privacyAccepted: boolean;
+  };
+  metadata?: {
+    signupSource?: string;
+    referralCode?: string | null;
+  };
+}
+
 interface PasswordSuccessPayload {
   status: string;
 }
@@ -54,6 +87,13 @@ export class AuthService {
         tap(session => this.persistSession(session)),
         catchError(err => this.handleError(err))
       );
+  }
+
+  register(payload: RegistrationRequest): Observable<ApiResponse<unknown>> {
+    const url = `${this.baseUrl}/auth/register`;
+    return this.http
+      .post<ApiResponse<unknown>>(url, payload)
+      .pipe(catchError(err => this.handleError(err)));
   }
 
   logout(): Observable<void> {

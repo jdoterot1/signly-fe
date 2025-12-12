@@ -38,4 +38,16 @@
     color: var(--brand-primary);
   }
 
+  .required-marker::after {
+    content: ' *';
+    color: #dc2626;
+  }
+
+  /* Placeholder más claro para todos los inputs/textarea */
+  input::placeholder,
+  textarea::placeholder {
+    color: #9ca3af;
+    opacity: 1;
+  }
+
 }
