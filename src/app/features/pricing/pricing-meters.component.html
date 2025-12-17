@@ -1,0 +1,160 @@
+<div class="min-h-full bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-6xl mx-auto space-y-8">
+    <section class="bg-white rounded-3xl shadow px-6 py-8">
+      <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.3em] text-[#2b0f60]">Precios</p>
+          <h2 class="text-2xl font-semibold text-gray-900 mt-2">Precios por canal de firma</h2>
+          <p class="text-sm text-gray-600 mt-2 max-w-3xl">
+            Revisa los precios (tiers) por volumen para cada tipo de firma. Para estimar tu costo mensual, usa la calculadora.
+          </p>
+          <div class="mt-4">
+            <a
+              routerLink="/administration/calculator"
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#3366FF] text-white text-sm font-semibold hover:bg-[#274FCC]"
+            >
+              Abrir calculadora
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7 7 7-7 7" />
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 sm:items-center">
+          <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              class="h-4 w-4 rounded border-gray-300 text-[#3366FF] focus:ring-[#3366FF]"
+              [(ngModel)]="showOnlyActive"
+            />
+            Solo activos
+          </label>
+
+          <select
+            class="w-full sm:w-56 rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+            [(ngModel)]="selectedCategory"
+          >
+            <option value="all">Todas las categorías</option>
+            <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
+          </select>
+
+          <select
+            class="w-full sm:w-28 rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+            [(ngModel)]="region"
+            (ngModelChange)="onRegionChanged()"
+          >
+            <option *ngFor="let r of availableRegions()" [value]="r">{{ r }}</option>
+          </select>
+
+          <select
+            class="w-full sm:w-28 rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+            [(ngModel)]="currency"
+            (ngModelChange)="onCurrencyChanged()"
+          >
+            <option *ngFor="let c of availableCurrencies()" [value]="c">{{ c }}</option>
+          </select>
+
+          <button
+            type="button"
+            class="px-4 py-2 rounded-xl border text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+            (click)="loadMeters()"
+            [disabled]="isLoading"
+          >
+            {{ isLoading ? 'Actualizando...' : 'Actualizar' }}
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="isLoading" class="mt-6 text-sm text-gray-500 animate-pulse">
+        Consultando precios...
+      </div>
+
+      <div *ngIf="!isLoading && filteredMeters.length === 0" class="mt-6 text-sm text-gray-500">
+        No hay precios para mostrar con los filtros actuales.
+      </div>
+
+      <div *ngIf="!isLoading && filteredMeters.length > 0" class="mt-6 grid lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 grid md:grid-cols-2 gap-4">
+          <button
+            *ngFor="let meter of filteredMeters"
+            type="button"
+            class="text-left border-2 rounded-2xl p-5 cursor-pointer transition flex flex-col justify-between bg-white"
+            [ngClass]="selectedMeter?.meter_code === meter.meter_code
+              ? 'border-indigo-600 shadow-sm bg-indigo-50/60'
+              : 'border-gray-200 hover:border-gray-400'"
+            (click)="selectMeter(meter)"
+          >
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold uppercase tracking-[0.25em] text-[#2b0f60]">
+                  {{ meter.category }} · {{ meter.unit }}
+                </span>
+                <span
+                  class="text-[11px] font-semibold px-3 py-1 rounded-full uppercase tracking-wide"
+                  [ngClass]="meter.active ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'"
+                >
+                  {{ meter.active ? 'Activo' : 'Inactivo' }}
+                </span>
+              </div>
+
+              <p class="text-sm font-semibold text-gray-900">{{ meter.display_name }}</p>
+              <p class="text-xs text-gray-600 mt-1">{{ meter.description }}</p>
+
+              <div class="mt-4">
+                <p class="text-xs text-gray-500">Desde</p>
+                <p class="text-xl font-semibold text-gray-900 mt-1">{{ headlinePrice(meter) }}</p>
+              </div>
+            </div>
+
+            <div class="mt-4 flex items-center justify-between">
+              <span class="font-mono text-[11px] bg-gray-50 border border-gray-200 px-2 py-1 rounded-lg text-gray-600">
+                {{ meter.meter_code }}
+              </span>
+              <span class="text-xs text-indigo-600 font-semibold">Ver tiers →</span>
+            </div>
+          </button>
+        </div>
+
+        <aside class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+          <div class="px-5 py-4 bg-gray-50 border-b border-gray-100">
+            <p class="text-xs font-semibold uppercase tracking-[0.25em] text-[#2b0f60]">Detalle</p>
+            <p class="text-sm font-semibold text-gray-900 mt-1">{{ selectedMeter?.display_name || 'Selecciona un canal' }}</p>
+            <p class="text-xs text-gray-500 mt-1">Región {{ region }} · {{ currency }}</p>
+          </div>
+
+          <div class="p-5" *ngIf="!selectedMeter">
+            <p class="text-sm text-gray-600">
+              Selecciona un canal para ver sus escalas de precio por volumen.
+            </p>
+          </div>
+
+          <div *ngIf="selectedMeter" class="p-5 space-y-4">
+            <p class="text-sm text-gray-600">{{ selectedMeter.description }}</p>
+
+            <div class="overflow-x-auto rounded-xl border border-gray-100">
+              <table class="min-w-full text-sm">
+                <thead class="bg-gray-50 text-gray-600">
+                  <tr>
+                    <th class="text-left font-semibold px-4 py-3">Rango</th>
+                    <th class="text-right font-semibold px-4 py-3">Precio unitario</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  <tr *ngFor="let tier of tiersFor(selectedMeter)" class="text-gray-700">
+                    <td class="px-4 py-3">{{ formatQtyRange(tier) }}</td>
+                    <td class="px-4 py-3 text-right">{{ formatMoney(tier.unit_price, tier.currency) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <p class="text-xs text-gray-500">
+              Los tiers se aplican según el volumen del periodo y pueden cambiar el precio unitario.
+            </p>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </div>
+</div>

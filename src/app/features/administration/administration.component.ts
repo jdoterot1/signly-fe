@@ -10,6 +10,8 @@ import { RolesCreateComponent } from '../roles/create/roles-add.component';
 import { CompanySettingsComponent } from '../company/company-settings.component';
 import { CompanyBrandingComponent } from '../company/company-branding.component';
 import { CompanyBillingComponent } from '../company/company-billing.component';
+import { PricingMetersComponent } from '../pricing/pricing-meters.component';
+import { PricingCalculatorComponent } from '../pricing/pricing-calculator.component';
 import { TableComponent } from '../../shared/table/table.component';
 import { TableModel } from '../../shared/table/table.model';
 import { WebhookListComponent } from '../webhooks/list/webhook-list.component';
@@ -51,6 +53,8 @@ interface NotificationRow {
     CompanySettingsComponent,
     CompanyBrandingComponent,
     CompanyBillingComponent,
+    PricingMetersComponent,
+    PricingCalculatorComponent,
     TableComponent,
     WebhookListComponent,
     WalletComponent,
@@ -80,6 +84,7 @@ export class AdministrationComponent implements OnInit, OnDestroy {
       label: 'Facturación y pagos',
       items: [
         { label: 'Facturación' },
+        { label: 'Precios' },
         { label: 'Billetera' }
       ]
     },
@@ -110,6 +115,7 @@ export class AdministrationComponent implements OnInit, OnDestroy {
     'Branding y correos': 'Configura colores, logos y remitentes para todas las comunicaciones.',
     Calculadora: 'Estima el impacto financiero de tus flujos y licencias.',
     'Facturación': 'Consulta planes, ciclos de pago y comprobantes emitidos.',
+    Precios: 'Consulta precios por canal, región y escalas de consumo.',
     Billetera: 'Administra saldos prepagados y movimientos en tu billetera.',
     Usuarios: 'Administra usuarios, invita nuevos miembros y define su estado.',
     Roles: 'Determina qué permisos tiene cada equipo en Signly.',
@@ -174,6 +180,7 @@ export class AdministrationComponent implements OnInit, OnDestroy {
     'Branding y correos': 'branding',
     Calculadora: 'calculator',
     'Facturación': 'billing',
+    Precios: 'pricing',
     Billetera: 'wallet',
     Usuarios: 'users',
     'Aplicaciones y claves': 'apps-and-keys',

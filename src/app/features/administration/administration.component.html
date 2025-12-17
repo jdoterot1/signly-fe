@@ -81,6 +81,8 @@
             </ng-template>
           </ng-container>
           <app-company-billing *ngSwitchCase="'Facturación'"></app-company-billing>
+          <app-pricing-meters *ngSwitchCase="'Precios'"></app-pricing-meters>
+          <app-pricing-calculator *ngSwitchCase="'Calculadora'"></app-pricing-calculator>
           <app-company-settings *ngSwitchCase="'Compañía'"></app-company-settings>
           <app-company-branding *ngSwitchCase="'Branding y correos'"></app-company-branding>
           <app-webhook-list *ngSwitchCase="'Webhooks'" [returnTo]="'/administration/webhooks'"></app-webhook-list>
