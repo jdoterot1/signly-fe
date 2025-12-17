@@ -68,6 +68,11 @@ export class TableComponent<T = any> implements OnChanges {
     Active: 'bg-[#4FD1A5]',          // verde medio
     Inactive: 'bg-[#E35D5D]',        // rojo medio
     Unresolved: 'bg-[#FFB347]',      // naranja medio
+    Pendiente: 'bg-[#FFB347]',
+    Pagada: 'bg-[#4FD1A5]',
+    Emitida: 'bg-[#3366FF]',
+    Cancelada: 'bg-[#E35D5D]',
+    Fallida: 'bg-[#E35D5D]',
   };
 
 

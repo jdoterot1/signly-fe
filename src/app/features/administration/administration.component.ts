@@ -12,11 +12,16 @@ import { CompanyBrandingComponent } from '../company/company-branding.component'
 import { CompanyBillingComponent } from '../company/company-billing.component';
 import { PricingMetersComponent } from '../pricing/pricing-meters.component';
 import { PricingCalculatorComponent } from '../pricing/pricing-calculator.component';
+import { BillingOrdersComponent } from '../billing/orders/billing-orders.component';
+import { BillingInvoicesComponent } from '../billing/invoices/billing-invoices.component';
+import { BillingOrderDetailComponent } from '../billing/orders/billing-order-detail.component';
+import { BillingInvoiceDetailComponent } from '../billing/invoices/billing-invoice-detail.component';
 import { TableComponent } from '../../shared/table/table.component';
 import { TableModel } from '../../shared/table/table.model';
 import { WebhookListComponent } from '../webhooks/list/webhook-list.component';
 import { WalletComponent } from '../wallet/wallet.component';
 import { AuditListComponent } from '../audit/list/audit-list.component';
+import { LogsListComponent } from '../audit/logs/logs-list.component';
 import { AuthService } from '../../core/services/auth/auth.service';
 
 interface QuickAccessItem {
@@ -55,10 +60,15 @@ interface NotificationRow {
     CompanyBillingComponent,
     PricingMetersComponent,
     PricingCalculatorComponent,
+    BillingOrdersComponent,
+    BillingInvoicesComponent,
+    BillingOrderDetailComponent,
+    BillingInvoiceDetailComponent,
     TableComponent,
     WebhookListComponent,
     WalletComponent,
-    AuditListComponent
+    AuditListComponent,
+    LogsListComponent
   ],
   templateUrl: './administration.component.html'
 })
@@ -84,6 +94,8 @@ export class AdministrationComponent implements OnInit, OnDestroy {
       label: 'Facturación y pagos',
       items: [
         { label: 'Facturación' },
+        { label: 'Órdenes' },
+        { label: 'Facturas' },
         { label: 'Precios' },
         { label: 'Billetera' }
       ]
@@ -115,6 +127,8 @@ export class AdministrationComponent implements OnInit, OnDestroy {
     'Branding y correos': 'Configura colores, logos y remitentes para todas las comunicaciones.',
     Calculadora: 'Estima el impacto financiero de tus flujos y licencias.',
     'Facturación': 'Consulta planes, ciclos de pago y comprobantes emitidos.',
+    'Órdenes': 'Consulta recargas y compras de créditos, con su estado y detalle.',
+    Facturas: 'Revisa facturas emitidas y descarga adjuntos cuando estén disponibles.',
     Precios: 'Consulta precios por canal, región y escalas de consumo.',
     Billetera: 'Administra saldos prepagados y movimientos en tu billetera.',
     Usuarios: 'Administra usuarios, invita nuevos miembros y define su estado.',
@@ -180,6 +194,8 @@ export class AdministrationComponent implements OnInit, OnDestroy {
     'Branding y correos': 'branding',
     Calculadora: 'calculator',
     'Facturación': 'billing',
+    'Órdenes': 'orders',
+    Facturas: 'invoices',
     Precios: 'pricing',
     Billetera: 'wallet',
     Usuarios: 'users',
@@ -195,6 +211,7 @@ export class AdministrationComponent implements OnInit, OnDestroy {
 
   selectedOption = this.defaultSection;
   detailView: string | null = null;
+  detailId: string | null = null;
   readonly rolesReturnTo = '/administration/roles';
   private routeSub?: Subscription;
   private querySub?: Subscription;
@@ -208,7 +225,8 @@ export class AdministrationComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.hydrateOwnerFromSession();
     this.routeSub = this.route.paramMap.subscribe(params => {
-      const slug = params.get('section');
+      const slug = params.get('section') ?? (this.route.snapshot.data?.['section'] as string | undefined) ?? null;
+      this.detailId = params.get('id');
       if (!slug) {
         this.selectedOption = this.defaultSection;
         return;

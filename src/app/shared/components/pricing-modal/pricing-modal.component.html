@@ -127,7 +127,7 @@
                 <p class="text-lg font-semibold text-gray-900 mt-1">
                   {{ hasPurchasePricing ? formatMoney(purchaseUnitPrice, currency) : formatMoney(1, currency) }}
                 </p>
-                <p class="text-xs text-gray-500 mt-1">Por crédito · Tier {{ purchaseTierLabel }}</p>
+                <p class="text-xs text-gray-500 mt-1">Por crédito · Escala {{ purchaseTierLabel }}</p>
               </div>
               <div class="rounded-2xl bg-gray-50 border border-gray-100 p-4">
                 <p class="text-xs text-gray-500">Total a pagar</p>
@@ -146,7 +146,7 @@
             <div class="mt-4 text-sm text-gray-600">
               <p class="leading-relaxed">
                 Los créditos se cargan a tu cuenta y se descuentan automáticamente cuando firmas documentos.
-                Si tu consumo crece, el precio por documento puede bajar según el volumen (tiers).
+                Si tu consumo crece, el precio por documento puede bajar según el volumen (escalas).
               </p>
             </div>
           </div>
@@ -168,33 +168,36 @@
             No hay meters de firma disponibles para mostrar.
           </div>
 
-          <div *ngIf="signatureMeters.length > 0" class="mt-4 grid md:grid-cols-2 gap-4">
-            <div
-              *ngFor="let meter of signatureMeters"
-              class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
-            >
-              <div class="flex items-start justify-between gap-3">
-                <div>
-                  <p class="text-sm font-semibold text-gray-900">{{ meter.display_name }}</p>
-                  <p class="text-xs text-gray-600 mt-1">{{ meter.description }}</p>
+          <div *ngIf="signatureMeters.length > 0" class="mt-4 max-h-[340px] overflow-y-auto pr-2">
+            <div class="grid md:grid-cols-2 gap-4">
+              <div
+                *ngFor="let meter of signatureMeters"
+                class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <p class="text-sm font-semibold text-gray-900">{{ meter.display_name }}</p>
+                    <p class="text-xs text-gray-600 mt-1">{{ meter.description }}</p>
+                  </div>
+                  <span
+                    class="text-[11px] font-semibold px-3 py-1 rounded-full uppercase tracking-wide"
+                    [ngClass]="meter.active ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'"
+                  >
+                    {{ meter.active ? 'Activo' : 'Inactivo' }}
+                  </span>
                 </div>
-                <span
-                  class="text-[11px] font-semibold px-3 py-1 rounded-full uppercase tracking-wide"
-                  [ngClass]="meter.active ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'"
-                >
-                  {{ meter.active ? 'Activo' : 'Inactivo' }}
-                </span>
-              </div>
 
-              <div class="mt-4 flex items-end justify-between">
-                <div>
-                  <p class="text-xs text-gray-500">Créditos por documento</p>
-                  <p class="text-2xl font-semibold text-gray-900 mt-1">
-                    {{ creditsPerDoc(meter) === null ? '—' : formatCredits(creditsPerDoc(meter)!) }}
-                  </p>
-                </div>
-                <div class="text-right">
-                  <p class="text-sm font-semibold text-gray-900 mt-1">{{ meterTierLabel(meter) }}</p>
+                <div class="mt-4 flex items-end justify-between">
+                  <div>
+                    <p class="text-xs text-gray-500">Créditos por documento</p>
+                    <p class="text-2xl font-semibold text-gray-900 mt-1">
+                      {{ creditsPerDoc(meter) === null ? '—' : formatCredits(creditsPerDoc(meter)!) }}
+                    </p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-xs text-gray-500">Escala aplicada</p>
+                    <p class="text-sm font-semibold text-gray-900 mt-1">{{ meterTierLabel(meter) }}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -270,10 +273,10 @@
           <button
             type="button"
             class="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#3366FF] text-white text-sm font-semibold hover:bg-[#274FCC]"
-            routerLink="/administration/billing"
+            routerLink="/administration/calculator"
             (click)="closeModal()"
           >
-            Ir a facturación
+            Ir a la calculadora
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7 7 7-7 7" />
             </svg>

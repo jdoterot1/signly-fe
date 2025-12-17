@@ -22,6 +22,44 @@ export const routes: Routes = [
   { path: 'reset-password',  component: ResetPasswordComponent },
   { path: 'complete-password', component: CompletePasswordComponent },
 
+  // 1.1) Pantallas de estado (sin header/footer)
+  {
+    path: '404',
+    loadComponent: () =>
+      import('./features/status-pages/status-page.component').then(m => m.StatusPageComponent),
+    data: { kind: '404' }
+  },
+  {
+    path: '500',
+    loadComponent: () =>
+      import('./features/status-pages/status-page.component').then(m => m.StatusPageComponent),
+    data: { kind: '500' }
+  },
+  {
+    path: 'payment/success',
+    loadComponent: () =>
+      import('./features/status-pages/status-page.component').then(m => m.StatusPageComponent),
+    data: { kind: 'payment_success' }
+  },
+  {
+    path: 'payment/pending',
+    loadComponent: () =>
+      import('./features/status-pages/status-page.component').then(m => m.StatusPageComponent),
+    data: { kind: 'payment_pending' }
+  },
+  {
+    path: 'payment/failed',
+    loadComponent: () =>
+      import('./features/status-pages/status-page.component').then(m => m.StatusPageComponent),
+    data: { kind: 'payment_failed' }
+  },
+  {
+    path: 'payment/cancelled',
+    loadComponent: () =>
+      import('./features/status-pages/status-page.component').then(m => m.StatusPageComponent),
+    data: { kind: 'payment_cancelled' }
+  },
+
   // 2) Bloque con layout (header/sidebar/footer)
   {
     path: '',
@@ -83,12 +121,30 @@ export const routes: Routes = [
           import('./features/administration/administration.component').then(m => m.AdministrationComponent)
       },
       {
+        path: 'administration/orders/:id',
+        loadComponent: () =>
+          import('./features/administration/administration.component').then(m => m.AdministrationComponent),
+        data: { section: 'orders' }
+      },
+      {
+        path: 'administration/invoices/:id',
+        loadComponent: () =>
+          import('./features/administration/administration.component').then(m => m.AdministrationComponent),
+        data: { section: 'invoices' }
+      },
+      {
+        path: 'administration/audit-log/:id',
+        loadComponent: () =>
+          import('./features/administration/administration.component').then(m => m.AdministrationComponent),
+        data: { section: 'audit-log' }
+      },
+      {
         path: 'administration/:section',
         loadComponent: () =>
           import('./features/administration/administration.component').then(m => m.AdministrationComponent)
       },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-      { path: '**', redirectTo: 'dashboard' }
+      { path: '**', redirectTo: '/404' }
     ]
   },
 ];

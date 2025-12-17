@@ -81,13 +81,30 @@
             </ng-template>
           </ng-container>
           <app-company-billing *ngSwitchCase="'Facturación'"></app-company-billing>
+          <ng-container *ngSwitchCase="'Órdenes'">
+            <app-billing-order-detail *ngIf="detailId; else ordersList" [orderId]="detailId"></app-billing-order-detail>
+            <ng-template #ordersList>
+              <app-billing-orders></app-billing-orders>
+            </ng-template>
+          </ng-container>
+          <ng-container *ngSwitchCase="'Facturas'">
+            <app-billing-invoice-detail *ngIf="detailId; else invoicesList" [invoiceId]="detailId"></app-billing-invoice-detail>
+            <ng-template #invoicesList>
+              <app-billing-invoices></app-billing-invoices>
+            </ng-template>
+          </ng-container>
           <app-pricing-meters *ngSwitchCase="'Precios'"></app-pricing-meters>
           <app-pricing-calculator *ngSwitchCase="'Calculadora'"></app-pricing-calculator>
           <app-company-settings *ngSwitchCase="'Compañía'"></app-company-settings>
           <app-company-branding *ngSwitchCase="'Branding y correos'"></app-company-branding>
           <app-webhook-list *ngSwitchCase="'Webhooks'" [returnTo]="'/administration/webhooks'"></app-webhook-list>
           <app-wallet *ngSwitchCase="'Billetera'"></app-wallet>
-          <app-audit-list *ngSwitchCase="'Registro de auditoría'"></app-audit-list>
+          <ng-container *ngSwitchCase="'Registro de auditoría'">
+            <app-logs-list *ngIf="detailId; else auditList"></app-logs-list>
+            <ng-template #auditList>
+              <app-audit-list></app-audit-list>
+            </ng-template>
+          </ng-container>
           <div *ngSwitchDefault class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-6">
             <p class="text-sm font-semibold heading-brand">Acciones rápidas</p>
             <p class="text-sm text-gray-500">Decide qué actualizar según la sección seleccionada.</p>

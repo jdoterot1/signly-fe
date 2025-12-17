@@ -39,7 +39,8 @@ export class AuditListComponent implements OnInit {
       showRowSelection: false,
       showIndexColumn: false,
       emptyMessage: 'No se encontraron auditorías.',
-      trackByField: 'id'
+      trackByField: 'id',
+      showCreateButton: false
     },
     columns: [
       { key: 'action', header: 'Acción', columnType: 'text', sortable: true, filterable: true, visible: true },
@@ -127,6 +128,6 @@ export class AuditListComponent implements OnInit {
   }
 
   onView(row: AuditRow): void {
-    this.router.navigate(['/audit-logs', row.id]);
+    this.router.navigate(['/administration/audit-log', row.id]);
   }
 }
