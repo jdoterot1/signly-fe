@@ -2,6 +2,9 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth/auth.service';
+import { Router } from '@angular/router';
+import { GuideModalComponent } from '../../shared/components/guide-modal/guide-modal.component';
+import { GuideFlowService, GuideStep } from '../../shared/services/guide-flow/guide-flow.service';
 
 interface TemplateCard {
   title: string
@@ -13,11 +16,14 @@ interface TemplateCard {
 @Component({
   selector: "app-dashboard",
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, GuideModalComponent],
   templateUrl: "./dashboard.component.html",
   styleUrls: [],
 })
 export class DashboardComponent {
+  showGuideModal = false;
+  guideSteps: GuideStep[] = [];
+
   readonly onboardingProgress = {
     title: 'Enviar documentos para firma',
     current: 0,
@@ -45,7 +51,11 @@ export class DashboardComponent {
     }
   ];
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private guideFlow: GuideFlowService
+  ) {}
 
   get displayName(): string {
     const session = this.authService.getSession();
@@ -69,5 +79,25 @@ export class DashboardComponent {
       return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     }
     return resolvedName.substring(0, 2).toUpperCase();
+  }
+
+  startGuide(): void {
+    this.guideSteps = this.guideFlow.getSteps();
+    this.showGuideModal = true;
+  }
+
+  closeGuideModal(): void {
+    this.showGuideModal = false;
+  }
+
+  beginGuideFlow(): void {
+    this.showGuideModal = false;
+    this.router.navigate(['/templates/create'], {
+      queryParams: {
+        guided: '1',
+        guideStep: 'template',
+        returnTo: '/dashboard'
+      }
+    });
   }
 }

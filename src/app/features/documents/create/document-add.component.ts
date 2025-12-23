@@ -1,4 +1,5 @@
 // src/app/features/documents/create/document-add.component.ts
+import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -8,25 +9,37 @@ import { FormComponent } from '../../../shared/form/form.component';
 import { DOCUMENT_CREATE_FORM_CONFIG } from '../../../core/constants/documents/create/documents-create.constant';
 
 import { AlertService } from '../../../shared/alert/alert.service'; // ✅ Importar servicio
+import { GuideModalComponent } from '../../../shared/components/guide-modal/guide-modal.component';
+import { GuideFlowService, GuideStep } from '../../../shared/services/guide-flow/guide-flow.service';
 
 @Component({
   selector: 'app-document-create',
   standalone: true,
-  imports: [FormComponent],
+  imports: [CommonModule, FormComponent, GuideModalComponent],
   templateUrl: './document-add.component.html'
 })
 export class DocumentCreateComponent {
   formConfig = DOCUMENT_CREATE_FORM_CONFIG;
   selectedFile?: File;
   private readonly returnTo: string | null;
+  showGuideModal = false;
+  guideSteps: GuideStep[] = [];
+  private readonly isGuidedFlow: boolean;
 
   constructor(
     private documentService: DocumentService,
     private router: Router,
     private route: ActivatedRoute,
-    private alertService: AlertService // ✅ Inyectar servicio
+    private alertService: AlertService, // ✅ Inyectar servicio
+    private guideFlow: GuideFlowService
   ) {
     this.returnTo = this.route.snapshot.queryParamMap.get('returnTo');
+    const guidedParam = this.route.snapshot.queryParamMap.get('guided');
+    this.isGuidedFlow = guidedParam === '1' || guidedParam === 'true';
+    if (this.isGuidedFlow) {
+      this.guideSteps = this.guideFlow.getSteps('document');
+      this.showGuideModal = true;
+    }
   }
 
   onFileSelected(file: File) {
@@ -76,5 +89,13 @@ export class DocumentCreateComponent {
   private navigateBack(): void {
     const target = this.returnTo || '/documents';
     this.router.navigateByUrl(target);
+  }
+
+  closeGuideModal(): void {
+    this.showGuideModal = false;
+  }
+
+  startDocumentStep(): void {
+    this.showGuideModal = false;
   }
 }

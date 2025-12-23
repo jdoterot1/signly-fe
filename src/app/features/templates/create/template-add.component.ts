@@ -8,11 +8,13 @@ import { TemplateService } from '../../../core/services/templates/template.servi
 import { Template } from '../../../core/models/templates/template.model';
 import { AlertService } from '../../../shared/alert/alert.service';
 import { DocumentMapperComponent } from '../../document-mapper/document-mapper.component';
+import { GuideModalComponent } from '../../../shared/components/guide-modal/guide-modal.component';
+import { GuideFlowService, GuideStep } from '../../../shared/services/guide-flow/guide-flow.service';
 
 @Component({
   selector: 'app-template-create',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DocumentMapperComponent],
+  imports: [CommonModule, ReactiveFormsModule, DocumentMapperComponent, GuideModalComponent],
   templateUrl: './template-add.component.html'
 })
 export class TemplateCreateComponent {
@@ -29,14 +31,24 @@ export class TemplateCreateComponent {
   isSaving = false;
   private readonly returnTo: string | null;
   private uploadedFile?: File;
+  showGuideModal = false;
+  guideSteps: GuideStep[] = [];
+  private readonly isGuidedFlow: boolean;
 
   constructor(
     private templateService: TemplateService,
     private router: Router,
     private route: ActivatedRoute,
-    private alertService: AlertService
+    private alertService: AlertService,
+    private guideFlow: GuideFlowService
   ) {
     this.returnTo = this.route.snapshot.queryParamMap.get('returnTo');
+    const guidedParam = this.route.snapshot.queryParamMap.get('guided');
+    this.isGuidedFlow = guidedParam === '1' || guidedParam === 'true';
+    if (this.isGuidedFlow) {
+      this.guideSteps = this.guideFlow.getSteps('template');
+      this.showGuideModal = true;
+    }
   }
 
   goToStepTwo(): void {
@@ -71,7 +83,7 @@ export class TemplateCreateComponent {
     this.templateService.createTemplate(payload).subscribe({
       next: () => {
         this.alertService.showSuccess('La plantilla fue creada exitosamente', '¡Plantilla creada!');
-        setTimeout(() => this.navigateBack(), 2600);
+        setTimeout(() => this.navigateAfterSave(), 2600);
       },
       error: err => {
         this.isSaving = false;
@@ -91,6 +103,29 @@ export class TemplateCreateComponent {
   private navigateBack(): void {
     const target = this.returnTo || '/templates';
     this.router.navigateByUrl(target);
+  }
+
+  private navigateAfterSave(): void {
+    if (this.isGuidedFlow) {
+      const targetReturn = this.returnTo || '/dashboard';
+      this.router.navigate(['/documents/create'], {
+        queryParams: {
+          guided: '1',
+          guideStep: 'document',
+          returnTo: targetReturn
+        }
+      });
+      return;
+    }
+    this.navigateBack();
+  }
+
+  closeGuideModal(): void {
+    this.showGuideModal = false;
+  }
+
+  startTemplateStep(): void {
+    this.showGuideModal = false;
   }
 
   onFileSelected(file?: File): void {

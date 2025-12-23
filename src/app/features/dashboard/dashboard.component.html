@@ -1,4 +1,14 @@
 <div class="bg-white min-h-screen flex flex-col">
+  <app-guide-modal
+    *ngIf="showGuideModal"
+    title="Tu primer documento en Signly"
+    subtitle="Te mostramos los pasos que vas a seguir para crear y dejar listo tu primer envio."
+    [steps]="guideSteps"
+    primaryLabel="Crear plantilla"
+    secondaryLabel="Mas tarde"
+    (primary)="beginGuideFlow()"
+    (closed)="closeGuideModal()"
+  ></app-guide-modal>
   <!-- <CHANGE> Updated primary color from dark purple (#2b0f60) to modern blue (#0066cc) -->
   <section class="bg-[#0066cc] text-white">
     <div class="max-w-6xl mx-auto px-6 lg:px-10 py-10">
@@ -23,6 +33,7 @@
             <button
               type="button"
               class="inline-flex items-center justify-center px-4 py-2 bg-white text-[#0066cc] rounded-full text-sm font-semibold hover:bg-blue-50 transition"
+              (click)="startGuide()"
             >
               Guíame
             </button>

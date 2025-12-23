@@ -1,6 +1,6 @@
 import { CommonModule } from "@angular/common"
 import { Component } from "@angular/core"
-import { ActivatedRoute, RouterModule } from "@angular/router"
+import { ActivatedRoute, ParamMap, RouterModule } from "@angular/router"
 
 type StatusKind = "404" | "500" | "payment_success" | "payment_pending" | "payment_failed" | "payment_cancelled"
 type StatusTone = "info" | "success" | "warning" | "danger"
@@ -313,24 +313,80 @@ interface StatusPageConfig {
   ],
 })
 export class StatusPageComponent {
-  readonly kind: StatusKind
-  readonly config: StatusPageConfig
+  kind: StatusKind
+  config: StatusPageConfig
 
-  readonly orderId: string | null
-  readonly invoiceId: string | null
-  readonly reference: string | null
-  readonly reason: string | null
+  orderId: string | null
+  invoiceId: string | null
+  reference: string | null
+  reason: string | null
 
   constructor(private route: ActivatedRoute) {
-    const kind = (this.route.snapshot.data?.["kind"] as StatusKind | undefined) ?? "404"
+    const kindFromData = (this.route.snapshot.data?.["kind"] as StatusKind | undefined) ?? "404"
+    const kind = this.resolveKind(kindFromData, this.route.snapshot.queryParamMap)
     this.kind = kind
     this.config = this.resolveConfig(kind)
 
     const qp = this.route.snapshot.queryParamMap
-    this.orderId = qp.get("orderId")
-    this.invoiceId = qp.get("invoiceId")
-    this.reference = qp.get("reference")
-    this.reason = qp.get("reason")
+    this.orderId = qp.get("orderId") ?? qp.get("x_extra1") ?? qp.get("x_extra2")
+    this.invoiceId = qp.get("invoiceId") ?? qp.get("x_id_invoice") ?? qp.get("x_id_factura")
+    this.reference = qp.get("reference") ?? qp.get("ref_payco") ?? qp.get("x_ref_payco")
+    this.reason =
+      qp.get("reason") ??
+      qp.get("x_response_reason_text") ??
+      qp.get("x_respuesta") ??
+      qp.get("x_response")
+  }
+
+  private resolveKind(fallback: StatusKind, qp: ParamMap): StatusKind {
+    if (fallback === "404" || fallback === "500") return fallback
+
+    const rawKind = qp.get("kind")
+    if (rawKind && this.isStatusKind(rawKind)) return rawKind
+
+    const status = (qp.get("status") ?? qp.get("state") ?? qp.get("payment_status"))?.toLowerCase()
+    if (status) {
+      if (status === "success" || status === "approved" || status === "ok" || status === "aceptada") return "payment_success"
+      if (status === "pending" || status === "pendiente") return "payment_pending"
+      if (status === "cancelled" || status === "canceled" || status === "cancelada") return "payment_cancelled"
+      if (status === "failed" || status === "rejected" || status === "rechazada" || status === "fallida") return "payment_failed"
+    }
+
+    const cod = qp.get("x_cod_response")?.trim()
+    if (cod) {
+      if (cod === "1") return "payment_success"
+      if (cod === "3") return "payment_pending"
+      if (cod === "2" || cod === "4") return "payment_failed"
+    }
+
+    const trState = qp.get("x_transaction_state")?.trim()
+    if (trState) {
+      if (trState === "1") return "payment_success"
+      if (trState === "3") return "payment_pending"
+      if (trState === "2") return "payment_failed"
+      if (trState === "4") return "payment_cancelled"
+    }
+
+    const responseText = (qp.get("x_response") ?? qp.get("x_respuesta") ?? "").toLowerCase()
+    if (responseText) {
+      if (responseText.includes("acept")) return "payment_success"
+      if (responseText.includes("pend")) return "payment_pending"
+      if (responseText.includes("cancel")) return "payment_cancelled"
+      if (responseText.includes("rechaz") || responseText.includes("fall")) return "payment_failed"
+    }
+
+    return fallback
+  }
+
+  private isStatusKind(value: string): value is StatusKind {
+    return (
+      value === "404" ||
+      value === "500" ||
+      value === "payment_success" ||
+      value === "payment_pending" ||
+      value === "payment_failed" ||
+      value === "payment_cancelled"
+    )
   }
 
   get iconToneClasses(): string {
@@ -446,6 +502,6 @@ export class StatusPageComponent {
   }
 
   get iconContainerClasses(): string {
-    return ""
+    return `rounded-full border-2 p-4 md:p-5 shadow-lg backdrop-blur-sm ${this.iconToneClasses}`
   }
 }

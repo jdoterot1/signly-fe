@@ -50,7 +50,7 @@
 
         <!-- Icon for payment statuses -->
         <div *ngIf="!showErrorNumber" class="flex justify-center mb-8">
-          <div class="status-icon-wrapper animate-scale-in" [class]="iconContainerClasses">
+          <div class="status-icon-wrapper animate-scale-in" [ngClass]="iconContainerClasses">
             <svg class="w-24 h-24" viewBox="0 0 120 120" fill="none">
               <!-- Success icon -->
               <g *ngIf="config.tone === 'success'">

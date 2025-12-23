@@ -1,4 +1,14 @@
 <div class="min-h-[calc(100vh-8rem)] w-full pb-10">
+  <app-guide-modal
+    *ngIf="showGuideModal"
+    title="Paso 1: crea tu plantilla"
+    subtitle="Completa los datos base y mapea el archivo para continuar."
+    [steps]="guideSteps"
+    primaryLabel="Listo, crear plantilla"
+    secondaryLabel="Cerrar"
+    (primary)="startTemplateStep()"
+    (closed)="closeGuideModal()"
+  ></app-guide-modal>
   <div class="px-4 lg:px-10 pt-8">
     <div class="flex items-center gap-4">
       <div class="flex items-center gap-3">

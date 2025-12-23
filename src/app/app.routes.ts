@@ -21,6 +21,11 @@ export const routes: Routes = [
   { path: 'otp',             component: OtpComponent },
   { path: 'reset-password',  component: ResetPasswordComponent },
   { path: 'complete-password', component: CompletePasswordComponent },
+  {
+    path: 'process',
+    loadChildren: () =>
+      import('./core/modules/process/process.module').then(m => m.ProcessModule)
+  },
 
   // 1.1) Pantallas de estado (sin header/footer)
   {
@@ -36,28 +41,11 @@ export const routes: Routes = [
     data: { kind: '500' }
   },
   {
-    path: 'payment/success',
+    path: 'payment/response',
     loadComponent: () =>
       import('./features/status-pages/status-page.component').then(m => m.StatusPageComponent),
-    data: { kind: 'payment_success' }
-  },
-  {
-    path: 'payment/pending',
-    loadComponent: () =>
-      import('./features/status-pages/status-page.component').then(m => m.StatusPageComponent),
+    // ePayco redirige a una sola URL; el componente resuelve el estado desde query params
     data: { kind: 'payment_pending' }
-  },
-  {
-    path: 'payment/failed',
-    loadComponent: () =>
-      import('./features/status-pages/status-page.component').then(m => m.StatusPageComponent),
-    data: { kind: 'payment_failed' }
-  },
-  {
-    path: 'payment/cancelled',
-    loadComponent: () =>
-      import('./features/status-pages/status-page.component').then(m => m.StatusPageComponent),
-    data: { kind: 'payment_cancelled' }
   },
 
   // 2) Bloque con layout (header/sidebar/footer)

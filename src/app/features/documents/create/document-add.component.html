@@ -1,4 +1,15 @@
 <!-- src/app/features/documents/create/document-add.component.html -->
+<app-guide-modal
+  *ngIf="showGuideModal"
+  title="Paso 2: crea tu documento"
+  subtitle="Carga el archivo y completa los datos para dejarlo listo para firma."
+  [steps]="guideSteps"
+  primaryLabel="Listo, crear documento"
+  secondaryLabel="Cerrar"
+  (primary)="startDocumentStep()"
+  (closed)="closeGuideModal()"
+></app-guide-modal>
+
 <app-form
   [config]="formConfig"
   (submitForm)="onSubmit($event)"
