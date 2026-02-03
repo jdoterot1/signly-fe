@@ -12,6 +12,7 @@ import { LayoutComponent }          from './core/layout/layout/layout.component'
 import { DashboardComponent }       from './features/dashboard/dashboard.component';
 // importa aquí otros componentes o feature-modules que deban ir bajo el layout
 import { authGuard, authChildGuard } from './core/guards/auth.guard';
+import { paymentRedirectGuard } from './core/guards/payment-redirect.guard';
 
 export const routes: Routes = [
   // 1) Rutas públicas (sin layout)
@@ -47,15 +48,20 @@ export const routes: Routes = [
     // ePayco redirige a una sola URL; el componente resuelve el estado desde query params
     data: { kind: 'payment_pending' }
   },
-
   // 2) Bloque con layout (header/sidebar/footer)
   {
     path: '',
     component: LayoutComponent,
-    canActivate: [authGuard],
+    canActivate: [paymentRedirectGuard, authGuard],
     canActivateChild: [authChildGuard],
     children: [
       { path: 'dashboard', component: DashboardComponent },
+      {
+        path: 'billing/payment/return',
+        loadComponent: () =>
+          import('./features/status-pages/status-page.component').then(m => m.StatusPageComponent),
+        data: { kind: 'payment_pending' }
+      },
       {
         path: 'documents',
         loadChildren: () =>

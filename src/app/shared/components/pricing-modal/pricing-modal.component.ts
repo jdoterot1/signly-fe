@@ -2,9 +2,10 @@ import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { finalize } from 'rxjs/operators';
+import { finalize, switchMap } from 'rxjs/operators';
 
 import { PricingService } from '../../../core/services/pricing/pricing.service';
+import { BillingService } from '../../../core/services/billing/billing.service';
 import { PricingMeter, PricingTier } from '../../../core/models/pricing/pricing.model';
 import { AlertService } from '../../alert/alert.service';
 
@@ -22,19 +23,21 @@ export class PricingModalComponent implements OnInit {
   region = 'CO';
   currency = 'COP';
 
-  creditsQty = 250;
-  creditsMin = 50;
-  creditsMax = 2000;
-  creditsStep = 50;
+  creditsQty = 10000;
+  creditsMin = 10000;
+  creditsMax = 10000000;
+  creditsStep = 10000;
 
   meters: PricingMeter[] = [];
   purchaseMeter: PricingMeter | null = null;
   signatureMeters: PricingMeter[] = [];
 
   isLoading = false;
+  isProcessingPayment = false;
 
   constructor(
     private pricingService: PricingService,
+    private billingService: BillingService,
     private alertService: AlertService
   ) {}
 
@@ -44,6 +47,48 @@ export class PricingModalComponent implements OnInit {
 
   closeModal(): void {
     this.closed.emit();
+  }
+
+  proceedToPayment(): void {
+    if (!this.purchaseMeter || this.isProcessingPayment) {
+      return;
+    }
+
+    this.isProcessingPayment = true;
+
+    const orderRequest = {
+      order_type: 'prepaid_topup' as const,
+      currency: this.currency,
+      items: [
+        {
+          meter_code: this.purchaseMeter.meter_code,
+          quantity: this.creditsQty,
+          description: 'Recarga de créditos'
+        }
+      ]
+    };
+
+    this.billingService
+      .createOrder(orderRequest)
+      .pipe(
+        switchMap(orderResponse =>
+          this.billingService.requestPayment({ orderId: orderResponse.orderId })
+        ),
+        finalize(() => (this.isProcessingPayment = false))
+      )
+      .subscribe({
+        next: paymentResponse => {
+          if (paymentResponse.checkoutUrl) {
+            window.location.href = paymentResponse.checkoutUrl;
+          } else {
+            this.alertService.showError('No se pudo obtener la URL de pago.', 'Error');
+          }
+        },
+        error: err => {
+          const message = err instanceof Error ? err.message : 'No se pudo iniciar el proceso de pago.';
+          this.alertService.showError(message, 'Error al procesar');
+        }
+      });
   }
 
   setViewMode(mode: 'credits' | 'ondemand'): void {
@@ -172,15 +217,9 @@ export class PricingModalComponent implements OnInit {
   }
 
   private hydrateCreditsBounds(): void {
-    const tiers = this.getApplicableTiers(this.purchaseMeter);
-    const minQty = tiers.length ? tiers[0].min_qty ?? 0 : 0;
-    const last = tiers.length ? tiers[tiers.length - 1] : null;
-    const maxQty = last?.max_qty ?? null;
-
-    this.creditsMin = Math.max(50, minQty || 0);
-    this.creditsMax = maxQty ?? Math.max(this.creditsMin * 10, (last?.min_qty ?? this.creditsMin) * 4, 2000);
-    this.creditsStep = this.creditsMax >= 10000 ? 250 : this.creditsMax >= 5000 ? 100 : 50;
-
+    this.creditsMin = 10000;
+    this.creditsMax = 10000000;
+    this.creditsStep = 10000;
     this.creditsQty = this.clamp(this.creditsQty, this.creditsMin, this.creditsMax);
   }
 

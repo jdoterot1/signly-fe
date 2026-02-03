@@ -85,3 +85,46 @@ export interface BillingInvoiceDetail extends BillingInvoiceSummary {
   items?: BillingInvoiceItem[];
 }
 
+// Payment Gateway
+export interface PaymentGatewayRequest {
+  orderId: string;
+}
+
+export interface PaymentGatewayResponse {
+  amountInCents: number;
+  checkoutUrl: string;
+  currency: string;
+  orderId: string;
+  provider: string;
+  redirectUrl: string;
+  reference: string;
+  signatureIntegrity: string;
+  tenantId: string;
+}
+
+// Create Order
+export interface CreateOrderItem {
+  meter_code: string;
+  quantity: number;
+  description?: string;
+}
+
+export interface CreateOrderRequest {
+  order_type: 'prepaid_topup';
+  currency: string;
+  items: CreateOrderItem[];
+  billing_name?: string;
+  billing_email?: string;
+  billing_tax_id?: string;
+  billing_address?: string;
+  due_date?: string;
+  notes?: string;
+}
+
+export interface CreateOrderResponse {
+  orderId: string;
+  status: string;
+  totalAmount: number;
+  currency: string;
+}
+

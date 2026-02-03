@@ -330,7 +330,8 @@ export class StatusPageComponent {
     const qp = this.route.snapshot.queryParamMap
     this.orderId = qp.get("orderId") ?? qp.get("x_extra1") ?? qp.get("x_extra2")
     this.invoiceId = qp.get("invoiceId") ?? qp.get("x_id_invoice") ?? qp.get("x_id_factura")
-    this.reference = qp.get("reference") ?? qp.get("ref_payco") ?? qp.get("x_ref_payco")
+    // Wompi uses 'id' for transaction reference
+    this.reference = qp.get("reference") ?? qp.get("ref_payco") ?? qp.get("x_ref_payco") ?? qp.get("id")
     this.reason =
       qp.get("reason") ??
       qp.get("x_response_reason_text") ??
@@ -365,6 +366,15 @@ export class StatusPageComponent {
       if (trState === "3") return "payment_pending"
       if (trState === "2") return "payment_failed"
       if (trState === "4") return "payment_cancelled"
+    }
+
+    // Wompi status handling
+    const wompiStatus = qp.get("transaction_status")?.toLowerCase()
+    if (wompiStatus) {
+      if (wompiStatus === "approved") return "payment_success"
+      if (wompiStatus === "pending") return "payment_pending"
+      if (wompiStatus === "declined" || wompiStatus === "error") return "payment_failed"
+      if (wompiStatus === "voided") return "payment_cancelled"
     }
 
     const responseText = (qp.get("x_response") ?? qp.get("x_respuesta") ?? "").toLowerCase()
@@ -448,45 +458,45 @@ export class StatusPageComponent {
         secondaryCtaLink: "/administration/billing",
       },
       payment_success: {
-        eyebrow: "Pago",
-        title: "Pago confirmado",
-        description: "¡Listo! Tu pago fue procesado correctamente. Si compraste créditos, verás la orden registrada.",
+        eyebrow: "Pago exitoso",
+        title: "¡Pago confirmado!",
+        description: "Tu pago fue procesado correctamente. Los créditos ya están disponibles en tu cuenta.",
         tone: "success",
-        primaryCtaLabel: "Ver órdenes",
-        primaryCtaLink: "/administration/orders",
-        secondaryCtaLabel: "Ver facturas",
-        secondaryCtaLink: "/administration/invoices",
+        primaryCtaLabel: "Volver a la app",
+        primaryCtaLink: "/dashboard",
+        secondaryCtaLabel: "Ver mis órdenes",
+        secondaryCtaLink: "/administration/orders",
       },
       payment_pending: {
-        eyebrow: "Pago",
+        eyebrow: "Pago en proceso",
         title: "Pago pendiente",
-        description: "Tu pago está en proceso. Te avisaremos cuando se confirme. Puedes revisar el estado en tus órdenes.",
+        description: "Tu pago está siendo procesado. Te notificaremos cuando se confirme. Puedes revisar el estado en tus órdenes.",
         tone: "warning",
-        primaryCtaLabel: "Ver órdenes",
-        primaryCtaLink: "/administration/orders",
-        secondaryCtaLabel: "Ir a facturación",
-        secondaryCtaLink: "/administration/billing",
+        primaryCtaLabel: "Volver a la app",
+        primaryCtaLink: "/dashboard",
+        secondaryCtaLabel: "Ver mis órdenes",
+        secondaryCtaLink: "/administration/orders",
       },
       payment_failed: {
-        eyebrow: "Pago",
-        title: "Pago rechazado",
+        eyebrow: "Pago rechazado",
+        title: "No pudimos procesar el pago",
         description:
-          "No pudimos confirmar el pago. Revisa los datos de la tarjeta o intenta con otro método. Si el cobro aparece, contáctanos.",
+          "El pago fue rechazado. Verifica los datos de tu tarjeta o intenta con otro método de pago.",
         tone: "danger",
-        primaryCtaLabel: "Volver a créditos",
+        primaryCtaLabel: "Intentar de nuevo",
         primaryCtaLink: "/dashboard",
-        secondaryCtaLabel: "Ver órdenes",
+        secondaryCtaLabel: "Ver mis órdenes",
         secondaryCtaLink: "/administration/orders",
       },
       payment_cancelled: {
-        eyebrow: "Pago",
-        title: "Pago cancelado",
-        description: "La operación se canceló antes de completarse. Si fue un error, puedes intentarlo de nuevo.",
+        eyebrow: "Pago cancelado",
+        title: "Cancelaste el pago",
+        description: "La operación fue cancelada. Puedes intentarlo de nuevo cuando quieras.",
         tone: "info",
-        primaryCtaLabel: "Volver a créditos",
+        primaryCtaLabel: "Intentar de nuevo",
         primaryCtaLink: "/dashboard",
-        secondaryCtaLabel: "Ir a facturación",
-        secondaryCtaLink: "/administration/billing",
+        secondaryCtaLabel: "Ver mis órdenes",
+        secondaryCtaLink: "/administration/orders",
       },
     }
 

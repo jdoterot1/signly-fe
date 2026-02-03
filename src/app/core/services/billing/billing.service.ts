@@ -6,7 +6,16 @@ import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse } from '../../models/auth/auth-session.model';
 import { AuthService } from '../auth/auth.service';
-import { BillingInvoiceDetail, BillingInvoiceSummary, BillingOrderDetail, BillingOrderSummary } from '../../models/billing/billing.model';
+import {
+  BillingInvoiceDetail,
+  BillingInvoiceSummary,
+  BillingOrderDetail,
+  BillingOrderSummary,
+  CreateOrderRequest,
+  CreateOrderResponse,
+  PaymentGatewayRequest,
+  PaymentGatewayResponse
+} from '../../models/billing/billing.model';
 
 @Injectable({
   providedIn: 'root'
@@ -47,6 +56,28 @@ export class BillingService {
     return this.executeWithHeaders(headers =>
       this.http
         .get<ApiResponse<BillingInvoiceDetail>>(`${this.baseUrl}/billing/invoices/${invoiceId}`, { headers })
+        .pipe(
+          map(res => res.data),
+          catchError(err => this.handleError(err))
+        )
+    );
+  }
+
+  createOrder(request: CreateOrderRequest): Observable<CreateOrderResponse> {
+    return this.executeWithHeaders(headers =>
+      this.http
+        .post<ApiResponse<CreateOrderResponse>>(`${this.baseUrl}/billing/orders`, request, { headers })
+        .pipe(
+          map(res => res.data),
+          catchError(err => this.handleError(err))
+        )
+    );
+  }
+
+  requestPayment(request: PaymentGatewayRequest): Observable<PaymentGatewayResponse> {
+    return this.executeWithHeaders(headers =>
+      this.http
+        .post<ApiResponse<PaymentGatewayResponse>>(`${this.baseUrl}/payment-gateway/request`, request, { headers })
         .pipe(
           map(res => res.data),
           catchError(err => this.handleError(err))

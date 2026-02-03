@@ -44,7 +44,7 @@
     </div>
 
     <!-- Body -->
-    <div class="px-6 py-5 space-y-5 max-h-[75vh] overflow-y-auto">
+    <div class="px-6 py-5 space-y-5 max-h-[60vh] overflow-y-auto">
       <div class="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4">
         <p class="text-sm text-gray-700">
           <span class="font-semibold">1 crédito = 1 peso colombiano (COP)</span> dentro de la plataforma.
@@ -88,17 +88,20 @@
                   <p class="text-xs text-gray-500">Créditos seleccionados</p>
                   <p class="text-3xl font-semibold text-gray-900">{{ formatCredits(creditsQty) }}</p>
                 </div>
-                <div class="w-40">
-                  <label class="text-xs text-gray-500">Editar</label>
-                  <input
-                    type="number"
-                    class="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
-                    [min]="creditsMin"
-                    [max]="creditsMax"
-                    [step]="creditsStep"
-                    [(ngModel)]="creditsQty"
-                    (ngModelChange)="onCreditsQtyChange($event)"
-                  />
+                <div class="w-48">
+                  <label class="text-xs text-gray-500">Editar (COP)</label>
+                  <div class="relative mt-1">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">$</span>
+                    <input
+                      type="number"
+                      class="w-full rounded-xl border border-gray-300 pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+                      [min]="creditsMin"
+                      [max]="creditsMax"
+                      [step]="creditsStep"
+                      [(ngModel)]="creditsQty"
+                      (ngModelChange)="onCreditsQtyChange($event)"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -300,26 +303,52 @@
           </button>
         </section>
       </ng-container>
+    </div>
 
-      <!-- Footer -->
-      <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+    <!-- Footer (fixed at bottom) -->
+    <div class="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-white">
+      <div class="flex items-center gap-3">
         <button
           type="button"
-          class="text-sm font-semibold text-indigo-600 hover:underline"
+          class="px-6 py-2.5 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition"
+          (click)="closeModal()"
+        >
+          Cancelar
+        </button>
+        <a
+          class="text-sm font-semibold text-gray-500 hover:text-gray-700 hover:underline"
           routerLink="/administration/pricing"
           (click)="closeModal()"
         >
-          Ver precios en administración
-        </button>
-
-        <button
-          type="button"
-          class="px-8 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition"
-          (click)="closeModal()"
-        >
-          Cerrar
-        </button>
+          Ver precios
+        </a>
       </div>
+
+      <button
+        *ngIf="viewMode === 'credits'"
+        type="button"
+        class="px-8 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        [disabled]="isProcessingPayment || !hasPurchasePricing"
+        (click)="proceedToPayment()"
+      >
+        <svg *ngIf="isProcessingPayment" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        {{ isProcessingPayment ? 'Procesando...' : 'Ir a pagar' }}
+        <svg *ngIf="!isProcessingPayment" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+        </svg>
+      </button>
+
+      <button
+        *ngIf="viewMode === 'ondemand'"
+        type="button"
+        class="px-8 py-2.5 rounded-lg bg-gray-600 text-white text-sm font-semibold hover:bg-gray-700 transition"
+        (click)="closeModal()"
+      >
+        Cerrar
+      </button>
     </div>
   </div>
 </div>
