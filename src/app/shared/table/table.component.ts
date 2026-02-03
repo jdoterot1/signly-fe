@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TooltipModule } from 'primeng/tooltip';
 import {
   TableModel,
   TableConfig,
@@ -29,7 +30,7 @@ interface TableState<T> {
 @Component({
   selector: 'app-table',
   standalone: true,
-  imports: [CommonModule, FormsModule, TableFiltersModalComponent],
+  imports: [CommonModule, FormsModule, TooltipModule, TableFiltersModalComponent],
   templateUrl: './table.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -290,6 +291,28 @@ export class TableComponent<T = any> implements OnChanges {
 
   getCellValue(row: T, key: string): any {
     return (row as any)?.[key];
+  }
+
+  truncateLimitForKey(key: string): number | null {
+    switch (key) {
+      case 'description':
+      case 'createdBy':
+        return 10;
+      case 'path':
+      case 'actor':
+      case 'resource':
+        return 10;
+      default:
+        return null;
+    }
+  }
+
+  isTruncatableKey(key: string): boolean {
+    return this.truncateLimitForKey(key) !== null;
+  }
+
+  asText(value: unknown): string {
+    return value == null ? '' : String(value);
   }
 
   visibleColumnsCount(): number {

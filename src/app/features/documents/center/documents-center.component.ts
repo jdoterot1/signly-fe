@@ -13,22 +13,13 @@ import { DocumentListComponent } from '../list/document-list.component';
   templateUrl: './documents-center.component.html'
 })
 export class DocumentsCenterComponent implements OnInit, OnDestroy {
-  readonly ownerName = 'Centro de acuerdos';
+  readonly ownerName = 'Centro de documentos';
   readonly accountId = 'ACD-2048';
   readonly sidebarSections: AdminSidebarSection[] = [
     {
-      label: 'Por tipo',
+      label: 'Acuerdos',
       items: [
-        { label: 'Opción 1' },
-        { label: 'Opción 2' },
-        { label: 'Opción 3' }
-      ]
-    },
-    {
-      label: 'Por estado',
-      items: [
-        { label: 'Opción 4' },
-        { label: 'Opción 5' }
+        { label: 'Todos' }
       ]
     }
   ];

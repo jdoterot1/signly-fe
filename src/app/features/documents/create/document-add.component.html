@@ -12,6 +12,8 @@
 
 <app-form
   [config]="formConfig"
+  [form]="form"
+  [initialData]="formInitialValues"
   (submitForm)="onSubmit($event)"
   (cancelForm)="onCancel()"
 ></app-form>

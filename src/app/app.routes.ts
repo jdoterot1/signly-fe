@@ -27,6 +27,11 @@ export const routes: Routes = [
     loadChildren: () =>
       import('./core/modules/process/process.module').then(m => m.ProcessModule)
   },
+  {
+    path: 'flow',
+    loadChildren: () =>
+      import('./core/modules/flow/flow.module').then(m => m.FlowModule)
+  },
 
   // 1.1) Pantallas de estado (sin header/footer)
   {

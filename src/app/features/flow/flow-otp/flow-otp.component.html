@@ -1,0 +1,177 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-indigo-50/30 relative overflow-hidden">
+  <div class="absolute -top-32 -right-24 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl"></div>
+  <div class="absolute -bottom-24 -left-16 h-64 w-64 rounded-full bg-indigo-200/40 blur-3xl"></div>
+
+  <header class="relative z-10 flex items-center justify-between px-6 py-5">
+    <div class="flex items-center gap-3">
+      <img src="assets/icons/sidebar/ApoloLogo.svg" alt="Signly" class="h-8 w-8" />
+      <span class="text-sm font-semibold text-slate-700">Signly</span>
+    </div>
+    <button class="text-xs font-semibold text-slate-500 hover:text-slate-700 transition" type="button">
+      Necesitas ayuda?
+    </button>
+  </header>
+
+  <main class="relative z-10 flex items-center justify-center px-4 py-10">
+    <section class="w-full max-w-md rounded-3xl bg-white/80 backdrop-blur-xl border border-white shadow-2xl shadow-blue-100/60 p-8 md:p-12">
+
+      <!-- Sending Step -->
+      <div *ngIf="currentStep === 'sending'" class="flex flex-col items-center text-center gap-6">
+        <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+          <i class="pi pi-spin pi-spinner text-2xl text-blue-600"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-semibold text-slate-900">Enviando codigo</h1>
+          <p class="mt-2 text-sm text-slate-500">Enviando codigo de verificacion a tu {{ getChannelLabel() }}...</p>
+        </div>
+      </div>
+
+      <!-- Input Step -->
+      <div *ngIf="currentStep === 'input'" class="flex flex-col items-center text-center gap-6">
+        <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+          <i class="pi text-2xl text-blue-600" [ngClass]="getChannelIcon()"></i>
+        </div>
+
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.35em] text-blue-600">Verificacion</p>
+          <h1 class="mt-3 text-2xl font-semibold text-slate-900">Ingresa el codigo</h1>
+          <p class="mt-2 text-sm text-slate-500">
+            Hemos enviado un codigo de 6 digitos a<br />
+            <span class="font-medium text-slate-700">{{ maskedContact }}</span>
+          </p>
+        </div>
+
+        <!-- OTP Input Fields -->
+        <form [formGroup]="otpForm" class="w-full">
+          <div class="flex justify-center gap-2 sm:gap-3">
+            <input #otpInput
+                   type="text"
+                   inputmode="numeric"
+                   maxlength="1"
+                   formControlName="otp1"
+                   (keyup)="onKeyUp($event, 0)"
+                   (paste)="onPaste($event)"
+                   class="w-11 h-14 text-center text-xl font-semibold border rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                   [ngClass]="f['otp1'].errors && f['otp1'].touched ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-white'" />
+            <input #otpInput
+                   type="text"
+                   inputmode="numeric"
+                   maxlength="1"
+                   formControlName="otp2"
+                   (keyup)="onKeyUp($event, 1)"
+                   class="w-11 h-14 text-center text-xl font-semibold border rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                   [ngClass]="f['otp2'].errors && f['otp2'].touched ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-white'" />
+            <input #otpInput
+                   type="text"
+                   inputmode="numeric"
+                   maxlength="1"
+                   formControlName="otp3"
+                   (keyup)="onKeyUp($event, 2)"
+                   class="w-11 h-14 text-center text-xl font-semibold border rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                   [ngClass]="f['otp3'].errors && f['otp3'].touched ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-white'" />
+
+            <span class="flex items-center text-slate-300">-</span>
+
+            <input #otpInput
+                   type="text"
+                   inputmode="numeric"
+                   maxlength="1"
+                   formControlName="otp4"
+                   (keyup)="onKeyUp($event, 3)"
+                   class="w-11 h-14 text-center text-xl font-semibold border rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                   [ngClass]="f['otp4'].errors && f['otp4'].touched ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-white'" />
+            <input #otpInput
+                   type="text"
+                   inputmode="numeric"
+                   maxlength="1"
+                   formControlName="otp5"
+                   (keyup)="onKeyUp($event, 4)"
+                   class="w-11 h-14 text-center text-xl font-semibold border rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                   [ngClass]="f['otp5'].errors && f['otp5'].touched ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-white'" />
+            <input #otpInput
+                   type="text"
+                   inputmode="numeric"
+                   maxlength="1"
+                   formControlName="otp6"
+                   (keyup)="onKeyUp($event, 5)"
+                   class="w-11 h-14 text-center text-xl font-semibold border rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                   [ngClass]="f['otp6'].errors && f['otp6'].touched ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-white'" />
+          </div>
+
+          <!-- Error Message -->
+          <p *ngIf="error" class="mt-4 text-sm text-red-600 text-center">{{ error }}</p>
+        </form>
+
+        <!-- Resend Option -->
+        <div class="text-center">
+          <p *ngIf="countdown > 0" class="text-sm text-slate-500">
+            Puedes reenviar el codigo en <span class="font-medium text-slate-700">{{ formatCountdown() }}</span>
+          </p>
+          <button *ngIf="countdown === 0"
+                  (click)="resendOtp()"
+                  class="text-sm font-semibold text-blue-600 hover:text-blue-700 transition">
+            Reenviar codigo
+          </button>
+        </div>
+
+        <!-- Verify Button -->
+        <button (click)="verifyOtp()"
+                [disabled]="otpForm.invalid || loading"
+                class="w-full rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-200/60 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+          Verificar codigo
+        </button>
+
+        <!-- Info -->
+        <p class="text-xs text-slate-400">
+          El codigo expira en 5 minutos
+        </p>
+      </div>
+
+      <!-- Verifying Step -->
+      <div *ngIf="currentStep === 'verifying'" class="flex flex-col items-center text-center gap-6">
+        <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+          <i class="pi pi-spin pi-spinner text-2xl text-blue-600"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-semibold text-slate-900">Verificando</h1>
+          <p class="mt-2 text-sm text-slate-500">Validando tu codigo de verificacion...</p>
+        </div>
+      </div>
+
+      <!-- Success Step -->
+      <div *ngIf="currentStep === 'success'" class="flex flex-col items-center text-center gap-6">
+        <div class="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+          <i class="pi pi-check text-2xl text-green-600"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-semibold text-slate-900">Codigo verificado</h1>
+          <p class="mt-2 text-sm text-slate-500">Tu identidad ha sido verificada correctamente.</p>
+        </div>
+        <p class="text-sm text-slate-400">Redirigiendo al siguiente paso...</p>
+      </div>
+
+      <!-- Error Step -->
+      <div *ngIf="currentStep === 'error'" class="flex flex-col items-center text-center gap-6">
+        <div class="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
+          <i class="pi pi-times text-2xl text-red-600"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-semibold text-slate-900">Error</h1>
+          <p class="mt-2 text-sm text-slate-500">{{ error }}</p>
+        </div>
+
+        <div class="flex gap-3">
+          <button (click)="goBack()"
+                  class="rounded-full border border-slate-200 px-6 py-2 text-sm font-semibold text-slate-600 hover:border-slate-300">
+            Volver
+          </button>
+          <button (click)="sendOtp()"
+                  class="rounded-full bg-blue-600 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200/60 hover:bg-blue-700">
+            Reintentar
+          </button>
+        </div>
+      </div>
+
+    </section>
+  </main>
+</div>

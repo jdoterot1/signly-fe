@@ -3,7 +3,6 @@ import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule }         from '@angular/common';
 import { RouterModule, Router, NavigationExtras } from '@angular/router';
 import { FormsModule }          from '@angular/forms';
-
 import { TableComponent }       from '../../../shared/table/table.component';
 import { TableModel }           from '../../../shared/table/table.model';
 import { TemplateService }      from '../../../core/services/templates/template.service';
@@ -54,14 +53,14 @@ export class TemplateListComponent implements OnInit {
         actions: [
           {
             label: '',
-            icon: 'assets/icons/tables/Pdf.svg',
-            tooltip: 'Download PDF',
-            handler: row => this.onDownload(row)
+            icon: 'assets/icons/tables/view.svg',
+            tooltip: 'Visualizar',
+            handler: row => this.onView(row)
           },
           {
             label: '',
             icon: 'assets/icons/tables/Edit.svg',
-            tooltip: 'Edit',
+            tooltip: 'Editar',
             handler: row => this.onEdit(row)
           },
           {
@@ -100,14 +99,12 @@ export class TemplateListComponent implements OnInit {
       });
   }
 
-  onDownload(row: TemplateRow) {
-    console.log('Download PDF for', row);
-    // navegar o invocar descarga...
+  onView(row: TemplateRow) {
+    this.router.navigate(['/templates', row.id], this.navigationExtras());
   }
 
   onEdit(row: TemplateRow) {
-    console.log('Edit', row);
-    // router.navigate...
+    this.router.navigate(['/templates', row.id, 'edit'], this.navigationExtras());
   }
 
   onDelete(row: TemplateRow) {
@@ -126,4 +123,5 @@ export class TemplateListComponent implements OnInit {
     }
     return { queryParams: { returnTo: this.returnTo } };
   }
+
 }

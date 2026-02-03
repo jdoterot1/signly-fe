@@ -59,8 +59,8 @@ export class DocumentListComponent implements OnInit {
         actions: [
           {
             label: '',
-            icon: 'assets/icons/tables/Pdf.svg',
-            tooltip: 'Ver documento',
+            icon: 'assets/icons/tables/view.svg',
+            tooltip: 'Visualizar',
             handler: row => this.onView(row)
           },
           {
@@ -103,7 +103,7 @@ export class DocumentListComponent implements OnInit {
   }
 
   onView(row: DocumentRow) {
-    console.log('Ver documento', row);
+    this.router.navigate(['/documents', row.id], this.navigationExtras());
   }
 
   onEdit(row: DocumentRow) {

@@ -1,11 +1,16 @@
 // src/app/features/templates/create/template-add.component.ts
 import { CommonModule } from '@angular/common';
 import { Component, ViewChild, inject } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 import { TemplateService } from '../../../core/services/templates/template.service';
-import { Template } from '../../../core/models/templates/template.model';
+import type {
+  CreateTemplateRequest,
+  TemplateApi,
+  TemplateField
+} from '../../../core/models/templates/template.model';
 import { AlertService } from '../../../shared/alert/alert.service';
 import { DocumentMapperComponent } from '../../document-mapper/document-mapper.component';
 import { GuideModalComponent } from '../../../shared/components/guide-modal/guide-modal.component';
@@ -22,6 +27,7 @@ export class TemplateCreateComponent {
   private mapperComponent?: DocumentMapperComponent;
 
   private readonly fb = inject(FormBuilder);
+  private readonly http = inject(HttpClient);
 
   readonly stepForm = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(120)]],
@@ -29,8 +35,18 @@ export class TemplateCreateComponent {
   });
   currentStep: 1 | 2 = 1;
   isSaving = false;
+  isUploadingPdf = false;
   private readonly returnTo: string | null;
   private uploadedFile?: File;
+  private pdfToUpload?: File;
+  templateId: string | null = null;
+  versions: Array<{ name: string; code: string }> = [];
+  readonly versionControl = this.fb.control<string | null>(null, [Validators.required]);
+
+  readonly fieldsForm = this.fb.group({
+    fields: this.fb.array([] as any[])
+  });
+
   showGuideModal = false;
   guideSteps: GuideStep[] = [];
   private readonly isGuidedFlow: boolean;
@@ -49,6 +65,25 @@ export class TemplateCreateComponent {
       this.guideSteps = this.guideFlow.getSteps('template');
       this.showGuideModal = true;
     }
+
+    const templateIdParam = this.route.snapshot.queryParamMap.get('templateId');
+    if (templateIdParam) {
+      this.templateId = templateIdParam;
+      // Start in step 2 when editing a template.
+      this.currentStep = 2;
+      const versionParam = this.normalizeVersion(this.route.snapshot.queryParamMap.get('templateVersion'));
+      if (versionParam) {
+        this.versionControl.setValue(versionParam, { emitEvent: false });
+      }
+      this.bootstrapExistingTemplate();
+    }
+
+    this.versionControl.valueChanges.subscribe(version => {
+      if (!this.templateId || !version) {
+        return;
+      }
+      this.loadTemplateVersion(version);
+    });
   }
 
   goToStepTwo(): void {
@@ -56,34 +91,26 @@ export class TemplateCreateComponent {
       this.stepForm.markAllAsTouched();
       return;
     }
-    this.currentStep = 2;
-  }
-
-  goBackToStepOne(): void {
-    this.currentStep = 1;
-  }
-
-  saveTemplate(): void {
-    if (this.stepForm.invalid || this.isSaving) {
-      this.stepForm.markAllAsTouched();
+    if (this.templateId) {
+      this.currentStep = 2;
       return;
     }
 
     const { name, description } = this.stepForm.getRawValue();
-    const payload: Template = {
-      name,
-      description,
-      language: 'Spanish',
-      status: 'Pending',
-      creationDate: new Date(),
-      createdBy: 'System Admin'
-    } as Template;
+    const payload: CreateTemplateRequest = {
+      templateName: name,
+      description: description || undefined
+    };
 
     this.isSaving = true;
     this.templateService.createTemplate(payload).subscribe({
-      next: () => {
-        this.alertService.showSuccess('La plantilla fue creada exitosamente', '¡Plantilla creada!');
-        setTimeout(() => this.navigateAfterSave(), 2600);
+      next: tpl => {
+        this.templateId = tpl.templateId;
+        const v = this.extractVersion(tpl.templateVersion) ?? this.normalizeVersion(String(tpl.version)) ?? '0001';
+        this.versionControl.setValue(v, { emitEvent: false });
+        this.currentStep = 2;
+        this.alertService.showSuccess('Plantilla creada. Ahora puedes configurar versiones, PDF y campos.', '¡Listo!');
+        this.loadHistoryAndFields();
       },
       error: err => {
         this.isSaving = false;
@@ -94,6 +121,20 @@ export class TemplateCreateComponent {
         this.isSaving = false;
       }
     });
+  }
+
+  goBackToStepOne(): void {
+    this.currentStep = 1;
+  }
+
+  saveTemplate(): void {
+    if (this.isSaving) {
+      this.stepForm.markAllAsTouched();
+      return;
+    }
+
+    // Finish template setup by persisting fields and returning to the flow.
+    this.saveFields(true);
   }
 
   onCancel(): void {
@@ -136,11 +177,277 @@ export class TemplateCreateComponent {
     }
   }
 
+  onPdfSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    this.pdfToUpload = file ?? undefined;
+    input.value = '';
+  }
+
+  downloadPdf(): void {
+    if (!this.templateId) {
+      this.alertService.showError('Primero crea la plantilla para poder descargar el PDF.', 'Error');
+      return;
+    }
+    const version = this.versionControl.value;
+    if (!version) {
+      this.alertService.showError('Selecciona una versión', 'Error');
+      return;
+    }
+    this.templateService.getTemplateDownloadUrl(this.templateId, version).subscribe({
+      next: res => window.open(res.downloadUrl, '_blank', 'noopener,noreferrer'),
+      error: err => {
+        console.error('No se pudo generar el download URL', err);
+        this.alertService.showError('No se pudo generar el link de descarga.', 'Error');
+      }
+    });
+  }
+
+  uploadPdf(): void {
+    if (!this.templateId) {
+      this.alertService.showError('Primero crea la plantilla para poder subir el PDF.', 'Error');
+      return;
+    }
+    const version = this.versionControl.value;
+    if (!version) {
+      this.alertService.showError('Selecciona una versión', 'Error');
+      return;
+    }
+    const file = this.pdfToUpload ?? this.uploadedFile;
+    if (!file) {
+      this.alertService.showError('Selecciona un archivo PDF para subir.', 'Error');
+      return;
+    }
+    if (!this.isPdf(file)) {
+      this.alertService.showError('El archivo a subir debe ser PDF.', 'Error');
+      return;
+    }
+    if (this.isUploadingPdf) {
+      return;
+    }
+    this.isUploadingPdf = true;
+    this.templateService.getTemplateUploadUrl(this.templateId, version).subscribe({
+      next: res => {
+        const headers = new HttpHeaders().set('Content-Type', file.type || 'application/pdf');
+        this.http.put(res.uploadUrl, file, { headers, responseType: 'text' }).subscribe({
+          next: () => {
+            this.alertService.showSuccess('Archivo subido correctamente', '¡PDF actualizado!');
+            this.pdfToUpload = undefined;
+          },
+          error: err => {
+            console.error('No se pudo subir el PDF al presigned URL', err);
+            this.alertService.showError('No se pudo subir el archivo (revisa CORS/permisos).', 'Error');
+          },
+          complete: () => {
+            this.isUploadingPdf = false;
+          }
+        });
+      },
+      error: err => {
+        console.error('No se pudo generar el upload URL', err);
+        this.alertService.showError('No se pudo generar el link de subida.', 'Error');
+        this.isUploadingPdf = false;
+      }
+    });
+  }
+
+  get fieldsArray(): FormArray {
+    return this.fieldsForm.get('fields') as FormArray;
+  }
+
+  addField(): void {
+    this.fieldsArray.push(
+      this.fb.group({
+        page: ['1', [Validators.required]],
+        x: ['0', [Validators.required]],
+        y: ['0', [Validators.required]],
+        width: ['200', [Validators.required]],
+        height: ['50', [Validators.required]],
+        fieldName: ['', [Validators.required]],
+        fieldType: ['sign', [Validators.required]],
+        fieldCode: ['3', [Validators.required]]
+      })
+    );
+  }
+
+  removeField(index: number): void {
+    this.fieldsArray.removeAt(index);
+  }
+
+  saveFields(navigateAfter = false): void {
+    if (!this.templateId) {
+      this.alertService.showError('Primero crea la plantilla para poder guardar campos.', 'Error');
+      return;
+    }
+    const fields = this.serializeFields();
+    this.isSaving = true;
+    this.templateService.updateTemplateFields(this.templateId, fields).subscribe({
+      next: () => {
+        this.alertService.showSuccess('Campos guardados correctamente', '¡Actualizado!');
+        if (navigateAfter) {
+          setTimeout(() => this.navigateAfterSave(), 900);
+        }
+      },
+      error: err => {
+        console.error('No se pudieron guardar los campos', err);
+        this.alertService.showError('No se pudieron guardar los campos.', 'Error');
+      },
+      complete: () => {
+        this.isSaving = false;
+      }
+    });
+  }
+
   openDocumentPicker(): void {
     this.mapperComponent?.openFilePicker();
   }
 
   get selectedFile(): File | undefined {
     return this.uploadedFile;
+  }
+
+  get selectedPdfName(): string {
+    return this.pdfToUpload?.name || this.uploadedFile?.name || 'Sin PDF seleccionado';
+  }
+
+  private bootstrapExistingTemplate(): void {
+    if (!this.templateId) {
+      return;
+    }
+    this.loadHistoryAndFields();
+    // If version is already selected, load its data. Otherwise load last version.
+    const version = this.versionControl.value;
+    if (version) {
+      this.loadTemplateVersion(version);
+    } else {
+      this.templateService.getTemplateDetail(this.templateId).subscribe({
+        next: tpl => {
+          const v = this.extractVersion(tpl.templateVersion) ?? this.normalizeVersion(String(tpl.version)) ?? null;
+          if (v) {
+            this.versionControl.setValue(v, { emitEvent: true });
+          }
+          this.stepForm.patchValue({
+            name: tpl.templateName,
+            description: tpl.description ?? ''
+          });
+        },
+        error: err => {
+          console.error('No se pudo cargar la plantilla', err);
+        }
+      });
+    }
+  }
+
+  private loadHistoryAndFields(): void {
+    if (!this.templateId) {
+      return;
+    }
+    this.templateService.getTemplateHistory(this.templateId).subscribe({
+      next: history => {
+        this.versions = this.buildVersionOptions(history);
+        if (!this.versionControl.value && this.versions.length) {
+          this.versionControl.setValue(this.versions[0].code, { emitEvent: true });
+        }
+      },
+      error: err => {
+        console.warn('No se pudo cargar el historial de versiones', err);
+      }
+    });
+
+    this.templateService.getTemplateFields(this.templateId).subscribe({
+      next: fields => this.setFields(fields),
+      error: err => console.warn('No se pudieron cargar los fields', err)
+    });
+  }
+
+  private loadTemplateVersion(version: string): void {
+    if (!this.templateId) {
+      return;
+    }
+    this.templateService.getTemplateVersion(this.templateId, version).subscribe({
+      next: tpl => {
+        // When switching versions, show name/description from that version in step 1.
+        this.stepForm.patchValue({
+          name: tpl.templateName,
+          description: tpl.description ?? ''
+        });
+      },
+      error: err => console.error('No se pudo cargar la versión del template', err)
+    });
+  }
+
+  private setFields(fields: TemplateField[]): void {
+    while (this.fieldsArray.length) {
+      this.fieldsArray.removeAt(0);
+    }
+    fields.forEach(f => {
+      this.fieldsArray.push(
+        this.fb.group({
+          page: [String(f.page), [Validators.required]],
+          x: [String(f.x), [Validators.required]],
+          y: [String(f.y), [Validators.required]],
+          width: [String(f.width), [Validators.required]],
+          height: [String(f.height), [Validators.required]],
+          fieldName: [f.fieldName, [Validators.required]],
+          fieldType: [f.fieldType, [Validators.required]],
+          fieldCode: [String(f.fieldCode), [Validators.required]]
+        })
+      );
+    });
+  }
+
+  private serializeFields(): TemplateField[] {
+    const raw = this.fieldsArray.getRawValue() as any[];
+    return raw.map(f => ({
+      page: f.page,
+      x: f.x,
+      y: f.y,
+      width: f.width,
+      height: f.height,
+      fieldName: f.fieldName,
+      fieldType: f.fieldType,
+      fieldCode: f.fieldCode
+    }));
+  }
+
+  private buildVersionOptions(history: TemplateApi[]): Array<{ name: string; code: string }> {
+    const versions = history
+      .map(item => this.extractVersion(item.templateVersion))
+      .filter((v): v is string => !!v)
+      .map(v => ({ name: v, code: v }));
+    const unique = Array.from(new Map(versions.map(v => [v.code, v])).values());
+    unique.sort((a, b) => b.code.localeCompare(a.code));
+    return unique;
+  }
+
+  private extractVersion(templateVersion: string | null | undefined): string | null {
+    if (!templateVersion) {
+      return null;
+    }
+    if (templateVersion.includes('#')) {
+      const v = templateVersion.split('#')[1];
+      return v?.trim() ? v.trim() : null;
+    }
+    return null;
+  }
+
+  private normalizeVersion(raw: string | null | undefined): string | null {
+    if (!raw) {
+      return null;
+    }
+    const normalized = raw.includes('#') ? raw.split('#')[1] : raw;
+    const trimmed = normalized.trim();
+    if (!trimmed) {
+      return null;
+    }
+    const asNum = Number(trimmed);
+    if (Number.isFinite(asNum)) {
+      return String(Math.trunc(asNum)).padStart(4, '0');
+    }
+    return trimmed;
+  }
+
+  private isPdf(file: File): boolean {
+    return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
   }
 }

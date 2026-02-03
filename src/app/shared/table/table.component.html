@@ -97,13 +97,15 @@
                     </div>
                   </ng-container>
                   <ng-container *ngSwitchDefault>
-                    <ng-container *ngIf="col.key === 'path' || col.key === 'actor' || col.key === 'resource'; else defaultCell">
+                    <ng-container *ngIf="isTruncatableKey(col.key); else defaultCell">
                       <span
                         class="inline-block max-w-xs truncate align-middle cursor-help"
-                        [attr.title]="getCellValue(row, col.key)"
+                        [pTooltip]="asText(getCellValue(row, col.key))"
+                        tooltipPosition="top"
+                        [tooltipDisabled]="asText(getCellValue(row, col.key)).length <= (truncateLimitForKey(col.key) ?? 0)"
                       >
-                        {{ getCellValue(row, col.key) | slice:0:10 }}
-                        <ng-container *ngIf="(getCellValue(row, col.key) || '').length > 10">...</ng-container>
+                        {{ asText(getCellValue(row, col.key)) | slice:0:(truncateLimitForKey(col.key) ?? 0) }}
+                        <ng-container *ngIf="asText(getCellValue(row, col.key)).length > (truncateLimitForKey(col.key) ?? 0)">...</ng-container>
                       </span>
                     </ng-container>
                     <ng-template #defaultCell>

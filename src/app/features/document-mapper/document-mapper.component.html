@@ -25,14 +25,7 @@
       >
         Cargar archivo
       </button>
-      <button
-        type="button"
-        class="inline-flex items-center px-4 py-1.5 rounded-full bg-[#2b0f60] text-white font-semibold text-xs hover:bg-[#25134e]"
-        (click)="downloadHtml()"
-        [disabled]="!selectedFile"
-      >
-        Descargar HTML
-      </button>
+      <ng-content select="[mapper-actions]"></ng-content>
     </div>
   </header>
 
