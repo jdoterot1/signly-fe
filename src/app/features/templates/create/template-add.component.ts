@@ -1,16 +1,12 @@
 // src/app/features/templates/create/template-add.component.ts
 import { CommonModule } from '@angular/common';
 import { Component, ViewChild, inject } from '@angular/core';
-import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 import { TemplateService } from '../../../core/services/templates/template.service';
-import type {
-  CreateTemplateRequest,
-  TemplateApi,
-  TemplateField
-} from '../../../core/models/templates/template.model';
+import type { CreateTemplateRequest, TemplateApi, TemplateField } from '../../../core/models/templates/template.model';
 import { AlertService } from '../../../shared/alert/alert.service';
 import { DocumentMapperComponent } from '../../document-mapper/document-mapper.component';
 import { GuideModalComponent } from '../../../shared/components/guide-modal/guide-modal.component';
@@ -42,10 +38,6 @@ export class TemplateCreateComponent {
   templateId: string | null = null;
   versions: Array<{ name: string; code: string }> = [];
   readonly versionControl = this.fb.control<string | null>(null, [Validators.required]);
-
-  readonly fieldsForm = this.fb.group({
-    fields: this.fb.array([] as any[])
-  });
 
   showGuideModal = false;
   guideSteps: GuideStep[] = [];
@@ -91,36 +83,7 @@ export class TemplateCreateComponent {
       this.stepForm.markAllAsTouched();
       return;
     }
-    if (this.templateId) {
-      this.currentStep = 2;
-      return;
-    }
-
-    const { name, description } = this.stepForm.getRawValue();
-    const payload: CreateTemplateRequest = {
-      templateName: name,
-      description: description || undefined
-    };
-
-    this.isSaving = true;
-    this.templateService.createTemplate(payload).subscribe({
-      next: tpl => {
-        this.templateId = tpl.templateId;
-        const v = this.extractVersion(tpl.templateVersion) ?? this.normalizeVersion(String(tpl.version)) ?? '0001';
-        this.versionControl.setValue(v, { emitEvent: false });
-        this.currentStep = 2;
-        this.alertService.showSuccess('Plantilla creada. Ahora puedes configurar versiones, PDF y campos.', '¡Listo!');
-        this.loadHistoryAndFields();
-      },
-      error: err => {
-        this.isSaving = false;
-        this.alertService.showError('No se pudo crear la plantilla', 'Error');
-        console.error('Error al crear la plantilla', err);
-      },
-      complete: () => {
-        this.isSaving = false;
-      }
-    });
+    this.currentStep = 2;
   }
 
   goBackToStepOne(): void {
@@ -133,8 +96,117 @@ export class TemplateCreateComponent {
       return;
     }
 
-    // Finish template setup by persisting fields and returning to the flow.
-    this.saveFields(true);
+    if (this.stepForm.invalid) {
+      this.stepForm.markAllAsTouched();
+      return;
+    }
+    const raw = this.stepForm.getRawValue();
+    const payload = {
+      templateName: raw.name,
+      description: raw.description || undefined
+    };
+    this.isSaving = true;
+
+    if (!this.templateId) {
+      this.templateService.createTemplate(payload as CreateTemplateRequest).subscribe({
+        next: tpl => {
+          this.templateId = tpl.templateId;
+          const v = this.extractVersion(tpl.templateVersion) ?? this.normalizeVersion(String(tpl.version)) ?? '0001';
+          this.versionControl.setValue(v, { emitEvent: false });
+          this.loadHistory();
+          this.finalizeTemplateSave();
+        },
+        error: err => {
+          console.error('No se pudo crear la plantilla', err);
+          this.alertService.showError('No se pudo crear la plantilla', 'Error');
+        },
+        complete: () => {
+          this.isSaving = false;
+        }
+      });
+      return;
+    }
+
+    this.templateService.updateTemplate(this.templateId, payload).subscribe({
+      next: () => {
+        this.finalizeTemplateSave();
+      },
+      error: err => {
+        console.error('No se pudo actualizar la plantilla', err);
+        this.alertService.showError('No se pudo guardar la plantilla.', 'Error');
+      },
+      complete: () => {
+        this.isSaving = false;
+      }
+    });
+  }
+
+  private finalizeTemplateSave(): void {
+    if (!this.templateId) {
+      this.isSaving = false;
+      return;
+    }
+    const version = this.versionControl.value || this.normalizeVersion('0001');
+    if (!version) {
+      this.isSaving = false;
+      this.alertService.showError('Selecciona una versión para subir el PDF.', 'Error');
+      return;
+    }
+
+    const file = this.pdfToUpload ?? this.uploadedFile;
+    if (!file || !this.isPdf(file)) {
+      this.isSaving = false;
+      this.alertService.showError('Debes subir un PDF válido para la plantilla.', 'Error');
+      return;
+    }
+
+    const fields = this.buildTemplateFields();
+    this.templateService.getTemplateUploadUrl(this.templateId, version).subscribe({
+      next: res => {
+        const headers = new HttpHeaders().set('Content-Type', file.type || 'application/pdf');
+        this.http.put(res.uploadUrl, file, { headers, responseType: 'text' }).subscribe({
+          next: () => {
+            this.templateService.updateTemplateFields(this.templateId!, fields).subscribe({
+              next: () => {
+                this.alertService.showSuccess('Plantilla guardada correctamente', '¡Listo!');
+                setTimeout(() => this.navigateAfterSave(), 900);
+              },
+              error: err => {
+                console.error('No se pudieron guardar los campos', err);
+                this.alertService.showError('Se subió el PDF, pero fallaron los campos.', 'Error');
+              },
+              complete: () => {
+                this.isSaving = false;
+              }
+            });
+          },
+          error: err => {
+            console.error('No se pudo subir el PDF', err);
+            this.alertService.showError('No se pudo subir el PDF.', 'Error');
+            this.isSaving = false;
+          }
+        });
+      },
+      error: err => {
+        console.error('No se pudo generar el upload URL', err);
+        this.alertService.showError('No se pudo generar el link de subida.', 'Error');
+        this.isSaving = false;
+      }
+    });
+  }
+
+  private buildTemplateFields(): TemplateField[] {
+    const mapped = this.mapperComponent?.getMappedFields() ?? [];
+    return mapped.map((field, index) => ({
+      page: '1',
+      x: '0',
+      y: String(index * 60),
+      width: '200',
+      height: '50',
+      fieldName: field.name,
+      fieldType: field.type,
+      fieldCode: String(index + 1)
+    }));
   }
 
   onCancel(): void {
@@ -251,53 +323,6 @@ export class TemplateCreateComponent {
     });
   }
 
-  get fieldsArray(): FormArray {
-    return this.fieldsForm.get('fields') as FormArray;
-  }
-
-  addField(): void {
-    this.fieldsArray.push(
-      this.fb.group({
-        page: ['1', [Validators.required]],
-        x: ['0', [Validators.required]],
-        y: ['0', [Validators.required]],
-        width: ['200', [Validators.required]],
-        height: ['50', [Validators.required]],
-        fieldName: ['', [Validators.required]],
-        fieldType: ['sign', [Validators.required]],
-        fieldCode: ['3', [Validators.required]]
-      })
-    );
-  }
-
-  removeField(index: number): void {
-    this.fieldsArray.removeAt(index);
-  }
-
-  saveFields(navigateAfter = false): void {
-    if (!this.templateId) {
-      this.alertService.showError('Primero crea la plantilla para poder guardar campos.', 'Error');
-      return;
-    }
-    const fields = this.serializeFields();
-    this.isSaving = true;
-    this.templateService.updateTemplateFields(this.templateId, fields).subscribe({
-      next: () => {
-        this.alertService.showSuccess('Campos guardados correctamente', '¡Actualizado!');
-        if (navigateAfter) {
-          setTimeout(() => this.navigateAfterSave(), 900);
-        }
-      },
-      error: err => {
-        console.error('No se pudieron guardar los campos', err);
-        this.alertService.showError('No se pudieron guardar los campos.', 'Error');
-      },
-      complete: () => {
-        this.isSaving = false;
-      }
-    });
-  }
-
   openDocumentPicker(): void {
     this.mapperComponent?.openFilePicker();
   }
@@ -314,7 +339,7 @@ export class TemplateCreateComponent {
     if (!this.templateId) {
       return;
     }
-    this.loadHistoryAndFields();
+    this.loadHistory();
     // If version is already selected, load its data. Otherwise load last version.
     const version = this.versionControl.value;
     if (version) {
@@ -338,7 +363,7 @@ export class TemplateCreateComponent {
     }
   }
 
-  private loadHistoryAndFields(): void {
+  private loadHistory(): void {
     if (!this.templateId) {
       return;
     }
@@ -352,11 +377,6 @@ export class TemplateCreateComponent {
       error: err => {
         console.warn('No se pudo cargar el historial de versiones', err);
       }
-    });
-
-    this.templateService.getTemplateFields(this.templateId).subscribe({
-      next: fields => this.setFields(fields),
-      error: err => console.warn('No se pudieron cargar los fields', err)
     });
   }
 
@@ -374,40 +394,6 @@ export class TemplateCreateComponent {
       },
       error: err => console.error('No se pudo cargar la versión del template', err)
     });
-  }
-
-  private setFields(fields: TemplateField[]): void {
-    while (this.fieldsArray.length) {
-      this.fieldsArray.removeAt(0);
-    }
-    fields.forEach(f => {
-      this.fieldsArray.push(
-        this.fb.group({
-          page: [String(f.page), [Validators.required]],
-          x: [String(f.x), [Validators.required]],
-          y: [String(f.y), [Validators.required]],
-          width: [String(f.width), [Validators.required]],
-          height: [String(f.height), [Validators.required]],
-          fieldName: [f.fieldName, [Validators.required]],
-          fieldType: [f.fieldType, [Validators.required]],
-          fieldCode: [String(f.fieldCode), [Validators.required]]
-        })
-      );
-    });
-  }
-
-  private serializeFields(): TemplateField[] {
-    const raw = this.fieldsArray.getRawValue() as any[];
-    return raw.map(f => ({
-      page: f.page,
-      x: f.x,
-      y: f.y,
-      width: f.width,
-      height: f.height,
-      fieldName: f.fieldName,
-      fieldType: f.fieldType,
-      fieldCode: f.fieldCode
-    }));
   }
 
   private buildVersionOptions(history: TemplateApi[]): Array<{ name: string; code: string }> {

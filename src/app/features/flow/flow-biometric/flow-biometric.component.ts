@@ -4,6 +4,8 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subscription, forkJoin, from } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
+import { FaceMesh, Results } from '@mediapipe/face_mesh';
+
 import { FlowService, FlowError } from '../../../core/services/flow/flow.service';
 import {
   FlowState,
@@ -42,6 +44,17 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
   cameraActive = false;
   cameraError: string | null = null;
   private stream?: MediaStream;
+  faceHint = 'Alinea tu rostro dentro del óvalo';
+  faceAligned = false;
+  private faceMesh?: FaceMesh;
+  private faceDetecting = false;
+  private stableFrames = 0;
+  private readonly requiredStableFrames = 12;
+  private autoCaptureLocked = false;
+  private documentCaptureActive = false;
+  documentHint = 'Mantén el documento dentro del recuadro';
+  private documentHintTimeout?: ReturnType<typeof setTimeout>;
+  private documentCaptureTimeout?: ReturnType<typeof setTimeout>;
 
   // Captured images
   capturedImages: Partial<Record<BiometricRequirement, CapturedImage>> = {};
@@ -73,6 +86,7 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.stopFaceDetection();
     this.stopCamera();
   }
 
@@ -95,7 +109,7 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
         this.biometricData = data;
         this.currentStep = 'selfie';
         this.loading = false;
-        this.startCamera();
+        this.resetCaptureState();
       },
       error: (err: FlowError) => {
         this.error = err.message || 'Error al iniciar la verificacion biometrica.';
@@ -131,11 +145,25 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
           video.srcObject = this.stream;
           await video.play();
           this.cameraActive = true;
+          if (this.currentStep === 'selfie') {
+            this.startFaceDetection();
+          } else {
+            this.startDocumentAutoCapture();
+          }
         }
       }, 100);
     } catch {
       this.cameraError = 'No pudimos acceder a tu camara. Revisa los permisos.';
     }
+  }
+
+  beginCamera(): void {
+    if (this.cameraActive || this.loading) {
+      return;
+    }
+    this.autoCaptureLocked = false;
+    this.stableFrames = 0;
+    this.startCamera();
   }
 
   stopCamera(): void {
@@ -144,6 +172,7 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
       this.stream = undefined;
     }
     this.cameraActive = false;
+    this.stopDocumentAutoCapture();
   }
 
   capturePhoto(): void {
@@ -151,6 +180,7 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
     const canvas = this.canvasRef?.nativeElement;
 
     if (!video || !canvas) return;
+    this.autoCaptureLocked = true;
 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
@@ -186,6 +216,7 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
       URL.revokeObjectURL(this.capturedImages[requirement]!.preview);
     }
     delete this.capturedImages[requirement];
+    this.autoCaptureLocked = false;
     this.startCamera();
   }
 
@@ -199,8 +230,8 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
 
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      this.error = 'Por favor selecciona un archivo de imagen.';
+    if (file.type !== 'image/jpeg' && !file.name.toLowerCase().match(/\.(jpe?g)$/)) {
+      this.error = 'Por favor selecciona una imagen JPG/JPEG.';
       return;
     }
 
@@ -221,8 +252,13 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
     const currentIndex = steps.indexOf(this.currentStep as BiometricStep);
 
     if (currentIndex < steps.length - 1) {
+      if (this.currentStep === 'selfie') {
+        this.stopFaceDetection();
+      } else {
+        this.stopDocumentAutoCapture();
+      }
       this.currentStep = steps[currentIndex + 1];
-      setTimeout(() => this.startCamera(), 100);
+      this.resetCaptureState();
     } else {
       this.uploadImages();
     }
@@ -230,8 +266,9 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
 
   skipToIdCapture(): void {
     if (this.currentStep === 'selfie' && this.capturedImages['selfie']) {
+      this.stopFaceDetection();
       this.currentStep = 'idFront';
-      this.startCamera();
+      this.resetCaptureState();
     }
   }
 
@@ -328,6 +365,7 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
       if (img?.preview) URL.revokeObjectURL(img.preview);
     });
     this.capturedImages = {};
+    this.autoCaptureLocked = false;
     this.error = null;
     this.currentStep = 'intro';
   }
@@ -368,5 +406,173 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
   hasCurrentCapture(): boolean {
     const requirement = this.currentStep as BiometricRequirement;
     return !!this.capturedImages[requirement];
+  }
+
+  private startFaceDetection(): void {
+    if (this.faceDetecting) return;
+    const video = this.videoRef?.nativeElement;
+    if (!video) return;
+
+    if (!this.faceMesh) {
+      this.faceMesh = new FaceMesh({
+        locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+      });
+      this.faceMesh.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.6,
+        minTrackingConfidence: 0.6
+      });
+      this.faceMesh.onResults(results => this.handleFaceResults(results));
+    }
+
+    this.faceDetecting = true;
+    this.stableFrames = 0;
+    this.faceAligned = false;
+    this.faceHint = 'Alinea tu rostro dentro del óvalo';
+
+    const loop = async () => {
+      if (!this.faceDetecting || !video || video.readyState < 2) {
+        if (this.faceDetecting) {
+          requestAnimationFrame(loop);
+        }
+        return;
+      }
+      try {
+        await this.faceMesh!.send({ image: video });
+      } catch {
+        // ignore send errors during teardown
+      }
+      if (this.faceDetecting) {
+        requestAnimationFrame(loop);
+      }
+    };
+
+    requestAnimationFrame(loop);
+  }
+
+  private stopFaceDetection(): void {
+    this.faceDetecting = false;
+    this.stableFrames = 0;
+    this.faceAligned = false;
+    this.faceHint = 'Alinea tu rostro dentro del óvalo';
+  }
+
+  private handleFaceResults(results: Results): void {
+    if (this.currentStep !== 'selfie' || !this.faceDetecting || this.hasCurrentCapture()) {
+      return;
+    }
+    const face = results.multiFaceLandmarks?.[0];
+    if (!face) {
+      this.faceAligned = false;
+      this.stableFrames = 0;
+      this.faceHint = 'Alinea tu rostro dentro del óvalo';
+      return;
+    }
+
+    const xs = face.map(p => p.x);
+    const ys = face.map(p => p.y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+
+    const boxWidth = maxX - minX;
+    const boxHeight = maxY - minY;
+
+    const cx = 0.5;
+    const cy = 0.5;
+    const rx = 0.26;
+    const ry = 0.36;
+
+    const isInside = (x: number, y: number) =>
+      ((x - cx) ** 2) / (rx ** 2) + ((y - cy) ** 2) / (ry ** 2) <= 1;
+
+    const insideOval =
+      isInside(minX, minY) &&
+      isInside(maxX, minY) &&
+      isInside(minX, maxY) &&
+      isInside(maxX, maxY);
+
+    if (!insideOval) {
+      this.faceAligned = false;
+      this.stableFrames = 0;
+      this.faceHint = 'Mantén el rostro dentro del óvalo';
+      return;
+    }
+
+    if (boxHeight < 0.35) {
+      this.faceAligned = false;
+      this.stableFrames = 0;
+      this.faceHint = 'Acerca un poco tu rostro';
+      return;
+    }
+
+    if (boxHeight > 0.75) {
+      this.faceAligned = false;
+      this.stableFrames = 0;
+      this.faceHint = 'Aléjate un poco';
+      return;
+    }
+
+    this.faceAligned = true;
+    this.faceHint = 'Perfecto, no te muevas';
+    this.stableFrames += 1;
+
+    if (this.stableFrames >= this.requiredStableFrames && !this.autoCaptureLocked) {
+      this.autoCaptureLocked = true;
+      this.capturePhoto();
+    }
+  }
+
+  private startDocumentAutoCapture(): void {
+    if (this.currentStep === 'selfie' || this.documentCaptureActive) {
+      return;
+    }
+    this.documentCaptureActive = true;
+    this.stableFrames = 0;
+    this.documentHint = 'Alinea el documento dentro del recuadro';
+
+    this.documentHintTimeout = setTimeout(() => {
+      if (!this.documentCaptureActive || !this.cameraActive || this.hasCurrentCapture()) {
+        return;
+      }
+      this.documentHint = 'Mantén el documento fijo...';
+    }, 1200);
+
+    this.documentCaptureTimeout = setTimeout(() => {
+      if (!this.documentCaptureActive || !this.cameraActive || this.hasCurrentCapture()) {
+        return;
+      }
+      if (this.autoCaptureLocked) {
+        return;
+      }
+      this.autoCaptureLocked = true;
+      this.documentHint = 'Capturando...';
+      this.capturePhoto();
+      this.documentCaptureActive = false;
+    }, 5000);
+  }
+
+  private stopDocumentAutoCapture(): void {
+    this.documentCaptureActive = false;
+    this.stableFrames = 0;
+    if (this.documentHintTimeout) {
+      clearTimeout(this.documentHintTimeout);
+      this.documentHintTimeout = undefined;
+    }
+    if (this.documentCaptureTimeout) {
+      clearTimeout(this.documentCaptureTimeout);
+      this.documentCaptureTimeout = undefined;
+    }
+  }
+
+  private resetCaptureState(): void {
+    this.autoCaptureLocked = false;
+    this.stableFrames = 0;
+    this.faceAligned = false;
+    this.faceHint = 'Alinea tu rostro dentro del óvalo';
+    this.documentHint = 'Alinea el documento y presiona Capturar';
+    this.cameraActive = false;
   }
 }

@@ -54,14 +54,13 @@ export class FlowLivenessComponent implements OnInit, OnDestroy {
     this.processId = this.route.snapshot.paramMap.get('processId') ?? '';
     this.flowState = this.flowService.getFlowState();
 
-    // TODO: Descomentar cuando el API funcione correctamente
     // Verificar que tenemos un token valido
-    // const token = this.flowService.getFlowToken();
-    // if (!this.processId || !this.flowState || !token) {
-    //   // Redirigir al landing para iniciar/reiniciar el flujo
-    //   this.router.navigate(['/flow', this.processId || 'invalid']);
-    //   return;
-    // }
+    const token = this.flowService.getFlowToken();
+    if (!this.processId || !this.flowState || !token) {
+      // Redirigir al landing para iniciar/reiniciar el flujo
+      this.router.navigate(['/flow', this.processId || 'invalid']);
+      return;
+    }
   }
 
   ngOnDestroy(): void {
@@ -77,31 +76,19 @@ export class FlowLivenessComponent implements OnInit, OnDestroy {
     this.error = null;
     this.currentStep = 'preparing';
 
-    // TODO: Descomentar cuando el API funcione correctamente
-    // const sub = this.flowService.startLivenessSession(this.processId).subscribe({
-    //   next: (data) => {
-    //     this.livenessData = data;
-    //     this.loading = false;
-    //     this.startCamera();
-    //   },
-    //   error: (err: FlowError) => {
-    //     this.error = err.message || 'Error al iniciar la prueba de vida.';
-    //     this.currentStep = 'error';
-    //     this.loading = false;
-    //   }
-    // });
-    // this.subscriptions.push(sub);
-
-    // Mock para pruebas de frontend
-    setTimeout(() => {
-      this.livenessData = {
-        processId: this.processId,
-        sessionId: 'mock-session-id',
-        step: 'liveness'
-      };
-      this.loading = false;
-      this.startCamera();
-    }, 500);
+    const sub = this.flowService.startLivenessSession(this.processId).subscribe({
+      next: (data) => {
+        this.livenessData = data;
+        this.loading = false;
+        this.startCamera();
+      },
+      error: (err: FlowError) => {
+        this.error = err.message || 'Error al iniciar la prueba de vida.';
+        this.currentStep = 'error';
+        this.loading = false;
+      }
+    });
+    this.subscriptions.push(sub);
   }
 
   async startCamera(): Promise<void> {

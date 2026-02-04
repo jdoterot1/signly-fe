@@ -34,24 +34,16 @@ export const DOCUMENT_CREATE_FORM_CONFIG: FormConfig = {
     {
       key: 'templateId',
       type: 'select',
-      label: 'Template ID',
-      placeholder: 'Selecciona un template',
+      label: 'Plantilla',
+      placeholder: 'Selecciona una plantilla',
       required: true
     },
     {
       key: 'templateVersion',
       type: 'select',
-      label: 'Template Version',
+      label: 'Versión de plantilla',
       placeholder: 'Selecciona una versión',
       required: true
-    },
-    {
-      key: 'orderMode',
-      type: 'select',
-      label: 'Modo de Orden',
-      placeholder: 'Selecciona el modo',
-      required: true,
-      options: DOCUMENT_ORDER_MODES
     },
     {
       key: 'deadlineAt',

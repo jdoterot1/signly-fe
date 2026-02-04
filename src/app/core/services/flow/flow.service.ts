@@ -208,21 +208,40 @@ export class FlowService {
     fn: (headers: HttpHeaders) => Observable<T>
   ): Observable<T> {
     const token = this.getFlowToken();
-    let headers = new HttpHeaders();
-    if (token) {
-      headers = headers.set('X-Auth-Signly-Flow', token);
-      console.log('[FlowService] Using flow token:', token.substring(0, 20) + '...');
-    } else {
+    if (!token) {
       console.warn('[FlowService] No flow token available!');
+      return throwError(() => {
+        const err = new Error('Missing flow bearer token') as FlowError;
+        err.code = 'missing_flow_token';
+        return err;
+      });
     }
+    let headers = new HttpHeaders();
+    const bearer = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+    headers = headers.set('X-Auth-Signly-Flow', bearer);
+    console.log('[FlowService] Using flow token:', token.substring(0, 20) + '...');
     headers = headers.set('Content-Type', 'application/json');
     return fn(headers);
   }
 
   private mapToFlowState(data: FlowInitiateData): FlowState {
+    const anyData = data as unknown as Record<string, any>;
+    const flowObject = (anyData['flow'] ?? {}) as Record<string, any>;
+    const token =
+      data.flowAuthToken ||
+      anyData['flow_auth_token'] ||
+      anyData['flowToken'] ||
+      anyData['token'] ||
+      anyData['flowTokenValue'] ||
+      anyData['flowAuth'] ||
+      anyData['flow_auth'] ||
+      anyData['flowTokenBearer'] ||
+      flowObject['authToken'] ||
+      flowObject['flowAuthToken'] ||
+      '';
     return {
       processId: data.processId,
-      flowAuthToken: data.flowAuthToken,
+      flowAuthToken: token,
       participant: data.participant,
       currentStep: data.flow.currentStep,
       pipeline: data.flow.pipeline,

@@ -9,7 +9,7 @@
     <div class="flex-1">
       <div class="grid gap-6 sm:grid-cols-2">
         <ng-container *ngFor="let field of config.fields">
-          <ng-container [ngSwitch]="field.type">
+          <ng-container *ngIf="!field.hidden" [ngSwitch]="field.type">
 
             <!-- Text -->
             <ng-container *ngSwitchCase="'text'">
@@ -112,6 +112,11 @@
                   [placeholder]="field.placeholder"
                   [formControlName]="field.key"
                   [disabled]="field.disabled ?? false"
+                  [minDate]="field.minDate"
+                  [showTime]="field.showTime ?? false"
+                  [hourFormat]="field.hourFormat ?? '24'"
+                  [dateFormat]="field.dateFormat"
+                  [showIcon]="true"
                   class="w-full"
                   inputStyleClass="w-full rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                 />
@@ -207,13 +212,13 @@
       class="w-full sm:w-auto px-6 py-3 text-sm font-semibold text-gray-600 bg-gray-200 hover:bg-gray-300 rounded-xl transition"
       (click)="cancelForm.emit()"
     >
-      Cancelar
+      {{ cancelLabel }}
     </button>
     <button
       type="submit"
       class="w-full sm:w-auto px-6 py-3 text-sm font-semibold text-white bg-[#2b0f60] hover:bg-[#1b1034] rounded-xl shadow transition"
     >
-      Guardar
+      {{ submitLabel }}
     </button>
   </div>
 </form>

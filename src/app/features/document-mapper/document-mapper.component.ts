@@ -14,6 +14,16 @@ import { DocumentMapperService } from '../../core/services/document-mapper/docum
 import { FIELD_TYPES } from '../../core/constants/form-builder/field-types.constant';
 import type { FormFieldType } from '../../core/models/form-builder/field.model';
 
+interface MappedField {
+  id: string;
+  type: FormFieldType;
+  label: string;
+  name: string;
+  required: boolean;
+  helpText: string;
+  options: string[];
+}
+
 @Component({
   selector: 'app-document-mapper',
   standalone: true,
@@ -52,13 +62,21 @@ export class DocumentMapperComponent implements OnDestroy {
   selectedFile?: File;
   errorMessage = '';
   readonly fieldPalette = FIELD_TYPES;
+  mappedFields: MappedField[] = [];
+  selectedFieldId: string | null = null;
+  isConfigOpen = true;
 
   private documentHtml = '<p></p>';
   private currentRange?: Range | null;
   private draggedFieldType?: FormFieldType;
+  private fieldCounter = 0;
 
   ngOnDestroy(): void {
     // Nothing to clean up for now
+  }
+
+  getMappedFields(): MappedField[] {
+    return [...this.mappedFields];
   }
 
   onPaletteDragStart(event: DragEvent, type: FormFieldType): void {
@@ -122,6 +140,17 @@ export class DocumentMapperComponent implements OnDestroy {
 
   onEditorFocus(): void {
     this.captureSelection();
+  }
+
+  onEditorClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (!target) {
+      return;
+    }
+    const fieldId = target.getAttribute('data-field-id');
+    if (fieldId) {
+      this.selectField(fieldId);
+    }
   }
 
   async onFileSelected(event: Event): Promise<void> {
@@ -217,11 +246,90 @@ export class DocumentMapperComponent implements OnDestroy {
     }
   }
 
+  selectField(fieldId: string): void {
+    this.selectedFieldId = fieldId;
+    this.updatePlaceholderSelection();
+  }
+
+  get selectedField(): MappedField | undefined {
+    return this.mappedFields.find(field => field.id === this.selectedFieldId);
+  }
+
+  updateSelectedFieldLabel(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.updateSelectedField({ label: value });
+  }
+
+  updateSelectedFieldName(event: Event): void {
+    const raw = (event.target as HTMLInputElement).value;
+    const normalized = this.normalizeFieldName(raw);
+    this.updateSelectedField({ name: normalized });
+    if (this.selectedFieldId) {
+      this.updatePlaceholderText(this.selectedFieldId, normalized);
+    }
+  }
+
+  toggleSelectedFieldRequired(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.updateSelectedField({ required: checked });
+  }
+
+  updateSelectedFieldOptions(event: Event): void {
+    const raw = (event.target as HTMLTextAreaElement).value;
+    const options = raw
+      .split(',')
+      .map(option => option.trim())
+      .filter(Boolean);
+    this.updateSelectedField({ options });
+  }
+
+  updateSelectedFieldHelp(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.updateSelectedField({ helpText: value });
+  }
+
+  removeField(fieldId: string): void {
+    this.mappedFields = this.mappedFields.filter(field => field.id !== fieldId);
+    if (this.selectedFieldId === fieldId) {
+      this.selectedFieldId = this.mappedFields[0]?.id ?? null;
+    }
+    this.removePlaceholders(fieldId);
+    this.updatePlaceholderSelection();
+  }
+
+  supportsOptions(type: FormFieldType): boolean {
+    return type === 'select' || type === 'radio' || type === 'multiselect';
+  }
+
+  buildPlaceholderPreview(value: string): string {
+    return this.buildPlaceholderFromName(value);
+  }
+
+  getOptionsText(field: MappedField): string {
+    return field.options.join(', ');
+  }
+
   private insertFieldPlaceholder(type: FormFieldType): void {
+    const field = this.createMappedField(type);
     const placeholder = document.createElement('span');
-    placeholder.textContent = this.buildPlaceholder(type);
     placeholder.className = 'placeholder-chip';
+    placeholder.setAttribute('data-field-id', field.id);
+    placeholder.setAttribute('data-field-type', field.type);
+    placeholder.setAttribute('contenteditable', 'false');
+    placeholder.setAttribute('role', 'button');
+
+    const label = document.createElement('span');
+    label.className = 'placeholder-chip__label';
+    label.textContent = this.buildPlaceholderFromName(field.name);
+
+    const icon = document.createElement('span');
+    icon.className = 'placeholder-chip__icon';
+    icon.textContent = '...';
+
+    placeholder.appendChild(label);
+    placeholder.appendChild(icon);
     this.insertNodeAtRange(placeholder);
+    this.mappedFields = [...this.mappedFields, field];
   }
 
   private insertNodeAtRange(node: Node): void {
@@ -296,14 +404,88 @@ export class DocumentMapperComponent implements OnDestroy {
     return !!target && editorElement.contains(target);
   }
 
-  private buildPlaceholder(type: FormFieldType): string {
-    const item = this.fieldPalette.find(ft => ft.type === type);
-    const slug = (item?.label || type)
+  private buildPlaceholderFromName(name: string): string {
+    const slug = this.normalizeFieldName(name);
+    return `{{${slug || 'CAMPO'}}}`;
+  }
+
+  private normalizeFieldName(value: string): string {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return '';
+    }
+    return trimmed
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .toUpperCase()
       .replace(/[^A-Z0-9]+/g, '_')
       .replace(/^_+|_+$/g, '');
-    return `{{${slug}}}`;
+  }
+
+  private createMappedField(type: FormFieldType): MappedField {
+    const palette = this.fieldPalette.find(item => item.type === type);
+    const base = palette?.label || type;
+    const suffix = ++this.fieldCounter;
+    const name = this.normalizeFieldName(`${base}_${suffix}`) || `CAMPO_${suffix}`;
+    return {
+      id: `field_${Date.now()}_${suffix}`,
+      type,
+      label: palette?.label || 'Nuevo campo',
+      name,
+      required: false,
+      helpText: '',
+      options: []
+    };
+  }
+
+  private updateSelectedField(patch: Partial<MappedField>): void {
+    if (!this.selectedFieldId) {
+      return;
+    }
+    this.mappedFields = this.mappedFields.map(field =>
+      field.id === this.selectedFieldId ? { ...field, ...patch } : field
+    );
+  }
+
+  private updatePlaceholderText(fieldId: string, name: string): void {
+    const editorElement = this.editorCanvas?.nativeElement;
+    if (!editorElement) {
+      return;
+    }
+    const placeholders = editorElement.querySelectorAll(`[data-field-id="${fieldId}"]`);
+    placeholders.forEach(node => {
+      const label = node.querySelector('.placeholder-chip__label');
+      if (label) {
+        label.textContent = this.buildPlaceholderFromName(name);
+      }
+    });
+    this.syncDocumentHtml();
+  }
+
+  private removePlaceholders(fieldId: string): void {
+    const editorElement = this.editorCanvas?.nativeElement;
+    if (!editorElement) {
+      return;
+    }
+    const placeholders = editorElement.querySelectorAll(`[data-field-id="${fieldId}"]`);
+    placeholders.forEach(node => node.parentElement?.removeChild(node));
+    this.syncDocumentHtml();
+  }
+
+  private updatePlaceholderSelection(): void {
+    const editorElement = this.editorCanvas?.nativeElement;
+    if (!editorElement) {
+      return;
+    }
+    const placeholders = editorElement.querySelectorAll('.placeholder-chip');
+    placeholders.forEach(node => {
+      const element = node as HTMLElement;
+      const id = element.getAttribute('data-field-id');
+      if (id && id === this.selectedFieldId) {
+        element.classList.add('placeholder-chip--active');
+      } else {
+        element.classList.remove('placeholder-chip--active');
+      }
+    });
   }
 }

@@ -34,6 +34,8 @@ export class FormComponent implements OnInit, OnChanges {
 
   @Input() showImageUpload = false;
   @Input() extraTemplate: TemplateRef<unknown> | null = null;
+  @Input() submitLabel = 'Guardar';
+  @Input() cancelLabel = 'Cancelar';
   @Output() fileSelected = new EventEmitter<File>();
   @Output() submitForm  = new EventEmitter<any>();
   @Output() cancelForm  = new EventEmitter<void>();

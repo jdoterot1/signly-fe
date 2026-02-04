@@ -21,6 +21,11 @@ export interface FormField {
   validators?: ValidatorFn[];                   // otros validadotes
   children?: FormField[];                       // solo para type = 'group'
   disabled?: boolean;
+  hidden?: boolean;
+  minDate?: Date;
+  showTime?: boolean;
+  hourFormat?: '12' | '24';
+  dateFormat?: string;
 }
 
 export interface FormConfig {

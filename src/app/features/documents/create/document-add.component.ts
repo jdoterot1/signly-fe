@@ -2,7 +2,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ValidatorFn, Validators } from '@angular/forms';
 import { Subscription } from 'rxjs';
 
 import { DocumentService } from '../../../core/services/documents/document.service';
@@ -34,6 +34,9 @@ import type { TemplateApi } from '../../../core/models/templates/template.model'
 export class DocumentCreateComponent implements OnInit, OnDestroy {
   formConfig = this.cloneFormConfig(DOCUMENT_CREATE_FORM_CONFIG);
   form: FormGroup;
+  currentStep: 1 | 2 = 1;
+  submitLabel = 'Continuar';
+  cancelLabel = 'Cancelar';
   formInitialValues = {
     orderMode: DOCUMENT_ORDER_MODES[0],
     language: DOCUMENT_LANGUAGES[0],
@@ -54,6 +57,23 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
   private preselectedTemplateVersion?: string;
   private prefillName?: string;
   private prefillDescription?: string;
+  private readonly step1Keys = [
+    'name',
+    'description',
+    'templateId',
+    'templateVersion',
+    'deadlineAt',
+    'language',
+    'signatureMode'
+  ];
+  private readonly step2Keys = [
+    'participantName',
+    'participantEmail',
+    'participantPhone',
+    'participantDocumentNumber',
+    'attemptsMax',
+    'cooldownSeconds'
+  ];
 
   constructor(
     private documentService: DocumentService,
@@ -115,6 +135,19 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
         this.loadTemplateVersions(templateId);
       })
     );
+
+    this.subs.add(
+      this.form.get('signatureMode')!.valueChanges.subscribe(value => {
+        const mode = this.readSelectValue(value) as DocumentSignatureMode | undefined;
+        this.applySignatureModeRules(mode);
+      })
+    );
+
+    const initialMode = this.readSelectValue(this.form.get('signatureMode')!.value) as DocumentSignatureMode | undefined;
+    this.applySignatureModeRules(initialMode);
+
+    this.setMinDateForDeadline();
+    this.applyStepState();
   }
 
   ngOnDestroy(): void {
@@ -127,6 +160,10 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
   }
 
   onSubmit(formValue: any) {
+    if (this.currentStep === 1) {
+      this.goToStepTwo();
+      return;
+    }
     const orderMode = this.readSelectValue(formValue.orderMode);
     const signatureMode = this.readSelectValue(formValue.signatureMode) as DocumentSignatureMode | undefined;
     const language = this.readSelectValue(formValue.language);
@@ -195,6 +232,11 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
   }
 
   onCancel() {
+    if (this.currentStep === 2) {
+      this.currentStep = 1;
+      this.applyStepState();
+      return;
+    }
     this.navigateBack();
   }
 
@@ -359,6 +401,101 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     if (target) {
       target.options = options;
     }
+  }
+
+  private setFormHidden(fieldKey: string, hidden: boolean): void {
+    this.formConfig = this.cloneFormConfig(this.formConfig);
+    const target = this.formConfig.fields.find((f: any) => f.key === fieldKey);
+    if (target) {
+      target.hidden = hidden;
+    }
+  }
+
+  private setMinDateForDeadline(): void {
+    this.formConfig = this.cloneFormConfig(this.formConfig);
+    const target = this.formConfig.fields.find((f: any) => f.key === 'deadlineAt');
+    if (target) {
+      const today = new Date();
+      today.setSeconds(0, 0);
+      target.minDate = today;
+      target.showTime = true;
+      target.hourFormat = '24';
+      target.dateFormat = 'yy-mm-dd';
+    }
+  }
+
+  private applyStepState(): void {
+    const step1 = this.currentStep === 1;
+    this.submitLabel = step1 ? 'Continuar' : 'Crear documento';
+    this.cancelLabel = step1 ? 'Cancelar' : 'Regresar';
+
+    this.step1Keys.forEach(key => {
+      this.setFormHidden(key, !step1);
+      this.setControlEnabled(key, step1);
+    });
+    this.step2Keys.forEach(key => {
+      this.setFormHidden(key, step1);
+      this.setControlEnabled(key, !step1);
+    });
+
+    const mode = this.readSelectValue(this.form.get('signatureMode')!.value) as DocumentSignatureMode | undefined;
+    this.applySignatureModeRules(mode);
+  }
+
+  private goToStepTwo(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    this.currentStep = 2;
+    this.applyStepState();
+  }
+
+  private setControlEnabled(fieldKey: string, enabled: boolean): void {
+    const control = this.form.get(fieldKey);
+    if (!control) {
+      return;
+    }
+    if (enabled) {
+      control.enable({ emitEvent: false });
+    } else {
+      control.disable({ emitEvent: false });
+    }
+  }
+
+  private setFieldRequired(fieldKey: string, required: boolean, extraValidators: ValidatorFn[] = []): void {
+    const control = this.form.get(fieldKey);
+    if (!control) {
+      return;
+    }
+    const validators = required ? [Validators.required, ...extraValidators] : [...extraValidators];
+    control.setValidators(validators);
+    if (!required) {
+      control.setValue('', { emitEvent: false });
+    }
+    control.updateValueAndValidity({ emitEvent: false });
+  }
+
+  private applySignatureModeRules(mode?: DocumentSignatureMode): void {
+    if (this.currentStep === 1) {
+      this.setFormHidden('participantEmail', true);
+      this.setFormHidden('participantPhone', true);
+      this.setFormHidden('participantDocumentNumber', true);
+      return;
+    }
+    const signatureMode = mode ?? 'SIGNATURE_EMAIL';
+
+    const isEmail = signatureMode === 'SIGNATURE_EMAIL';
+    const isSms = signatureMode === 'SIGNATURE_SMS';
+    const isBio = signatureMode === 'SIGNATURE_BIOMETRIC_PLUS';
+
+    this.setFormHidden('participantEmail', !isEmail && !isBio);
+    this.setFormHidden('participantPhone', !isSms);
+    this.setFormHidden('participantDocumentNumber', !isBio);
+
+    this.setFieldRequired('participantEmail', isEmail || isBio, [Validators.email] as any);
+    this.setFieldRequired('participantPhone', isSms);
+    this.setFieldRequired('participantDocumentNumber', isBio);
   }
 
   private cloneFormConfig(config: any): any {

@@ -101,4 +101,35 @@
   font-weight: 600;
   color: #2b0f60;
   margin: 0 0.2rem;
+  cursor: pointer;
+  gap: 0.35rem;
+}
+
+.placeholder-chip__label {
+  display: inline-flex;
+  align-items: center;
+}
+
+.placeholder-chip__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7em;
+  line-height: 1;
+  padding: 0.1rem 0.35rem;
+  border-radius: 999px;
+  background-color: rgba(43, 15, 96, 0.08);
+  color: #2b0f60;
+  border: 1px solid rgba(43, 15, 96, 0.25);
+  opacity: 0.7;
+}
+
+.placeholder-chip:hover .placeholder-chip__icon {
+  opacity: 1;
+}
+
+.placeholder-chip--active {
+  box-shadow: 0 0 0 2px rgba(43, 15, 96, 0.25);
+  border-color: rgba(43, 15, 96, 0.55);
+  background-color: rgba(87, 73, 173, 0.18);
 }
