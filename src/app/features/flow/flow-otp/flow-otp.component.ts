@@ -6,13 +6,14 @@ import { Subscription, interval } from 'rxjs';
 
 import { FlowService, FlowError } from '../../../core/services/flow/flow.service';
 import { FlowState, OtpChannel, OtpSendData } from '../../../core/models/flow/flow.model';
+import { FlowProgressComponent } from '../shared/flow-progress/flow-progress.component';
 
 type OtpStep = 'sending' | 'input' | 'verifying' | 'success' | 'error';
 
 @Component({
   selector: 'app-flow-otp',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, FlowProgressComponent],
   templateUrl: './flow-otp.component.html'
 })
 export class FlowOtpComponent implements OnInit, OnDestroy {

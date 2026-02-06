@@ -5,11 +5,12 @@ import { Subscription } from 'rxjs';
 
 import { FlowService, FlowError } from '../../../core/services/flow/flow.service';
 import { FlowState, FlowChallengeType } from '../../../core/models/flow/flow.model';
+import { FlowProgressComponent } from '../shared/flow-progress/flow-progress.component';
 
 @Component({
   selector: 'app-flow-landing',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FlowProgressComponent],
   templateUrl: './flow-landing.component.html'
 })
 export class FlowLandingComponent implements OnInit, OnDestroy {

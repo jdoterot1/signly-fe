@@ -13,6 +13,7 @@ import {
   BiometricRequirement,
   BiometricUpload
 } from '../../../core/models/flow/flow.model';
+import { FlowProgressComponent } from '../shared/flow-progress/flow-progress.component';
 
 type BiometricStep = 'intro' | 'selfie' | 'idFront' | 'idBack' | 'uploading' | 'verifying' | 'success' | 'error';
 
@@ -24,7 +25,7 @@ interface CapturedImage {
 @Component({
   selector: 'app-flow-biometric',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FlowProgressComponent],
   templateUrl: './flow-biometric.component.html'
 })
 export class FlowBiometricComponent implements OnInit, OnDestroy {

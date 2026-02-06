@@ -5,13 +5,14 @@ import { Subscription } from 'rxjs';
 
 import { FlowService, FlowError } from '../../../core/services/flow/flow.service';
 import { FlowState, LivenessStartData } from '../../../core/models/flow/flow.model';
+import { FlowProgressComponent } from '../shared/flow-progress/flow-progress.component';
 
 type LivenessStep = 'intro' | 'preparing' | 'active' | 'processing' | 'success' | 'error';
 
 @Component({
   selector: 'app-flow-liveness',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FlowProgressComponent],
   templateUrl: './flow-liveness.component.html'
 })
 export class FlowLivenessComponent implements OnInit, OnDestroy {

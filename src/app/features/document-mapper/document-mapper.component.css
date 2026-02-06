@@ -12,23 +12,118 @@
   border-radius: 999px;
 }
 
-.editor-shell {
+.pdf-shell {
   background: #f4f1fb;
   border: 1px solid #ebe5f7;
 }
 
-.editor-shell .editor-scroll {
+.docx-shell {
+  background: #f4f1fb;
+  border: 1px solid #ebe5f7;
+}
+
+.pdf-scroll {
   height: 100%;
   overflow: auto;
   padding: 16px 0 32px;
   background: linear-gradient(180deg, #f4f1fb 0%, #f6f7fb 100%);
 }
 
-.editor-document {
+.docx-scroll {
+  height: 100%;
+  overflow: auto;
+  padding: 16px 0 32px;
+  background: linear-gradient(180deg, #f4f1fb 0%, #f6f7fb 100%);
+}
+
+.pdf-page-block {
+  width: max-content;
+  margin: 0 auto 1.5rem;
+}
+
+.pdf-page-caption {
+  margin: 0 0 0.5rem;
+  padding-left: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.pdf-page {
+  position: relative;
+  border-radius: 1.1rem;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow:
+    0 35px 80px rgba(15, 23, 42, 0.16),
+    0 4px 14px rgba(15, 23, 42, 0.12);
+  transition: box-shadow 150ms ease, outline-color 150ms ease;
+}
+
+.pdf-page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 1.1rem;
+}
+
+.pdf-page--active {
+  box-shadow:
+    0 40px 100px rgba(43, 15, 96, 0.2),
+    0 8px 20px rgba(43, 15, 96, 0.12);
+}
+
+.pdf-page--drop {
+  outline: 2px dashed #2b0f60;
+  outline-offset: 12px;
+}
+
+.pdf-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.pdf-text-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.pdf-text-editor {
+  position: absolute;
+  border: 1px dashed transparent;
+  border-radius: 0.15rem;
+  padding: 0 1px;
+  white-space: pre-wrap;
+  line-height: 1.2;
+  color: transparent;
+  background: transparent;
+  outline: none;
+  pointer-events: auto;
+  caret-color: #111827;
+}
+
+.pdf-text-editor:hover {
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+.pdf-text-editor:focus {
+  color: #111827;
+  border-color: rgba(59, 130, 246, 0.7);
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.docx-editor {
   max-width: 860px;
   min-height: 620px;
   margin: 0 auto;
-  padding: 3.25rem 3.5rem;
+  padding: 3rem 3.2rem;
   background: #ffffff;
   border-radius: 1.5rem;
   box-shadow:
@@ -36,58 +131,21 @@
     0 4px 12px rgba(15, 23, 42, 0.08);
   font-family: 'Calibri', 'Segoe UI', 'Times New Roman', sans-serif;
   font-size: 16px;
-  line-height: 1.65;
-  color: #111826;
+  line-height: 1.6;
+  color: #111827;
+  outline: none;
 }
 
-.editor-shell.editor-drop-active .editor-document {
-  outline: 2px dashed #2b0f60;
-  outline-offset: 12px;
-  box-shadow:
-    0 60px 120px rgba(76, 29, 149, 0.15),
-    0 6px 16px rgba(76, 29, 149, 0.1);
-}
-
-.editor-document h1,
-.editor-document h2,
-.editor-document h3,
-.editor-document h4 {
-  margin-top: 1.5rem;
-  margin-bottom: 0.75rem;
-  font-weight: 600;
-  color: #0f172a;
-}
-
-.editor-document p {
-  margin-bottom: 0.95rem;
-}
-
-.editor-document ul,
-.editor-document ol {
-  padding-left: 1.75rem;
-  margin-bottom: 1rem;
-}
-
-.editor-document table {
+.docx-editor table {
   width: 100%;
   border-collapse: collapse;
-  margin: 1.25rem 0;
+  margin: 1rem 0;
 }
 
-.editor-document th,
-.editor-document td {
-  border: 1px solid #d7cfee;
-  padding: 0.65rem 0.85rem;
-}
-
-.editor-document tr:nth-child(even) {
-  background-color: #fbf9ff;
-}
-
-.editor-document img {
-  max-width: 100%;
-  display: block;
-  margin: 1rem auto;
+.docx-editor td,
+.docx-editor th {
+  border: 1px solid #d1d5db;
+  padding: 0.45rem 0.6rem;
 }
 
 .placeholder-chip {
@@ -100,9 +158,17 @@
   font-size: 0.85em;
   font-weight: 600;
   color: #2b0f60;
-  margin: 0 0.2rem;
   cursor: pointer;
   gap: 0.35rem;
+}
+
+.mapper-chip {
+  position: absolute;
+  margin: 0;
+  justify-content: center;
+  white-space: nowrap;
+  padding: 0.15rem 0.35rem;
+  z-index: 6;
 }
 
 .placeholder-chip__label {
@@ -110,25 +176,7 @@
   align-items: center;
 }
 
-.placeholder-chip__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7em;
-  line-height: 1;
-  padding: 0.1rem 0.35rem;
-  border-radius: 999px;
-  background-color: rgba(43, 15, 96, 0.08);
-  color: #2b0f60;
-  border: 1px solid rgba(43, 15, 96, 0.25);
-  opacity: 0.7;
-}
-
-.placeholder-chip:hover .placeholder-chip__icon {
-  opacity: 1;
-}
-
-.placeholder-chip--active {
+.mapper-chip--active {
   box-shadow: 0 0 0 2px rgba(43, 15, 96, 0.25);
   border-color: rgba(43, 15, 96, 0.55);
   background-color: rgba(87, 73, 173, 0.18);

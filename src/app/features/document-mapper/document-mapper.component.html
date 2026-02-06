@@ -1,5 +1,4 @@
 <section class="h-[calc(100vh-6rem)] bg-[#f5f6fb] flex flex-col">
-  <!-- Barra superior sencilla -->
   <header class="flex items-center justify-between px-6 py-3 bg-white border-b border-slate-200 shadow-sm">
     <div class="flex items-center gap-3">
       <div
@@ -29,9 +28,7 @@
     </div>
   </header>
 
-  <!-- Contenido principal -->
   <div class="flex-1 flex overflow-hidden px-4 pb-4 pt-3 gap-4">
-    <!-- Sidebar de componentes -->
     <aside
       class="bg-white rounded-3xl shadow-md flex flex-col w-72 shrink-0 p-4 border border-slate-100 overflow-hidden"
     >
@@ -100,13 +97,12 @@
       </p>
     </aside>
 
-    <!-- Zona del documento -->
     <div class="flex-1 flex flex-col overflow-hidden rounded-3xl">
       <input
         #fileInput
         type="file"
         class="sr-only"
-        accept=".docx,.pdf"
+        accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         (change)="onFileSelected($event)"
       />
 
@@ -119,10 +115,7 @@
         </div>
 
         <ng-container *ngIf="selectedFile; else emptyState">
-          <div
-            class="editor-shell h-full w-full flex flex-col rounded-3xl"
-            [class.editor-drop-active]="editorDropActive"
-          >
+          <div class="pdf-shell h-full w-full flex flex-col rounded-3xl" *ngIf="documentMode === 'pdf'">
             <div class="px-6 pt-3 pb-2 text-xs text-gray-500">
               <p class="font-medium text-gray-700">{{ selectedFile.name }}</p>
               <p class="text-[11px] mt-0.5">
@@ -131,20 +124,72 @@
               </p>
             </div>
 
-            <div class="flex-1 overflow-hidden">
-              <div class="editor-scroll custom-scroll">
+            <div class="flex-1 overflow-hidden pb-6">
+              <div class="pdf-scroll custom-scroll">
                 <div
-                  #editorCanvas
-                  class="editor-document"
+                  class="pdf-page-block"
+                  *ngFor="let page of pdfPages"
+                >
+                  <p class="pdf-page-caption">Página {{ page.pageNumber }}</p>
+                  <div
+                    class="pdf-page"
+                    [class.pdf-page--drop]="dropTargetPage === page.pageNumber"
+                    [class.pdf-page--active]="activePageNumber === page.pageNumber"
+                    [style.width.px]="page.width"
+                    [style.height.px]="page.height"
+                    (click)="onPdfPageClick(page.pageNumber)"
+                    (dragover)="onPdfPageDragOver($event, page.pageNumber)"
+                    (dragleave)="onPdfPageDragLeave($event, page.pageNumber)"
+                    (drop)="onPdfPageDrop($event, page.pageNumber)"
+                  >
+                    <canvas #pageCanvas class="pdf-canvas"></canvas>
+
+                    <div class="pdf-text-layer">
+                      <div
+                        class="pdf-text-editor"
+                        *ngFor="let textItem of getTextItemsForPage(page.pageNumber)"
+                        [ngStyle]="getTextItemStyle(textItem)"
+                        [textContent]="textItem.text"
+                        contenteditable="true"
+                        spellcheck="false"
+                        (input)="onPdfTextInput(textItem.id, $event)"
+                        (mousedown)="$event.stopPropagation()"
+                      ></div>
+                    </div>
+
+                    <button
+                      type="button"
+                      class="placeholder-chip mapper-chip"
+                      *ngFor="let field of getFieldsForPage(page.pageNumber)"
+                      [class.mapper-chip--active]="field.id === selectedFieldId"
+                      [ngStyle]="getFieldStyle(field)"
+                      [attr.title]="field.label"
+                      (click)="onFieldChipClick($event, field.id)"
+                    >
+                      <span class="placeholder-chip__label">{{ buildPlaceholderFromName(field.name) }}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="docx-shell h-full w-full flex flex-col rounded-3xl" *ngIf="documentMode === 'docx'">
+            <div class="px-6 pt-3 pb-2 text-xs text-gray-500">
+              <p class="font-medium text-gray-700">{{ selectedFile.name }}</p>
+              <p class="text-[11px] mt-0.5">
+                Modo edición Word (frontend). La fidelidad puede variar según el documento.
+              </p>
+            </div>
+
+            <div class="flex-1 overflow-hidden pb-6">
+              <div class="docx-scroll custom-scroll">
+                <div
+                  #docxEditor
+                  class="docx-editor"
                   contenteditable="true"
-                  (input)="onEditorInput()"
-                  (mouseup)="onEditorSelectionChange()"
-                  (keyup)="onEditorSelectionChange()"
-                  (click)="onEditorClick($event)"
-                  (focus)="onEditorFocus()"
-                  (dragover)="onEditorDragOver($event)"
-                  (dragleave)="onEditorDragLeave($event)"
-                  (drop)="onEditorDrop($event)"
+                  spellcheck="false"
+                  (input)="onDocxInput()"
                 ></div>
               </div>
             </div>
@@ -165,7 +210,7 @@
                 Crea tu plantilla
               </p>
               <p class="text-sm mt-1 text-gray-500">
-                Carga un archivo Word o PDF para iniciar el mapeo del documento.
+                Carga un PDF o Word para iniciar el mapeo y edición.
               </p>
             </div>
             <div class="flex gap-3">
@@ -174,7 +219,7 @@
                 class="px-5 py-2 rounded-2xl border border-[#2b0f60] text-sm font-semibold text-[#2b0f60] hover:bg-[#f3effb]"
                 (click)="openFilePicker()"
               >
-                Cargar documento
+                Cargar archivo
               </button>
             </div>
             <p *ngIf="errorMessage" class="text-sm text-red-500">
@@ -279,6 +324,57 @@
               />
               <p class="text-[11px] text-gray-400 mt-1">
                 Se mostrará como {{ buildPlaceholderPreview(selectedField.name) }}.
+              </p>
+            </div>
+
+            <div>
+              <label class="text-[11px] uppercase text-gray-400 font-semibold">
+                Ubicación (%)
+              </label>
+              <div class="grid grid-cols-2 gap-2 mt-1">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  class="rounded-xl border border-gray-200 px-2 py-1.5 text-sm"
+                  [value]="getMetricPercent(selectedField, 'x')"
+                  (change)="updateSelectedFieldMetric('x', $event)"
+                  title="Posición X"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  class="rounded-xl border border-gray-200 px-2 py-1.5 text-sm"
+                  [value]="getMetricPercent(selectedField, 'y')"
+                  (change)="updateSelectedFieldMetric('y', $event)"
+                  title="Posición Y"
+                />
+                <input
+                  type="number"
+                  min="8"
+                  max="80"
+                  step="0.1"
+                  class="rounded-xl border border-gray-200 px-2 py-1.5 text-sm"
+                  [value]="getMetricPercent(selectedField, 'width')"
+                  (change)="updateSelectedFieldMetric('width', $event)"
+                  title="Ancho"
+                />
+                <input
+                  type="number"
+                  min="3.5"
+                  max="30"
+                  step="0.1"
+                  class="rounded-xl border border-gray-200 px-2 py-1.5 text-sm"
+                  [value]="getMetricPercent(selectedField, 'height')"
+                  (change)="updateSelectedFieldMetric('height', $event)"
+                  title="Alto"
+                />
+              </div>
+              <p class="text-[11px] text-gray-400 mt-1">
+                Página {{ selectedField.page }}.
               </p>
             </div>
 

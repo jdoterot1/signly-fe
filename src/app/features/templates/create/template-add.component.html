@@ -90,7 +90,7 @@
         {{ (selectedFile.size / 1024 / 1024) | number:'1.1-2' }} MB · {{ selectedFile.type || 'Formato detectado automáticamente' }}
       </p>
       <p class="text-sm text-gray-500" *ngIf="!selectedFile">
-        Selecciona o arrastra un archivo Word o PDF antes de pasar al mapeador.
+        Selecciona un PDF o Word (.docx) para mapear. Para máxima fidelidad visual, usa PDF.
       </p>
     </div>
 
@@ -132,32 +132,6 @@
               <option [ngValue]="null" disabled>Versión</option>
               <option *ngFor="let v of versions" [ngValue]="v.code">{{ v.name }}</option>
             </select>
-
-            <button
-              type="button"
-              class="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-60"
-              (click)="downloadPdf()"
-              [disabled]="!templateId || !versionControl.value"
-            >
-              Descargar PDF
-            </button>
-
-            <label
-              class="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50 cursor-pointer"
-              [attr.title]="selectedPdfName"
-            >
-              Seleccionar PDF
-              <input type="file" accept="application/pdf" class="hidden" (change)="onPdfSelected($event)" />
-            </label>
-
-            <button
-              type="button"
-              class="inline-flex items-center px-4 py-1.5 rounded-full bg-[#2b0f60] text-white font-semibold text-xs hover:bg-[#25134e] disabled:opacity-50"
-              (click)="uploadPdf()"
-              [disabled]="!templateId || !versionControl.value || isUploadingPdf"
-            >
-              Subir PDF
-            </button>
           </div>
         </app-document-mapper>
       </div>

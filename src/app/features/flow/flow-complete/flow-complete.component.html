@@ -11,12 +11,7 @@
     <div class="confetti confetti-5"></div>
   </div>
 
-  <header class="relative z-10 flex items-center justify-between px-6 py-5">
-    <div class="flex items-center gap-3">
-      <img src="assets/icons/sidebar/ApoloLogo.svg" alt="Signly" class="h-8 w-8" />
-      <span class="text-sm font-semibold text-slate-700">Signly</span>
-    </div>
-  </header>
+  <app-flow-progress [currentStep]="'completado'" [processId]="processId" [companyName]="'Apolo'"></app-flow-progress>
 
   <main class="relative z-10 flex items-center justify-center px-4 py-10">
     <section class="w-full max-w-lg rounded-3xl bg-white/80 backdrop-blur-xl border border-white shadow-2xl shadow-green-100/60 p-8 md:p-12">

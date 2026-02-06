@@ -1,20 +1,44 @@
 import { CommonModule } from '@angular/common';
 import {
   Component,
+  EventEmitter,
   ElementRef,
   OnDestroy,
-  ViewChild,
-  EventEmitter,
   Output,
+  QueryList,
+  ViewChild,
+  ViewChildren,
   inject
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { DocumentMapperService } from '../../core/services/document-mapper/document-mapper.service';
+import { getDocument, GlobalWorkerOptions, TextItem } from 'pdfjs-dist/legacy/build/pdf';
 import { FIELD_TYPES } from '../../core/constants/form-builder/field-types.constant';
 import type { FormFieldType } from '../../core/models/form-builder/field.model';
+import { DocumentMapperService } from '../../core/services/document-mapper/document-mapper.service';
 
-interface MappedField {
+const PDF_WORKER_SRC = 'assets/pdf.worker.min.mjs';
+GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
+
+interface PdfPageView {
+  pageNumber: number;
+  width: number;
+  height: number;
+  scale: number;
+}
+
+interface PdfEditableTextItem {
+  id: string;
+  pageNumber: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fontSize: number;
+  text: string;
+}
+
+export interface DocumentMappedField {
   id: string;
   type: FormFieldType;
   label: string;
@@ -22,6 +46,13 @@ interface MappedField {
   required: boolean;
   helpText: string;
   options: string[];
+  page: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  pageWidth: number;
+  pageHeight: number;
 }
 
 @Component({
@@ -32,21 +63,21 @@ interface MappedField {
   styleUrl: './document-mapper.component.css'
 })
 export class DocumentMapperComponent implements OnDestroy {
-  private editorCanvas?: ElementRef<HTMLDivElement>;
-
   @ViewChild('fileInput')
   private fileInputRef?: ElementRef<HTMLInputElement>;
 
-  @ViewChild('editorCanvas')
-  set editorCanvasRef(value: ElementRef<HTMLDivElement> | undefined) {
-    if (value === this.editorCanvas) {
-      return;
-    }
-    this.editorCanvas = value;
-    if (this.editorCanvas) {
-      this.renderDocumentHtml();
+  private docxEditorRef?: ElementRef<HTMLDivElement>;
+
+  @ViewChild('docxEditor')
+  set docxEditor(value: ElementRef<HTMLDivElement> | undefined) {
+    this.docxEditorRef = value;
+    if (value) {
+      value.nativeElement.innerHTML = this.docxHtml;
     }
   }
+
+  @ViewChildren('pageCanvas')
+  private pageCanvasRefs?: QueryList<ElementRef<HTMLCanvasElement>>;
 
   private readonly fb = inject(FormBuilder);
   private readonly mapperService = inject(DocumentMapperService);
@@ -56,26 +87,35 @@ export class DocumentMapperComponent implements OnDestroy {
   });
 
   loading = false;
-  editorDropActive = false;
+  dropTargetPage: number | null = null;
+  activePageNumber = 1;
+  documentMode: 'pdf' | 'docx' | null = null;
   @Output() fileSelected = new EventEmitter<File | undefined>();
 
   selectedFile?: File;
   errorMessage = '';
   readonly fieldPalette = FIELD_TYPES;
-  mappedFields: MappedField[] = [];
+  mappedFields: DocumentMappedField[] = [];
   selectedFieldId: string | null = null;
   isConfigOpen = true;
+  pdfPages: PdfPageView[] = [];
+  pdfTextItems: PdfEditableTextItem[] = [];
+  docxHtml = '<p></p>';
 
-  private documentHtml = '<p></p>';
-  private currentRange?: Range | null;
   private draggedFieldType?: FormFieldType;
   private fieldCounter = 0;
+  private pdfDocument: any | null = null;
+  private renderSession = 0;
+  private readonly targetPageWidth = 820;
+  private readonly defaultFieldWidth = 0.22;
+  private readonly defaultFieldHeight = 0.065;
 
   ngOnDestroy(): void {
-    // Nothing to clean up for now
+    this.renderSession += 1;
+    this.pdfDocument = null;
   }
 
-  getMappedFields(): MappedField[] {
+  getMappedFields(): DocumentMappedField[] {
     return [...this.mappedFields];
   }
 
@@ -92,65 +132,94 @@ export class DocumentMapperComponent implements OnDestroy {
     this.draggedFieldType = undefined;
   }
 
-  onEditorDragOver(event: DragEvent): void {
+  onPdfPageDragOver(event: DragEvent, pageNumber: number): void {
     const type = this.getDragType(event);
     if (!type) {
       return;
     }
     event.preventDefault();
-    this.editorDropActive = true;
-    const range = this.getRangeFromPoint(event.clientX, event.clientY);
-    if (range) {
-      this.currentRange = range;
+    this.dropTargetPage = pageNumber;
+  }
+
+  onPdfPageDragLeave(event: DragEvent, pageNumber: number): void {
+    const currentTarget = event.currentTarget as HTMLElement | null;
+    const relatedTarget = event.relatedTarget as Node | null;
+    if (currentTarget && relatedTarget && currentTarget.contains(relatedTarget)) {
+      return;
+    }
+    if (this.dropTargetPage === pageNumber) {
+      this.dropTargetPage = null;
     }
   }
 
-  onEditorDragLeave(event: DragEvent): void {
-    if (!this.isEventInsideEditor(event)) {
-      this.editorDropActive = false;
-    }
-  }
-
-  onEditorDrop(event: DragEvent): void {
+  onPdfPageDrop(event: DragEvent, pageNumber: number): void {
     const type = this.getDragType(event);
     if (!type) {
       return;
     }
     event.preventDefault();
-    this.editorDropActive = false;
-    const dropRange = this.getRangeFromPoint(event.clientX, event.clientY);
-    if (dropRange) {
-      this.currentRange = dropRange;
+    this.dropTargetPage = null;
+    const pageElement = event.currentTarget as HTMLElement | null;
+    if (!pageElement) {
+      return;
     }
-    this.insertFieldPlaceholder(type);
+
+    const point = this.getNormalizedPoint(event.clientX, event.clientY, pageElement);
+    this.placeFieldOnPage(type, pageNumber, point.x, point.y);
   }
 
   onPaletteClick(type: FormFieldType): void {
-    this.insertFieldPlaceholder(type);
-  }
-
-  onEditorInput(): void {
-    this.captureSelection();
-    this.syncDocumentHtml();
-  }
-
-  onEditorSelectionChange(): void {
-    this.captureSelection();
-  }
-
-  onEditorFocus(): void {
-    this.captureSelection();
-  }
-
-  onEditorClick(event: MouseEvent): void {
-    const target = event.target as HTMLElement | null;
-    if (!target) {
+    if (this.documentMode === 'docx') {
+      this.placeFieldInDocx(type);
       return;
     }
-    const fieldId = target.getAttribute('data-field-id');
-    if (fieldId) {
-      this.selectField(fieldId);
+
+    if (!this.pdfPages.length) {
+      this.errorMessage = 'Primero carga un documento para poder insertar campos.';
+      return;
     }
+    const page = this.activePageNumber || this.pdfPages[0].pageNumber;
+    const fieldsOnPage = this.mappedFields.filter(field => field.page === page).length;
+    const offsetY = this.clamp(0.18 + fieldsOnPage * 0.08, 0.12, 0.88);
+    this.placeFieldOnPage(type, page, 0.5, offsetY);
+  }
+
+  onPdfPageClick(pageNumber: number): void {
+    this.activePageNumber = pageNumber;
+  }
+
+  onFieldChipClick(event: MouseEvent, fieldId: string): void {
+    event.stopPropagation();
+    this.selectField(fieldId);
+  }
+
+  onPdfTextInput(itemId: string, event: Event): void {
+    const value = (event.target as HTMLElement).innerText.replace(/\n/g, ' ');
+    this.pdfTextItems = this.pdfTextItems.map(item =>
+      item.id === itemId ? { ...item, text: value } : item
+    );
+  }
+
+  getTextItemsForPage(pageNumber: number): PdfEditableTextItem[] {
+    return this.pdfTextItems.filter(item => item.pageNumber === pageNumber);
+  }
+
+  getTextItemStyle(item: PdfEditableTextItem): Record<string, string> {
+    return {
+      left: `${item.x}px`,
+      top: `${item.y}px`,
+      width: `${item.width}px`,
+      minHeight: `${item.height}px`,
+      fontSize: `${item.fontSize}px`
+    };
+  }
+
+  onDocxInput(): void {
+    const editor = this.docxEditorRef?.nativeElement;
+    if (!editor) {
+      return;
+    }
+    this.docxHtml = editor.innerHTML;
   }
 
   async onFileSelected(event: Event): Promise<void> {
@@ -172,86 +241,83 @@ export class DocumentMapperComponent implements OnDestroy {
       const suggestedName = file.name.replace(/\.[^.]+$/, '');
       this.form.patchValue({ documentName: suggestedName });
 
-      const result = await this.mapperService.convertFileToHtml(file);
-      this.setEditorContent(result.content);
+      if (this.isPdf(file)) {
+        this.documentMode = 'pdf';
+        await this.loadPdf(file);
+      } else if (this.isDocx(file)) {
+        this.documentMode = 'docx';
+        await this.loadDocx(file);
+      } else {
+        throw new Error('Solo se permiten archivos PDF o Word (.docx).');
+      }
     } catch (error) {
       this.errorMessage =
         error instanceof Error ? error.message : 'No se pudo procesar el archivo.';
       this.selectedFile = undefined;
       this.fileSelected.emit(undefined);
-      this.setEditorContent('<p></p>');
+      this.documentMode = null;
+      this.pdfPages = [];
+      this.pdfTextItems = [];
+      this.docxHtml = '<p></p>';
+      this.mappedFields = [];
+      this.selectedFieldId = null;
+      this.pdfDocument = null;
     } finally {
       this.loading = false;
     }
   }
 
   clearDocument(): void {
+    this.renderSession += 1;
     this.selectedFile = undefined;
     this.fileSelected.emit(undefined);
     this.errorMessage = '';
     this.form.reset();
-    this.documentHtml = '<p></p>';
-    this.renderDocumentHtml();
-    this.currentRange = undefined;
+    this.documentMode = null;
+    this.pdfPages = [];
+    this.pdfTextItems = [];
+    this.docxHtml = '<p></p>';
+    this.pdfDocument = null;
+    this.mappedFields = [];
+    this.selectedFieldId = null;
+    this.dropTargetPage = null;
+    this.activePageNumber = 1;
     if (this.fileInputRef) {
       this.fileInputRef.nativeElement.value = '';
     }
-  }
-
-  downloadHtml(): void {
-    const name = this.form.controls.documentName.value?.trim() || 'documento-mapeado';
-    const html = this.editorCanvas?.nativeElement.innerHTML ?? this.documentHtml;
-    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${name}.html`;
-    link.click();
-    URL.revokeObjectURL(url);
   }
 
   openFilePicker(): void {
     this.fileInputRef?.nativeElement.click();
   }
 
-  private setEditorContent(html: string): void {
-    this.documentHtml = html && html.trim().length ? html : '<p></p>';
-    this.renderDocumentHtml();
-    this.captureSelection();
-    this.syncDocumentHtml();
+  getFieldsForPage(pageNumber: number): DocumentMappedField[] {
+    return this.mappedFields.filter(field => field.page === pageNumber);
   }
 
-  private renderDocumentHtml(): void {
-    if (!this.editorCanvas) {
-      return;
-    }
-    this.editorCanvas.nativeElement.innerHTML = this.documentHtml;
+  getFieldStyle(field: DocumentMappedField): Record<string, string> {
+    return {
+      left: `${field.x * 100}%`,
+      top: `${field.y * 100}%`,
+      width: `${field.width * 100}%`,
+      height: `${field.height * 100}%`
+    };
   }
 
-  private captureSelection(): void {
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) {
-      this.currentRange = undefined;
-      return;
-    }
-    const range = selection.getRangeAt(0);
-    if (this.editorCanvas?.nativeElement.contains(range.commonAncestorContainer)) {
-      this.currentRange = range;
-    }
+  buildPlaceholderPreview(value: string): string {
+    return this.buildPlaceholderFromName(value);
   }
 
-  private syncDocumentHtml(): void {
-    if (this.editorCanvas) {
-      this.documentHtml = this.editorCanvas.nativeElement.innerHTML;
-    }
+  buildPlaceholderFromName(name: string): string {
+    const slug = this.normalizeFieldName(name);
+    return `{{${slug || 'CAMPO'}}}`;
   }
 
   selectField(fieldId: string): void {
     this.selectedFieldId = fieldId;
-    this.updatePlaceholderSelection();
   }
 
-  get selectedField(): MappedField | undefined {
+  get selectedField(): DocumentMappedField | undefined {
     return this.mappedFields.find(field => field.id === this.selectedFieldId);
   }
 
@@ -264,9 +330,6 @@ export class DocumentMapperComponent implements OnDestroy {
     const raw = (event.target as HTMLInputElement).value;
     const normalized = this.normalizeFieldName(raw);
     this.updateSelectedField({ name: normalized });
-    if (this.selectedFieldId) {
-      this.updatePlaceholderText(this.selectedFieldId, normalized);
-    }
   }
 
   toggleSelectedFieldRequired(event: Event): void {
@@ -288,82 +351,60 @@ export class DocumentMapperComponent implements OnDestroy {
     this.updateSelectedField({ helpText: value });
   }
 
+  updateSelectedFieldMetric(metric: 'x' | 'y' | 'width' | 'height', event: Event): void {
+    const rawValue = (event.target as HTMLInputElement).value;
+    const parsed = Number(rawValue);
+    if (!Number.isFinite(parsed)) {
+      return;
+    }
+
+    const normalized = this.clamp(parsed / 100, 0, 1);
+    const current = this.selectedField;
+    if (!current) {
+      return;
+    }
+
+    if (metric === 'width' || metric === 'height') {
+      const min = metric === 'width' ? 0.08 : 0.035;
+      const max = metric === 'width' ? 0.8 : 0.3;
+      const size = this.clamp(normalized, min, max);
+      if (metric === 'width') {
+        const nextX = this.clamp(current.x, 0, 1 - size);
+        this.updateSelectedField({ width: size, x: nextX });
+      } else {
+        const nextY = this.clamp(current.y, 0, 1 - size);
+        this.updateSelectedField({ height: size, y: nextY });
+      }
+      return;
+    }
+
+    if (metric === 'x') {
+      const nextX = this.clamp(normalized, 0, 1 - current.width);
+      this.updateSelectedField({ x: nextX });
+      return;
+    }
+
+    const nextY = this.clamp(normalized, 0, 1 - current.height);
+    this.updateSelectedField({ y: nextY });
+  }
+
+  getMetricPercent(field: DocumentMappedField, metric: 'x' | 'y' | 'width' | 'height'): string {
+    return (field[metric] * 100).toFixed(2);
+  }
+
   removeField(fieldId: string): void {
     this.mappedFields = this.mappedFields.filter(field => field.id !== fieldId);
     if (this.selectedFieldId === fieldId) {
       this.selectedFieldId = this.mappedFields[0]?.id ?? null;
     }
-    this.removePlaceholders(fieldId);
-    this.updatePlaceholderSelection();
   }
 
   supportsOptions(type: FormFieldType): boolean {
     return type === 'select' || type === 'radio' || type === 'multiselect';
   }
 
-  buildPlaceholderPreview(value: string): string {
-    return this.buildPlaceholderFromName(value);
-  }
-
-  getOptionsText(field: MappedField): string {
+  getOptionsText(field: DocumentMappedField): string {
     return field.options.join(', ');
-  }
-
-  private insertFieldPlaceholder(type: FormFieldType): void {
-    const field = this.createMappedField(type);
-    const placeholder = document.createElement('span');
-    placeholder.className = 'placeholder-chip';
-    placeholder.setAttribute('data-field-id', field.id);
-    placeholder.setAttribute('data-field-type', field.type);
-    placeholder.setAttribute('contenteditable', 'false');
-    placeholder.setAttribute('role', 'button');
-
-    const label = document.createElement('span');
-    label.className = 'placeholder-chip__label';
-    label.textContent = this.buildPlaceholderFromName(field.name);
-
-    const icon = document.createElement('span');
-    icon.className = 'placeholder-chip__icon';
-    icon.textContent = '...';
-
-    placeholder.appendChild(label);
-    placeholder.appendChild(icon);
-    this.insertNodeAtRange(placeholder);
-    this.mappedFields = [...this.mappedFields, field];
-  }
-
-  private insertNodeAtRange(node: Node): void {
-    const editorElement = this.editorCanvas?.nativeElement;
-    if (!editorElement) {
-      return;
-    }
-
-    editorElement.focus({ preventScroll: true });
-
-    let range = this.currentRange;
-    if (!range || !editorElement.contains(range.commonAncestorContainer)) {
-      range = document.createRange();
-      range.selectNodeContents(editorElement);
-      range.collapse(false);
-    }
-
-    range.deleteContents();
-    range.insertNode(node);
-    this.placeCaretAfter(node);
-    this.syncDocumentHtml();
-  }
-
-  private placeCaretAfter(node: Node): void {
-    const selection = window.getSelection();
-    if (!selection) {
-      return;
-    }
-    const range = document.createRange();
-    range.setStartAfter(node);
-    range.collapse(true);
-    selection.removeAllRanges();
-    selection.addRange(range);
-    this.currentRange = range;
   }
 
   private getDragType(event: DragEvent): FormFieldType | undefined {
@@ -375,38 +416,6 @@ export class DocumentMapperComponent implements OnDestroy {
       return undefined;
     }
     return this.fieldPalette.find(item => item.type === data)?.type;
-  }
-
-  private getRangeFromPoint(x: number, y: number): Range | null {
-    const doc = this.editorCanvas?.nativeElement.ownerDocument || document;
-    const anyDoc = doc as any;
-    if (typeof anyDoc.caretRangeFromPoint === 'function') {
-      return anyDoc.caretRangeFromPoint(x, y) ?? null;
-    }
-    if (typeof anyDoc.caretPositionFromPoint === 'function') {
-      const position = anyDoc.caretPositionFromPoint(x, y);
-      if (position) {
-        const range = doc.createRange();
-        range.setStart(position.offsetNode, position.offset);
-        range.collapse(true);
-        return range;
-      }
-    }
-    return null;
-  }
-
-  private isEventInsideEditor(event: DragEvent): boolean {
-    const editorElement = this.editorCanvas?.nativeElement;
-    if (!editorElement) {
-      return false;
-    }
-    const target = (event.relatedTarget ?? event.target) as Node | null;
-    return !!target && editorElement.contains(target);
-  }
-
-  private buildPlaceholderFromName(name: string): string {
-    const slug = this.normalizeFieldName(name);
-    return `{{${slug || 'CAMPO'}}}`;
   }
 
   private normalizeFieldName(value: string): string {
@@ -422,7 +431,16 @@ export class DocumentMapperComponent implements OnDestroy {
       .replace(/^_+|_+$/g, '');
   }
 
-  private createMappedField(type: FormFieldType): MappedField {
+  private createMappedField(
+    type: FormFieldType,
+    page: number,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    pageWidth: number,
+    pageHeight: number
+  ): DocumentMappedField {
     const palette = this.fieldPalette.find(item => item.type === type);
     const base = palette?.label || type;
     const suffix = ++this.fieldCounter;
@@ -434,11 +452,51 @@ export class DocumentMapperComponent implements OnDestroy {
       name,
       required: false,
       helpText: '',
-      options: []
+      options: [],
+      page,
+      x,
+      y,
+      width,
+      height,
+      pageWidth,
+      pageHeight
     };
   }
 
-  private updateSelectedField(patch: Partial<MappedField>): void {
+  private placeFieldOnPage(type: FormFieldType, pageNumber: number, x: number, y: number): void {
+    const page = this.pdfPages.find(item => item.pageNumber === pageNumber);
+    if (!page) {
+      return;
+    }
+    const size = this.getDefaultFieldSize(type);
+    const normalizedX = this.clamp(x - size.width / 2, 0, 1 - size.width);
+    const normalizedY = this.clamp(y - size.height / 2, 0, 1 - size.height);
+    const field = this.createMappedField(
+      type,
+      pageNumber,
+      normalizedX,
+      normalizedY,
+      size.width,
+      size.height,
+      page.width,
+      page.height
+    );
+    this.mappedFields = [...this.mappedFields, field];
+    this.selectedFieldId = field.id;
+    this.activePageNumber = pageNumber;
+  }
+
+  private placeFieldInDocx(type: FormFieldType): void {
+    const size = this.getDefaultFieldSize(type);
+    const fieldsOnDocx = this.mappedFields.length;
+    const y = this.clamp(0.12 + fieldsOnDocx * 0.06, 0, 0.92);
+    const field = this.createMappedField(type, 1, 0.08, y, size.width, size.height, 1000, 1400);
+    this.mappedFields = [...this.mappedFields, field];
+    this.selectedFieldId = field.id;
+    this.insertDocxPlaceholder(this.buildPlaceholderFromName(field.name));
+  }
+
+  private updateSelectedField(patch: Partial<DocumentMappedField>): void {
     if (!this.selectedFieldId) {
       return;
     }
@@ -447,45 +505,237 @@ export class DocumentMapperComponent implements OnDestroy {
     );
   }
 
-  private updatePlaceholderText(fieldId: string, name: string): void {
-    const editorElement = this.editorCanvas?.nativeElement;
-    if (!editorElement) {
-      return;
+  private getDefaultFieldSize(type: FormFieldType): { width: number; height: number } {
+    switch (type) {
+      case 'textarea':
+        return { width: 0.3, height: 0.11 };
+      case 'date':
+      case 'datetime':
+        return { width: 0.18, height: 0.06 };
+      case 'radio':
+      case 'multiselect':
+      case 'select':
+        return { width: 0.24, height: 0.07 };
+      default:
+        return { width: this.defaultFieldWidth, height: this.defaultFieldHeight };
     }
-    const placeholders = editorElement.querySelectorAll(`[data-field-id="${fieldId}"]`);
-    placeholders.forEach(node => {
-      const label = node.querySelector('.placeholder-chip__label');
-      if (label) {
-        label.textContent = this.buildPlaceholderFromName(name);
-      }
-    });
-    this.syncDocumentHtml();
   }
 
-  private removePlaceholders(fieldId: string): void {
-    const editorElement = this.editorCanvas?.nativeElement;
-    if (!editorElement) {
-      return;
+  private getNormalizedPoint(clientX: number, clientY: number, element: HTMLElement): { x: number; y: number } {
+    const rect = element.getBoundingClientRect();
+    if (!rect.width || !rect.height) {
+      return { x: 0.5, y: 0.5 };
     }
-    const placeholders = editorElement.querySelectorAll(`[data-field-id="${fieldId}"]`);
-    placeholders.forEach(node => node.parentElement?.removeChild(node));
-    this.syncDocumentHtml();
+    const x = this.clamp((clientX - rect.left) / rect.width, 0, 1);
+    const y = this.clamp((clientY - rect.top) / rect.height, 0, 1);
+    return { x, y };
   }
 
-  private updatePlaceholderSelection(): void {
-    const editorElement = this.editorCanvas?.nativeElement;
-    if (!editorElement) {
+  private clamp(value: number, min: number, max: number): number {
+    return Math.min(Math.max(value, min), max);
+  }
+
+  private async loadDocx(file: File): Promise<void> {
+    const result = await this.mapperService.convertFileToHtml(file);
+    this.renderSession += 1;
+    this.pdfDocument = null;
+    this.pdfPages = [];
+    this.pdfTextItems = [];
+    this.activePageNumber = 1;
+    this.dropTargetPage = null;
+    this.mappedFields = [];
+    this.selectedFieldId = null;
+    this.fieldCounter = 0;
+    this.docxHtml = result.content?.trim() ? result.content : '<p></p>';
+    await this.sleep(0);
+    if (this.docxEditorRef?.nativeElement) {
+      this.docxEditorRef.nativeElement.innerHTML = this.docxHtml;
+    }
+  }
+
+  private async loadPdf(file: File): Promise<void> {
+    const arrayBuffer = await file.arrayBuffer();
+    this.renderSession += 1;
+    const currentSession = this.renderSession;
+    const loadingTask = getDocument({ data: new Uint8Array(arrayBuffer) });
+    const pdf = await loadingTask.promise;
+    if (currentSession !== this.renderSession) {
       return;
     }
-    const placeholders = editorElement.querySelectorAll('.placeholder-chip');
-    placeholders.forEach(node => {
-      const element = node as HTMLElement;
-      const id = element.getAttribute('data-field-id');
-      if (id && id === this.selectedFieldId) {
-        element.classList.add('placeholder-chip--active');
-      } else {
-        element.classList.remove('placeholder-chip--active');
+
+    const pages: PdfPageView[] = [];
+    const textItems: PdfEditableTextItem[] = [];
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+      const page = await pdf.getPage(pageNumber);
+      const baseViewport = page.getViewport({ scale: 1 });
+      const scale = this.targetPageWidth / baseViewport.width;
+      const viewport = page.getViewport({ scale });
+      const textContent = await page.getTextContent();
+      pages.push({
+        pageNumber,
+        width: Math.round(viewport.width),
+        height: Math.round(viewport.height),
+        scale
+      });
+      textItems.push(
+        ...this.mapPdfTextItems(
+          textContent.items,
+          pageNumber,
+          scale,
+          baseViewport.height,
+          Math.round(viewport.width),
+          Math.round(viewport.height)
+        )
+      );
+    }
+
+    if (currentSession !== this.renderSession) {
+      return;
+    }
+
+    this.pdfDocument = pdf;
+    this.pdfPages = pages;
+    this.pdfTextItems = textItems;
+    this.docxHtml = '<p></p>';
+    this.activePageNumber = pages[0]?.pageNumber ?? 1;
+    this.dropTargetPage = null;
+    this.mappedFields = [];
+    this.selectedFieldId = null;
+    this.fieldCounter = 0;
+
+    await this.waitForCanvasElements(pages.length);
+    await this.renderPdfPages(currentSession);
+  }
+
+  private async waitForCanvasElements(expected: number): Promise<void> {
+    if (expected === 0) {
+      return;
+    }
+    for (let attempt = 0; attempt < 20; attempt++) {
+      if ((this.pageCanvasRefs?.length ?? 0) === expected) {
+        return;
       }
-    });
+      await this.sleep(16);
+    }
+  }
+
+  private async renderPdfPages(session: number): Promise<void> {
+    if (!this.pdfDocument || !this.pageCanvasRefs) {
+      return;
+    }
+
+    const canvases = this.pageCanvasRefs.toArray();
+    for (const pageView of this.pdfPages) {
+      if (session !== this.renderSession || !this.pdfDocument) {
+        return;
+      }
+
+      const canvas = canvases[pageView.pageNumber - 1]?.nativeElement;
+      if (!canvas) {
+        continue;
+      }
+
+      const page = await this.pdfDocument.getPage(pageView.pageNumber);
+      const viewport = page.getViewport({ scale: pageView.scale });
+      canvas.width = Math.floor(viewport.width);
+      canvas.height = Math.floor(viewport.height);
+
+      const context = canvas.getContext('2d');
+      if (!context) {
+        continue;
+      }
+
+      await page.render({ canvasContext: context, viewport } as any).promise;
+    }
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => window.setTimeout(resolve, ms));
+  }
+
+  private insertDocxPlaceholder(placeholder: string): void {
+    const editor = this.docxEditorRef?.nativeElement;
+    if (!editor) {
+      return;
+    }
+
+    editor.focus({ preventScroll: true });
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      if (editor.contains(range.commonAncestorContainer)) {
+        range.deleteContents();
+        range.insertNode(document.createTextNode(placeholder));
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        this.docxHtml = editor.innerHTML;
+        return;
+      }
+    }
+
+    editor.appendChild(document.createTextNode(` ${placeholder}`));
+    this.docxHtml = editor.innerHTML;
+  }
+
+  private mapPdfTextItems(
+    items: unknown[],
+    pageNumber: number,
+    scale: number,
+    pageHeightBase: number,
+    pageWidth: number,
+    pageHeight: number
+  ): PdfEditableTextItem[] {
+    const result: PdfEditableTextItem[] = [];
+    let itemIndex = 0;
+
+    for (const item of items) {
+      if (!this.isTextItem(item)) {
+        continue;
+      }
+
+      const value = item.str ?? '';
+      if (!value.trim()) {
+        continue;
+      }
+
+      const transform = (item.transform ?? []) as number[];
+      const offsetX = Number(transform[4] ?? 0) * scale;
+      const offsetY = (pageHeightBase - Number(transform[5] ?? 0)) * scale;
+      const fontSize = this.clamp(Math.abs(Number(transform[3] ?? 10)) * scale, 8, 40);
+      const widthRaw = Number(item.width ?? 0) * scale;
+      const width = Math.max(widthRaw, value.length * fontSize * 0.45, 10);
+      const height = Math.max(fontSize * 1.2, 12);
+      const x = this.clamp(offsetX, 0, Math.max(pageWidth - width, 0));
+      const y = this.clamp(offsetY - height * 0.8, 0, Math.max(pageHeight - height, 0));
+
+      result.push({
+        id: `text_${pageNumber}_${itemIndex++}`,
+        pageNumber,
+        x,
+        y,
+        width,
+        height,
+        fontSize,
+        text: value
+      });
+    }
+
+    return result;
+  }
+
+  private isTextItem(item: unknown): item is TextItem {
+    return Boolean(item && typeof (item as TextItem).str === 'string');
+  }
+
+  private isPdf(file: File): boolean {
+    return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+  }
+
+  private isDocx(file: File): boolean {
+    return (
+      file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      file.name.toLowerCase().endsWith('.docx')
+    );
   }
 }

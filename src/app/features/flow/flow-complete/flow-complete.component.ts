@@ -4,11 +4,12 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 
 import { FlowService } from '../../../core/services/flow/flow.service';
 import { FlowState, FlowChallengeType } from '../../../core/models/flow/flow.model';
+import { FlowProgressComponent } from '../shared/flow-progress/flow-progress.component';
 
 @Component({
   selector: 'app-flow-complete',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FlowProgressComponent],
   templateUrl: './flow-complete.component.html'
 })
 export class FlowCompleteComponent implements OnInit {
