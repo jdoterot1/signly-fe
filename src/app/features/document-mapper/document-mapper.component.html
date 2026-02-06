@@ -1,0 +1,426 @@
+<section class="h-[calc(100vh-6rem)] bg-[#f5f6fb] flex flex-col">
+  <header class="flex items-center justify-between px-6 py-3 bg-white border-b border-slate-200 shadow-sm">
+    <div class="flex items-center gap-3">
+      <div
+        class="h-8 w-8 rounded-full bg-[#2b0f60] text-white text-sm font-semibold flex items-center justify-center"
+      >
+        {{ (form.controls.documentName.value || 'D')[0] || 'D' }}
+      </div>
+      <div>
+        <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">
+          Documento
+        </p>
+        <p class="text-sm font-semibold text-gray-900 truncate max-w-[260px]">
+          {{ form.controls.documentName.value || 'Documento sin título' }}
+        </p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 text-xs">
+      <button
+        type="button"
+        class="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50"
+        (click)="openFilePicker()"
+      >
+        Cargar archivo
+      </button>
+      <ng-content select="[mapper-actions]"></ng-content>
+    </div>
+  </header>
+
+  <div class="flex-1 flex overflow-hidden px-4 pb-4 pt-3 gap-4">
+    <aside
+      class="bg-white rounded-3xl shadow-md flex flex-col w-72 shrink-0 p-4 border border-slate-100 overflow-hidden"
+    >
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">
+            Campos
+          </p>
+          <p class="text-base font-semibold text-gray-900">
+            Componentes
+          </p>
+        </div>
+        <button
+          type="button"
+          class="h-8 w-8 rounded-full border border-slate-200 text-[#2b0f60] font-semibold text-lg leading-none flex items-center justify-center"
+          aria-label="Agregar campo"
+        >
+          +
+        </button>
+      </div>
+
+      <div class="bg-[#f6f3fb] rounded-2xl p-3 shadow-inner">
+        <label class="text-[11px] uppercase text-gray-500 font-semibold">
+          Nombre del documento
+        </label>
+        <input
+          type="text"
+          class="mt-1 w-full rounded-xl border border-transparent bg-white px-3 py-2 text-sm focus:border-[#2b0f60] focus:ring-[#2b0f60] outline-none"
+          [formControl]="form.controls.documentName"
+          placeholder="Ej. Contrato_comercial"
+        />
+      </div>
+
+      <div class="flex-1 overflow-y-auto pr-1 custom-scroll space-y-3">
+        <button
+          *ngFor="let field of fieldPalette"
+          type="button"
+          class="w-full text-left px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-[#f3effb] hover:border-[#d7cfee] shadow-[0_1px_0_#edeef2] transition cursor-grab active:scale-[0.99]"
+          draggable="true"
+          (dragstart)="onPaletteDragStart($event, field.type)"
+          (dragend)="onPaletteDragEnd()"
+          (click)="onPaletteClick(field.type)"
+        >
+          <div class="flex items-center justify-between">
+            <span class="font-medium text-gray-900 text-sm">
+              {{ field.label }}
+            </span>
+            <span class="text-[10px] uppercase tracking-wide text-gray-400">
+              {{ field.type }}
+            </span>
+          </div>
+          <p
+            class="text-[11px] text-gray-500 mt-1"
+            *ngIf="field.description"
+          >
+            {{ field.description }}
+          </p>
+        </button>
+      </div>
+
+      <p class="text-[11px] text-gray-400 mt-3">
+        Inserta campos con el formato
+        <span class="font-mono text-[#2b0f60]">
+          {{ '{{CAMPO}}' }}
+        </span>.
+      </p>
+    </aside>
+
+    <div class="flex-1 flex flex-col overflow-hidden rounded-3xl">
+      <input
+        #fileInput
+        type="file"
+        class="sr-only"
+        accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        (change)="onFileSelected($event)"
+      />
+
+      <div class="relative flex-1 overflow-hidden">
+        <div
+          *ngIf="loading"
+          class="absolute inset-0 bg-white/70 backdrop-blur-sm z-20 flex items-center justify-center text-gray-600 text-sm"
+        >
+          Procesando documento…
+        </div>
+
+        <ng-container *ngIf="selectedFile; else emptyState">
+          <div class="pdf-shell h-full w-full flex flex-col rounded-3xl" *ngIf="documentMode === 'pdf'">
+            <div class="px-6 pt-3 pb-2 text-xs text-gray-500">
+              <p class="font-medium text-gray-700">{{ selectedFile.name }}</p>
+              <p class="text-[11px] mt-0.5">
+                {{ (selectedFile.size / 1024 / 1024) | number:'1.1-2' }} MB ·
+                {{ selectedFile.type || 'Formato detectado' }}
+              </p>
+            </div>
+
+            <div class="flex-1 overflow-hidden pb-6">
+              <div class="pdf-scroll custom-scroll">
+                <div
+                  class="pdf-page-block"
+                  *ngFor="let page of pdfPages"
+                >
+                  <p class="pdf-page-caption">Página {{ page.pageNumber }}</p>
+                  <div
+                    class="pdf-page"
+                    [class.pdf-page--drop]="dropTargetPage === page.pageNumber"
+                    [class.pdf-page--active]="activePageNumber === page.pageNumber"
+                    [style.width.px]="page.width"
+                    [style.height.px]="page.height"
+                    (click)="onPdfPageClick(page.pageNumber)"
+                    (dragover)="onPdfPageDragOver($event, page.pageNumber)"
+                    (dragleave)="onPdfPageDragLeave($event, page.pageNumber)"
+                    (drop)="onPdfPageDrop($event, page.pageNumber)"
+                  >
+                    <canvas #pageCanvas class="pdf-canvas"></canvas>
+
+                    <div class="pdf-text-layer">
+                      <div
+                        class="pdf-text-editor"
+                        *ngFor="let textItem of getTextItemsForPage(page.pageNumber)"
+                        [ngStyle]="getTextItemStyle(textItem)"
+                        [textContent]="textItem.text"
+                        contenteditable="true"
+                        spellcheck="false"
+                        (input)="onPdfTextInput(textItem.id, $event)"
+                        (mousedown)="$event.stopPropagation()"
+                      ></div>
+                    </div>
+
+                    <button
+                      type="button"
+                      class="placeholder-chip mapper-chip"
+                      *ngFor="let field of getFieldsForPage(page.pageNumber)"
+                      [class.mapper-chip--active]="field.id === selectedFieldId"
+                      [ngStyle]="getFieldStyle(field)"
+                      [attr.title]="field.label"
+                      (click)="onFieldChipClick($event, field.id)"
+                    >
+                      <span class="placeholder-chip__label">{{ buildPlaceholderFromName(field.name) }}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="docx-shell h-full w-full flex flex-col rounded-3xl" *ngIf="documentMode === 'docx'">
+            <div class="px-6 pt-3 pb-2 text-xs text-gray-500">
+              <p class="font-medium text-gray-700">{{ selectedFile.name }}</p>
+              <p class="text-[11px] mt-0.5">
+                Modo edición Word (frontend). La fidelidad puede variar según el documento.
+              </p>
+            </div>
+
+            <div class="flex-1 overflow-hidden pb-6">
+              <div class="docx-scroll custom-scroll">
+                <div
+                  #docxEditor
+                  class="docx-editor"
+                  contenteditable="true"
+                  spellcheck="false"
+                  (input)="onDocxInput()"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <p class="px-6 text-sm text-red-500 mt-2" *ngIf="errorMessage">
+            {{ errorMessage }}
+          </p>
+        </ng-container>
+
+        <ng-template #emptyState>
+          <div
+            class="h-full flex flex-col items-center justify-center text-center gap-4 px-8 text-gray-500 bg-[#f5f6fb] rounded-3xl border border-dashed border-slate-200"
+          >
+            <div class="text-5xl">📄</div>
+            <div>
+              <p class="text-xl font-semibold text-gray-900">
+                Crea tu plantilla
+              </p>
+              <p class="text-sm mt-1 text-gray-500">
+                Carga un PDF o Word para iniciar el mapeo y edición.
+              </p>
+            </div>
+            <div class="flex gap-3">
+              <button
+                type="button"
+                class="px-5 py-2 rounded-2xl border border-[#2b0f60] text-sm font-semibold text-[#2b0f60] hover:bg-[#f3effb]"
+                (click)="openFilePicker()"
+              >
+                Cargar archivo
+              </button>
+            </div>
+            <p *ngIf="errorMessage" class="text-sm text-red-500">
+              {{ errorMessage }}
+            </p>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+
+    <!-- Sidebar de campos agregados -->
+    <aside
+      class="bg-white rounded-3xl shadow-md flex flex-col w-72 shrink-0 p-4 border border-slate-100 overflow-hidden"
+    >
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">
+            Campos agregados
+          </p>
+          <p class="text-base font-semibold text-gray-900">
+            {{ selectedField?.label || 'Configuración' }}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="text-xs font-semibold text-gray-500 hover:text-gray-700"
+          (click)="isConfigOpen = !isConfigOpen"
+        >
+          {{ isConfigOpen ? 'Ocultar' : 'Mostrar' }}
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto pr-1 custom-scroll space-y-4 mt-4">
+        <div *ngIf="mappedFields.length === 0" class="text-xs text-gray-400">
+          Arrastra un componente para empezar a configurar campos.
+        </div>
+
+        <div class="space-y-2" *ngIf="mappedFields.length > 0">
+          <button
+            *ngFor="let field of mappedFields"
+            type="button"
+            class="w-full text-left px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-[#f3effb] hover:border-[#d7cfee] shadow-[0_1px_0_#edeef2] transition"
+            [class.border-[#2b0f60]]="field.id === selectedFieldId"
+            [class.bg-[#f3effb]]="field.id === selectedFieldId"
+            (click)="selectField(field.id)"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-gray-900 truncate">
+                  {{ field.label || 'Campo sin nombre' }}
+                </p>
+                <p class="text-[11px] text-gray-500 truncate">
+                  {{ field.name }}
+                </p>
+              </div>
+              <span class="text-[10px] uppercase tracking-wide text-gray-400">
+                {{ field.type }}
+              </span>
+            </div>
+          </button>
+        </div>
+
+        <div
+          *ngIf="selectedField"
+          class="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm space-y-3"
+        >
+          <div class="flex items-center justify-between">
+            <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">
+              Configurar campo
+            </p>
+            <button
+              type="button"
+              class="text-xs font-semibold text-red-500 hover:text-red-600"
+              (click)="removeField(selectedField.id)"
+            >
+              Eliminar
+            </button>
+          </div>
+
+          <div *ngIf="isConfigOpen" class="space-y-3">
+            <div>
+              <label class="text-[11px] uppercase text-gray-400 font-semibold">
+                Nombre visible
+              </label>
+              <input
+                type="text"
+                class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-[#2b0f60] focus:ring-[#2b0f60] outline-none"
+                [value]="selectedField.label"
+                (input)="updateSelectedFieldLabel($event)"
+              />
+            </div>
+
+            <div>
+              <label class="text-[11px] uppercase text-gray-400 font-semibold">
+                Código del campo
+              </label>
+              <input
+                type="text"
+                class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-[#2b0f60] focus:ring-[#2b0f60] outline-none"
+                [value]="selectedField.name"
+                (input)="updateSelectedFieldName($event)"
+              />
+              <p class="text-[11px] text-gray-400 mt-1">
+                Se mostrará como {{ buildPlaceholderPreview(selectedField.name) }}.
+              </p>
+            </div>
+
+            <div>
+              <label class="text-[11px] uppercase text-gray-400 font-semibold">
+                Ubicación (%)
+              </label>
+              <div class="grid grid-cols-2 gap-2 mt-1">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  class="rounded-xl border border-gray-200 px-2 py-1.5 text-sm"
+                  [value]="getMetricPercent(selectedField, 'x')"
+                  (change)="updateSelectedFieldMetric('x', $event)"
+                  title="Posición X"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  class="rounded-xl border border-gray-200 px-2 py-1.5 text-sm"
+                  [value]="getMetricPercent(selectedField, 'y')"
+                  (change)="updateSelectedFieldMetric('y', $event)"
+                  title="Posición Y"
+                />
+                <input
+                  type="number"
+                  min="8"
+                  max="80"
+                  step="0.1"
+                  class="rounded-xl border border-gray-200 px-2 py-1.5 text-sm"
+                  [value]="getMetricPercent(selectedField, 'width')"
+                  (change)="updateSelectedFieldMetric('width', $event)"
+                  title="Ancho"
+                />
+                <input
+                  type="number"
+                  min="3.5"
+                  max="30"
+                  step="0.1"
+                  class="rounded-xl border border-gray-200 px-2 py-1.5 text-sm"
+                  [value]="getMetricPercent(selectedField, 'height')"
+                  (change)="updateSelectedFieldMetric('height', $event)"
+                  title="Alto"
+                />
+              </div>
+              <p class="text-[11px] text-gray-400 mt-1">
+                Página {{ selectedField.page }}.
+              </p>
+            </div>
+
+            <div class="flex items-center justify-between">
+              <div>
+                <label class="text-[11px] uppercase text-gray-400 font-semibold">
+                  Requerido
+                </label>
+                <p class="text-[11px] text-gray-400">Obligatorio para firmar.</p>
+              </div>
+              <input
+                type="checkbox"
+                class="h-4 w-4 text-[#2b0f60] border-gray-300 rounded"
+                [checked]="selectedField.required"
+                (change)="toggleSelectedFieldRequired($event)"
+              />
+            </div>
+
+            <div *ngIf="supportsOptions(selectedField.type)">
+              <label class="text-[11px] uppercase text-gray-400 font-semibold">
+                Opciones
+              </label>
+              <textarea
+                rows="3"
+                class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-[#2b0f60] focus:ring-[#2b0f60] outline-none"
+                [value]="getOptionsText(selectedField)"
+                (input)="updateSelectedFieldOptions($event)"
+                placeholder="Ej. Opción 1, Opción 2"
+              ></textarea>
+            </div>
+
+            <div>
+              <label class="text-[11px] uppercase text-gray-400 font-semibold">
+                Ayuda
+              </label>
+              <input
+                type="text"
+                class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-[#2b0f60] focus:ring-[#2b0f60] outline-none"
+                [value]="selectedField.helpText"
+                (input)="updateSelectedFieldHelp($event)"
+                placeholder="Texto de apoyo para el usuario"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</section>

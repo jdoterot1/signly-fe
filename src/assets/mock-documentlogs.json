@@ -1,0 +1,94 @@
+{
+  "auditLogs": [
+    {
+      "id": "1",
+      "id_document": "1",
+      "name": "Olivia Rhye",
+      "role": "Firmante",
+      "status": "Completed",
+      "action": "Acceso al enlace",
+      "observation": "Firma capturada correctamente",
+      "method": "Firma Biométrica"
+    },
+    {
+      "id": "2",
+      "id_document": "1",
+      "name": "Phoenix Baker",
+      "role": "Validador",
+      "status": "In Progress",
+      "action": "OTP verificado",
+      "observation": "Validación facial aprobada",
+      "method": "OTP Email"
+    },
+    {
+      "id": "3",
+      "id_document": "1",
+      "name": "Lana Steiner",
+      "role": "Firmante",
+      "status": "Completed",
+      "action": "Firma completada",
+      "observation": "Recordatorio automático enviado",
+      "method": "Firma Biométrica"
+    },
+    {
+      "id": "4",
+      "id_document": "1",
+      "name": "Demi Wilkinson",
+      "role": "Firmante",
+      "status": "Completed",
+      "action": "Validación",
+      "observation": "Validación facial aprobada",
+      "method": "Firma Biométrica"
+    },
+    {
+      "id": "5",
+      "id_document": "2",
+      "name": "Candice Wu",
+      "role": "Firmante",
+      "status": "Completed",
+      "action": "Firma completada",
+      "observation": "Recordatorio automático enviado",
+      "method": "Firma Biométrica"
+    },
+    {
+      "id": "6",
+      "id_document": "2",
+      "name": "Natali Craig",
+      "role": "Validador",
+      "status": "In Progress",
+      "action": "Validación",
+      "observation": "Recordatorio automático enviado",
+      "method": "OTP Email"
+    },
+    {
+      "id": "7",
+      "id_document": "1",
+      "name": "Drew Cano",
+      "role": "Validador",
+      "status": "In Progress",
+      "action": "Firma completada",
+      "observation": "Validación facial aprobada",
+      "method": "OTP Email"
+    },
+    {
+      "id": "8",
+      "id_document": "2",
+      "name": "Orlando Diggs",
+      "role": "Firmante",
+      "status": "Completed",
+      "action": "Firma completada",
+      "observation": "Recordatorio automático enviado",
+      "method": "Firma Biométrica"
+    },
+    {
+      "id": "9",
+      "id_document": "1",
+      "name": "Andi Lane",
+      "role": "Firmante",
+      "status": "Completed",
+      "action": "OTP verificado",
+      "observation": "Validación facial aprobada",
+      "method": "Firma Biométrica"
+    }
+  ]
+}

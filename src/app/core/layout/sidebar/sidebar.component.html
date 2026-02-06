@@ -1,126 +1,274 @@
-<!-- src/app/core/layout/sidebar/sidebar.component.html -->
+<style>
+  :root {
+    --brand-primary: #4f46e5;
+  }
+</style>
+
 <div
-  [class.w-16]="isCollapsed"
+  [class.w-[68px]]="isCollapsed"
   [class.w-64]="!isCollapsed"
-  class="flex flex-col h-full bg-white transition-all duration-300 overflow-hidden"
+  class="flex flex-col h-full bg-white border-r border-slate-100 shadow-xl shadow-slate-50/20 transition-all duration-300"
 >
-  <!-- Encabezado: logo y toggle -->
-  <div class="flex items-center justify-between h-24 px-4">
-    <div class="flex items-center">
-      <img
-        *ngIf="!isCollapsed"
-        src="assets/icons/sidebar/ApoloLogo.svg"
-        alt="Apolo Logo"
-        class="h-14 w-auto"
-      />
-      <span
-        *ngIf="!isCollapsed"
-        class="ml-3 text-xl font-normal text-gray-800"
-        style="font-family: 'Roboto', sans-serif;"
+  <div
+    class="flex items-center py-4"
+    [ngClass]="{
+      'justify-between px-3': !isCollapsed,
+      'justify-center px-2': isCollapsed
+    }"
+  >
+    <div *ngIf="!isCollapsed" class="flex items-center gap-3 overflow-hidden">
+      <div 
+        [class.h-9]="isCollapsed"
+        [class.w-9]="isCollapsed"
+        [class.h-11]="!isCollapsed"
+        [class.w-11]="!isCollapsed"
+        class="rounded-xl bg-[var(--brand-primary)] grid place-content-center text-white text-lg font-bold shrink-0 transition-all duration-300"
       >
-        APOLO
-      </span>
+        S
+      </div>
+      <div class="leading-5 transition-opacity duration-300">
+        <p class="text-[10px] uppercase tracking-[0.14em] text-slate-400 font-semibold">APOLO SUITE</p>
+        <p class="text-xl font-extrabold text-slate-900">Signly</p>
+      </div>
     </div>
-    <button (click)="toggle()" class="p-2 focus:outline-none">
-      <img
-        src="assets/icons/sidebar/HamburgerMenu.svg"
-        alt="Toggle sidebar"
-        class="h-6 w-6"
-      />
+    
+    <button
+      (click)="toggle()"
+      class="rounded-full h-8 w-8 shrink-0 grid place-content-center text-slate-500 transition hover:bg-slate-100 hover:text-[var(--brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30"
+      aria-label="Contraer o expandir menú"
+    >
+      <svg
+        *ngIf="!isCollapsed"
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-4 w-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      </svg>
+      <svg
+        *ngIf="isCollapsed"
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-4 w-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+      </svg>
     </button>
   </div>
 
-  <!-- Menú -->
-  <nav
-    *ngIf="!isCollapsed"
-    class="flex-1 overflow-y-auto px-4 pt-6 space-y-2"
-  >
-    <a
-      routerLink="/dashboard"
-      routerLinkActive="bg-gray-200"
-      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
-    >
-      <img src="assets/icons/sidebar/Dashboard.svg" alt="Dashboard" class="w-6 h-6 mr-3" />
-      Dashboard
-    </a>
-    <a
-      routerLink="/templates"
-      routerLinkActive="bg-gray-200"
-      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
-    >
-      <img src="assets/icons/sidebar/DocumentTemplate.svg" alt="Plantillas" class="w-6 h-6 mr-3" />
-      Plantillas de Documentos
-    </a>
-    <a
-      routerLink="/documents"
-      routerLinkActive="bg-gray-200"
-      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
-    >
-      <img src="assets/icons/sidebar/files.svg" alt="Documentos" class="w-6 h-6 mr-3" />
-      Documentos y Procesos de Firma
-    </a>
-    <a
-      routerLink="/users"
-      routerLinkActive="bg-gray-200"
-      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
-    >
-      <img src="assets/icons/header/User.svg" alt="Usuarios" class="w-6 h-6 mr-3" />
-      Usuarios
-    </a>
-    <a
-      routerLink="/roles"
-      routerLinkActive="bg-gray-200"
-      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
-    >
-      <img src="assets/icons/sidebar/Roles.svg" alt="Roles" class="w-6 h-6 mr-3" />
-      Roles y Permisos
-    </a>
-    <a
-      routerLink="/audit"
-      routerLinkActive="bg-gray-200"
-      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
-    >
-      <img src="assets/icons/sidebar/Audit.svg" alt="Auditoría" class="w-6 h-6 mr-3" />
-      Auditoría de Acciones
-    </a>
-    <a
-      routerLink="/uploads"
-      routerLinkActive="bg-gray-200"
-      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
-    >
-      <img src="assets/icons/sidebar/files.svg" alt="Archivos subidos" class="w-6 h-6 mr-3" />
-      Archivos subidos
-    </a>
-    <a
-      routerLink="/dark-mode"
-      routerLinkActive="bg-gray-200"
-      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
-    >
-      <img src="assets/icons/sidebar/Moon.svg" alt="Dark Mode" class="w-6 h-6 mr-3" />
-      Dark Mode
-    </a>
-    <a
-      routerLink="/notifications"
-      routerLinkActive="bg-gray-200"
-      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
-    >
-      <img src="assets/icons/sidebar/Bell.svg" alt="Notifications" class="w-6 h-6 mr-3" />
-      Notifications
-    </a>
-    <a
-      routerLink="/settings"
-      routerLinkActive="bg-gray-200"
-      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
-    >
-      <img src="assets/icons/sidebar/Settings.svg" alt="Settings" class="w-6 h-6 mr-3" />
-      Settings
-    </a>
-    <a
-      routerLink="/logout"
-      class="flex items-center px-3 py-2 rounded hover:bg-gray-100 text-lg font-normal text-gray-800"
-    >
-      <img src="assets/icons/sidebar/LogOut.svg" alt="Logout" class="w-6 h-6 mr-3" />
-      Logout
-    </a>
+  <nav class="flex-1 overflow-y-auto px-3 pb-4 space-y-4 pt-2">
+    
+    <div class="space-y-1">
+      <p *ngIf="!isCollapsed" class="px-3 text-[10px] uppercase tracking-[0.14em] text-slate-400 font-semibold">
+        Inicio
+      </p>
+      <a
+        *ngFor="let item of mainSingles"
+        [routerLink]="item.path"
+        [routerLinkActiveOptions]="activeMatchOptions"
+        routerLinkActive="active"
+        #rla="routerLinkActive"
+        class="group relative flex items-center rounded-lg py-2.5 text-sm font-semibold transition duration-200 ease-in-out"
+        [ngClass]="{
+          'px-3 gap-3': !isCollapsed,
+          'justify-center w-full px-0': isCollapsed,
+          'text-[var(--brand-primary)] bg-indigo-50/50': rla.isActive,
+          'text-slate-600 hover:bg-slate-50': !rla.isActive
+        }"
+        [attr.title]="isCollapsed ? item.label : null"
+      >
+        <span
+          class="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-full transition-colors duration-200"
+          [ngClass]="rla.isActive ? 'bg-[var(--brand-primary)]' : 'bg-transparent'"
+        ></span>
+        
+        <span
+          class="shrink-0 flex items-center justify-center transition-all duration-200"
+          [ngClass]="{
+            'h-6 w-6': !isCollapsed,
+            'h-8 w-8 rounded-lg': isCollapsed
+          }"
+        >
+          <img [src]="item.icon" [alt]="item.label" class="h-5 w-5 opacity-70 group-hover:opacity-100 transition-opacity" />
+        </span>
+        
+        <span *ngIf="!isCollapsed" class="truncate">{{ item.label }}</span>
+      </a>
+    </div>
+
+    <div class="space-y-4">
+      <p *ngIf="!isCollapsed" class="px-3 text-[10px] uppercase tracking-[0.14em] text-slate-400 font-semibold">
+        Navegación Principal
+      </p>
+
+      <div *ngFor="let group of mainGroups" class="rounded-lg">
+        <button
+          type="button"
+          (click)="toggleGroup(group)"
+          [attr.aria-expanded]="isGroupOpen(group)"
+          class="group relative flex w-full items-center rounded-lg py-2.5 text-sm font-semibold transition duration-200 ease-in-out"
+          [ngClass]="{
+            'px-3 gap-3': !isCollapsed,
+            'justify-center w-full px-0': isCollapsed,
+            'text-[var(--brand-primary)] bg-indigo-50/50': isGroupActive(group),
+            'text-slate-600 hover:bg-slate-50': !isGroupActive(group)
+          }"
+          [attr.title]="isCollapsed ? group.label : null"
+        >
+          <span
+            class="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-full transition-colors duration-200"
+            [ngClass]="isGroupActive(group) ? 'bg-[var(--brand-primary)]' : 'bg-transparent'"
+          ></span>
+          
+          <span
+            class="shrink-0 flex items-center justify-center transition-all duration-200"
+            [ngClass]="{
+              'h-6 w-6': !isCollapsed,
+              'h-8 w-8 rounded-lg': isCollapsed
+            }"
+          >
+            <img [src]="group.icon" [alt]="group.label" class="h-5 w-5 opacity-70 group-hover:opacity-100 transition-opacity" />
+          </span>
+          
+          <span *ngIf="!isCollapsed" class="flex-1 truncate text-left">{{ group.label }}</span>
+          <svg
+            *ngIf="!isCollapsed"
+            class="h-4 w-4 text-slate-400 transition-transform duration-300 shrink-0"
+            [ngClass]="isGroupOpen(group) ? 'rotate-180' : ''"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        <div *ngIf="isGroupOpen(group) && !isCollapsed" class="mt-1 space-y-0.5 border-l border-slate-200 ml-4 pl-3 py-1">
+          <a
+            *ngFor="let item of group.children"
+            [routerLink]="item.path"
+            [routerLinkActiveOptions]="activeMatchOptions"
+            routerLinkActive="active"
+            #rla="routerLinkActive"
+            class="group relative flex items-center rounded-lg py-2 text-sm font-medium pl-3 transition duration-200 ease-in-out"
+            [ngClass]="{
+              'text-[var(--brand-primary)] font-semibold bg-indigo-50/50': rla.isActive,
+              'text-slate-600 hover:bg-slate-50': !rla.isActive
+            }"
+          >
+            <span
+              class="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-full transition-colors duration-200"
+              [ngClass]="rla.isActive ? 'bg-[var(--brand-primary)]' : 'bg-transparent'"
+            ></span>
+            
+            <span class="flex h-5 w-5 shrink-0 items-center justify-center mr-2">
+              <img [src]="item.icon" [alt]="item.label" class="h-4 w-4 opacity-70" />
+            </span>
+            <span class="truncate">{{ item.label }}</span>
+          </a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="space-y-4 pt-4 border-t border-slate-100">
+      <p *ngIf="!isCollapsed" class="px-3 text-[10px] uppercase tracking-[0.14em] text-slate-400 font-semibold">
+        Sistema y Preferencias
+      </p>
+
+      <div *ngFor="let group of secondaryGroups" class="rounded-lg">
+        <button
+          type="button"
+          (click)="toggleGroup(group)"
+          [attr.aria-expanded]="isGroupOpen(group)"
+          class="group relative flex w-full items-center rounded-lg py-2.5 text-sm font-semibold transition duration-200 ease-in-out"
+          [ngClass]="{
+            'px-3 gap-3': !isCollapsed,
+            'justify-center w-full px-0': isCollapsed,
+            'text-[var(--brand-primary)] bg-indigo-50/50': isGroupActive(group),
+            'text-slate-600 hover:bg-slate-50': !isGroupActive(group)
+          }"
+          [attr.title]="isCollapsed ? group.label : null"
+        >
+          <span
+            class="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-full transition-colors duration-200"
+            [ngClass]="isGroupActive(group) ? 'bg-[var(--brand-primary)]' : 'bg-transparent'"
+          ></span>
+          <span
+            class="shrink-0 flex items-center justify-center transition-all duration-200"
+            [ngClass]="{
+              'h-6 w-6': !isCollapsed,
+              'h-8 w-8 rounded-lg': isCollapsed
+            }"
+          >
+            <img [src]="group.icon" [alt]="group.label" class="h-5 w-5 opacity-70 group-hover:opacity-100 transition-opacity" />
+          </span>
+          <span *ngIf="!isCollapsed" class="flex-1 truncate text-left">{{ group.label }}</span>
+          <svg
+            *ngIf="!isCollapsed"
+            class="h-4 w-4 text-slate-400 transition-transform duration-300 shrink-0"
+            [ngClass]="isGroupOpen(group) ? 'rotate-180' : ''"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        <div *ngIf="isGroupOpen(group) && !isCollapsed" class="mt-1 space-y-0.5 border-l border-slate-200 ml-4 pl-3 py-1">
+          <a
+            *ngFor="let item of group.children"
+            [routerLink]="item.path"
+            [routerLinkActiveOptions]="activeMatchOptions"
+            routerLinkActive="active"
+            #rla="routerLinkActive"
+            class="group relative flex items-center rounded-lg py-2 text-sm font-medium pl-3 transition duration-200 ease-in-out"
+            [ngClass]="{
+              'text-[var(--brand-primary)] font-semibold bg-indigo-50/50': rla.isActive,
+              'text-slate-600 hover:bg-slate-50': !rla.isActive
+            }"
+          >
+            <span
+              class="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-full transition-colors duration-200"
+              [ngClass]="rla.isActive ? 'bg-[var(--brand-primary)]' : 'bg-transparent'"
+            ></span>
+            <span class="flex h-5 w-5 shrink-0 items-center justify-center mr-2">
+              <img [src]="item.icon" [alt]="item.label" class="h-4 w-4 opacity-70" />
+            </span>
+            <span class="truncate">{{ item.label }}</span>
+          </a>
+        </div>
+      </div>
+    </div>
   </nav>
+
+  <div class="mt-auto border-t border-slate-100 bg-white p-3 flex items-center shrink-0">
+    <button
+      type="button"
+      (click)="logout()"
+      [disabled]="isLoggingOut"
+      class="w-full flex items-center rounded-xl px-2 py-2 text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed text-rose-700 bg-rose-50 hover:bg-rose-100"
+      [ngClass]="{
+        'gap-3': !isCollapsed,
+        'justify-center w-full': isCollapsed
+      }"
+      [attr.title]="isCollapsed ? 'Cerrar sesión' : null"
+    >
+      <span
+        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white border border-rose-200 text-rose-600 shadow-sm"
+        [ngClass]="{'h-8 w-full': isCollapsed}"
+      >
+        <img src="assets/icons/sidebar/LogOut.svg" alt="Logout" class="h-5 w-5" />
+      </span>
+      
+      <span *ngIf="!isCollapsed" class="truncate flex-1 text-left">
+        <span *ngIf="!isLoggingOut">Cerrar sesión</span>
+        <span *ngIf="isLoggingOut">Cerrando sesión…</span>
+      </span>
+    </button>
+  </div>
 </div>

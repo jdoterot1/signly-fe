@@ -10,12 +10,14 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TooltipModule } from 'primeng/tooltip';
 import {
   TableModel,
   TableConfig,
   TableColumn,
   TableCellAction,
 } from './table.model';
+import { TableFiltersModalComponent } from './table-filters-modal.component';
 
 interface TableState<T> {
   filteredData: T[];
@@ -28,22 +30,23 @@ interface TableState<T> {
 @Component({
   selector: 'app-table',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TooltipModule, TableFiltersModalComponent],
   templateUrl: './table.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TableComponent<T = any> implements OnChanges {
   @Input() model!: TableModel<T>;
   @Output() selectionChange = new EventEmitter<T[]>();
+  @Output() create        = new EventEmitter<void>();
 
-  // búsqueda global
   searchTerm = '';
-  // controla visibilidad de la fila de filtros por columna
-  showColumnFilters = false;
-  // valores de filtro por cada columna
+  // valores de filtro aplicados
   columnFilters: Record<string, string> = {};
+  // control modal de filtros
+  isFiltersModalOpen = false;
+  modalColumnFilters: Record<string, string> = {};
 
-  // estado interno: orden, paginado, datos filtrados
+  // status interno: orden, paginado, datos filtrados
   state: {
     sortBy?: string;
     sortDir: 'asc' | 'desc';
@@ -58,12 +61,21 @@ export class TableComponent<T = any> implements OnChanges {
   selectAll = false;
   private selected = new Set<T>();
 
-  // clases para badge de estado
+  // statusClasses con colores más suaves pero aún definidos
   statusClasses: Record<string, string> = {
-    Pending: 'bg-[#DF0404]',
-    'In Progress': 'bg-[#FF9500]',
-    Completed: 'bg-[#00B087]',
+    Pending: 'bg-[#E35D5D]',         // rojo medio
+    'In Progress': 'bg-[#FFB347]',   // naranja medio
+    Completed: 'bg-[#4FD1A5]',       // verde medio
+    Active: 'bg-[#4FD1A5]',          // verde medio
+    Inactive: 'bg-[#E35D5D]',        // rojo medio
+    Unresolved: 'bg-[#FFB347]',      // naranja medio
+    Pendiente: 'bg-[#FFB347]',
+    Pagada: 'bg-[#4FD1A5]',
+    Emitida: 'bg-[#3366FF]',
+    Cancelada: 'bg-[#E35D5D]',
+    Fallida: 'bg-[#E35D5D]',
   };
+
 
   ngOnChanges(changes: SimpleChanges): void {
     if ('model' in changes) {
@@ -79,6 +91,9 @@ export class TableComponent<T = any> implements OnChanges {
   get columns(): TableColumn[] {
     return this.model.columns;
   }
+  get filterableColumns(): TableColumn[] {
+    return this.columns.filter(col => (col.visible ?? true) && col.columnType !== 'action');
+  }
   get data(): T[] {
     return this.model.data;
   }
@@ -93,21 +108,35 @@ export class TableComponent<T = any> implements OnChanges {
   }
 
   // muestra/oculta la fila de inputs de filtro
-  toggleFiltersRow(): void {
-    this.showColumnFilters = !this.showColumnFilters;
-    if (!this.showColumnFilters) {
-      // al ocultar, limpiamos filtros y recargamos
-      this.columnFilters = {};
-      this.resetState();
-      this.applyFilters();
-    }
+  openFiltersModal(): void {
+    this.modalColumnFilters = { ...this.columnFilters };
+    this.isFiltersModalOpen = true;
   }
 
-  // manejo de cambio de filtro por columna
-  onColumnFilterChange(key: string, value: string): void {
-    this.columnFilters[key] = value;
-    this.state.data.currentPage = 1;
+  closeFiltersModal(): void {
+    this.isFiltersModalOpen = false;
+  }
+
+  applyFiltersFromModal(): void {
+    this.columnFilters = { ...this.modalColumnFilters };
+    this.resetState();
     this.applyFilters();
+    this.closeFiltersModal();
+  }
+
+  clearModalFilters(): void {
+    this.modalColumnFilters = {};
+  }
+
+  clearAllFilters(): void {
+    this.modalColumnFilters = {};
+    this.columnFilters = {};
+    this.resetState();
+    this.applyFilters();
+  }
+
+  get hasActiveFilters(): boolean {
+    return Object.values(this.columnFilters).some(value => !!value?.toString().trim());
   }
 
   private resetState(): void {
@@ -132,7 +161,7 @@ export class TableComponent<T = any> implements OnChanges {
 
     // 2) filtros por columna
     Object.entries(this.columnFilters).forEach(([key, val]) => {
-      const term = val.toLowerCase();
+      const term = val?.toString().toLowerCase().trim();
       if (term) {
         list = list.filter(r =>
           String((r as any)[key]).toLowerCase().includes(term)
@@ -244,6 +273,16 @@ export class TableComponent<T = any> implements OnChanges {
     this.selectionChange.emit(Array.from(this.selected));
   }
 
+  onCreate(): void {
+    this.create.emit();
+  }
+
+  onActionClick(action: TableCellAction, row: T, event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    action.handler(row);
+  }
+
   trackByFn(index: number, row: T): any {
     const cfg = this.model?.tableConfig;
     const key = cfg?.trackByField;
@@ -252,6 +291,28 @@ export class TableComponent<T = any> implements OnChanges {
 
   getCellValue(row: T, key: string): any {
     return (row as any)?.[key];
+  }
+
+  truncateLimitForKey(key: string): number | null {
+    switch (key) {
+      case 'description':
+      case 'createdBy':
+        return 10;
+      case 'path':
+      case 'actor':
+      case 'resource':
+        return 10;
+      default:
+        return null;
+    }
+  }
+
+  isTruncatableKey(key: string): boolean {
+    return this.truncateLimitForKey(key) !== null;
+  }
+
+  asText(value: unknown): string {
+    return value == null ? '' : String(value);
   }
 
   visibleColumnsCount(): number {

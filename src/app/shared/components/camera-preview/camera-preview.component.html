@@ -1,0 +1,32 @@
+<div class="relative w-full h-full">
+  <video
+    #video
+    class="h-full w-full rounded-2xl object-cover"
+    playsinline
+    muted
+    autoplay
+  ></video>
+  <div class="absolute inset-0 rounded-2xl border border-blue-200/60 pointer-events-none"></div>
+
+  <div *ngIf="!isActive" class="absolute inset-0 flex items-center justify-center rounded-2xl bg-slate-900/50">
+    <button
+      type="button"
+      class="rounded-full bg-white/90 px-4 py-2 text-xs font-semibold text-slate-700 shadow"
+      (click)="startCamera()"
+    >
+      Activar camara
+    </button>
+  </div>
+
+  <div
+    *ngIf="isActive"
+    class="absolute bottom-3 left-3 flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-600"
+  >
+    <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+    Camara activa
+  </div>
+
+  <div *ngIf="errorMessage" class="absolute inset-0 flex items-center justify-center rounded-2xl bg-slate-900/60 text-xs font-semibold text-white">
+    {{ errorMessage }}
+  </div>
+</div>

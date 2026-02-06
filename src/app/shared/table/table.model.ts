@@ -16,6 +16,7 @@ export interface TableConfig {
     showIndexColumn?: boolean;
     columnVisibilityControl?: boolean;
     exportOptions?: Array<'csv' | 'excel' | 'pdf'>;
+    showCreateButton?: boolean;
 }
 
 export interface TableColumn {

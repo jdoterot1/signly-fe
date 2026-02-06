@@ -1,0 +1,158 @@
+<div class="min-h-[calc(100vh-8rem)] w-full pb-10">
+  <app-guide-modal
+    *ngIf="showGuideModal"
+    title="Paso 1: crea tu plantilla"
+    subtitle="Completa los datos base y mapea el archivo para continuar."
+    [steps]="guideSteps"
+    primaryLabel="Listo, crear plantilla"
+    secondaryLabel="Cerrar"
+    (primary)="startTemplateStep()"
+    (closed)="closeGuideModal()"
+  ></app-guide-modal>
+  <div class="px-4 lg:px-10 pt-8">
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-3">
+        <span
+          class="flex h-10 w-10 items-center justify-center rounded-full text-white font-semibold"
+          [ngClass]="currentStep === 1 ? 'bg-[#2b0f60]' : 'bg-[#c7beda]'"
+        >
+          1
+        </span>
+        <div>
+          <p class="text-sm font-semibold heading-brand">Información básica</p>
+          <p class="text-xs text-gray-500">Define nombre y descripción</p>
+        </div>
+      </div>
+      <div class="flex-1 h-px bg-gray-200"></div>
+      <div class="flex items-center gap-3">
+        <span
+          class="flex h-10 w-10 items-center justify-center rounded-full text-white font-semibold"
+          [ngClass]="currentStep === 2 ? 'bg-[#2b0f60]' : 'bg-[#c7beda]'"
+        >
+          2
+        </span>
+        <div>
+          <p class="text-sm font-semibold heading-brand">Mapeo del documento</p>
+          <p class="text-xs text-gray-500">Diseña el flujo y campos</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <form
+    *ngIf="currentStep === 1"
+    [formGroup]="stepForm"
+    class="mx-4 mt-8 lg:mx-10 bg-white rounded-3xl border border-gray-100 shadow-xl shadow-indigo-50/60 p-8 space-y-6"
+  >
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1" for="templateName">Nombre de la plantilla</label>
+      <input
+        id="templateName"
+        type="text"
+        class="w-full rounded-2xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2b0f60] placeholder:text-gray-400"
+        [class.border-red-400]="stepForm.controls.name.invalid && stepForm.controls.name.touched"
+        formControlName="name"
+        placeholder="Ej. Contrato de prestación de servicios"
+      />
+      <p *ngIf="stepForm.controls.name.invalid && stepForm.controls.name.touched" class="mt-1 text-xs text-red-500">
+        Este campo es obligatorio.
+      </p>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1" for="templateDescription">Descripción</label>
+      <textarea
+        id="templateDescription"
+        rows="4"
+        class="w-full rounded-2xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2b0f60] placeholder:text-gray-400"
+        formControlName="description"
+        placeholder="Describe brevemente el propósito de esta plantilla"
+      ></textarea>
+    </div>
+
+    <div class="rounded-2xl border border-gray-100 shadow-sm p-6 bg-slate-50/60 space-y-2">
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+            <p class="text-xs uppercase tracking-wide text-gray-500 font-semibold">Documento a mapear</p>
+            <p class="text-lg font-semibold heading-brand mt-1">
+              {{ selectedFile?.name || 'Sin documento seleccionado' }}
+            </p>
+        </div>
+        <button
+          type="button"
+          class="px-5 py-2.5 rounded-2xl border border-[#2b0f60] text-sm font-semibold text-[#2b0f60] hover:bg-[#f3effb]"
+          (click)="openDocumentPicker()"
+        >
+          {{ selectedFile ? 'Cambiar documento' : 'Seleccionar documento' }}
+        </button>
+      </div>
+      <p class="text-sm text-gray-500" *ngIf="selectedFile">
+        {{ (selectedFile.size / 1024 / 1024) | number:'1.1-2' }} MB · {{ selectedFile.type || 'Formato detectado automáticamente' }}
+      </p>
+      <p class="text-sm text-gray-500" *ngIf="!selectedFile">
+        Selecciona un PDF o Word (.docx) para mapear. Para máxima fidelidad visual, usa PDF.
+      </p>
+    </div>
+
+    <div class="flex flex-col sm:flex-row justify-end gap-3">
+      <button type="button" class="px-5 py-2 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-600" (click)="onCancel()">
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="px-6 py-2 rounded-2xl bg-[#2b0f60] text-white text-sm font-semibold hover:bg-[#1b1034]"
+        (click)="goToStepTwo()"
+        [disabled]="isSaving || stepForm.invalid || !selectedFile"
+      >
+        Continuar
+      </button>
+    </div>
+  </form>
+
+  <section class="mt-6 space-y-8" [class.hidden]="currentStep !== 2" [attr.aria-hidden]="currentStep !== 2 ? true : null">
+    <div class="px-4 lg:px-10">
+      <p class="text-xs uppercase tracking-wide text-gray-500 font-semibold">
+        Template ID:
+        <span class="normal-case font-semibold text-gray-800 break-all">
+          {{ templateId || 'Sin template (crea la plantilla primero)' }}
+        </span>
+      </p>
+    </div>
+
+    <div class="-mx-2 sm:-mx-4 lg:-mx-10 bg-slate-50/70 py-6">
+      <div class="px-2 sm:px-4 lg:px-10">
+        <app-document-mapper (fileSelected)="onFileSelected($event)">
+          <div mapper-actions class="flex items-center gap-2">
+            <select
+              class="h-8 rounded-full border border-gray-200 bg-white px-3 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#2b0f60] disabled:opacity-60"
+              [formControl]="versionControl"
+              [disabled]="!templateId || !versions.length"
+              title="Versión"
+            >
+              <option [ngValue]="null" disabled>Versión</option>
+              <option *ngFor="let v of versions" [ngValue]="v.code">{{ v.name }}</option>
+            </select>
+          </div>
+        </app-document-mapper>
+      </div>
+    </div>
+
+    <div class="px-4 lg:px-10 flex flex-col sm:flex-row justify-end gap-3">
+      <button
+        type="button"
+        class="px-5 py-2 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-600"
+        (click)="goBackToStepOne()"
+      >
+        Regresar
+      </button>
+      <button
+        type="button"
+        class="px-6 py-2 rounded-2xl bg-[#2b0f60] text-white text-sm font-semibold hover:bg-[#1b1034] disabled:opacity-50"
+        [disabled]="isSaving"
+        (click)="saveTemplate()"
+      >
+        Guardar plantilla
+      </button>
+    </div>
+  </section>
+</div>

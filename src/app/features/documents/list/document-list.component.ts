@@ -1,6 +1,7 @@
-import { Component, OnInit }      from '@angular/core';
+// src/app/features/documents/list/document-list.component.ts
+import { Component, Input, OnInit }      from '@angular/core';
 import { CommonModule }           from '@angular/common';
-import { RouterModule }           from '@angular/router';
+import { RouterModule, Router, NavigationExtras }   from '@angular/router';
 import { FormsModule }            from '@angular/forms';
 
 import { TableComponent }         from '../../../shared/table/table.component';
@@ -8,14 +9,11 @@ import { TableModel }             from '../../../shared/table/table.model';
 import { DocumentService }        from '../../../core/services/documents/document.service';
 import { Document, DocumentStatus } from '../../../core/models/documents/document.model';
 
-import { AlertComponent }         from '../../../shared/alert/alert.component';
-import { AlertType }              from '../../../shared/alert/alert-type.enum';
-
 interface DocumentRow {
   id: string;
   name: string;
   description?: string;
-  creationDate: string;    // 'dd/MM/yyyy'
+  creationDate: string;
   createdBy: string;
   language: string;
   status: DocumentStatus;
@@ -28,12 +26,12 @@ interface DocumentRow {
     CommonModule,
     RouterModule,
     FormsModule,
-    TableComponent,
-    AlertComponent
+    TableComponent
   ],
   templateUrl: './document-list.component.html',
 })
 export class DocumentListComponent implements OnInit {
+  @Input() returnTo: string | null = null;
   tableModel: TableModel<DocumentRow> = {
     entityName: 'Lista de Documentos',
     tableConfig: {
@@ -61,8 +59,8 @@ export class DocumentListComponent implements OnInit {
         actions: [
           {
             label: '',
-            icon: 'assets/icons/tables/Pdf.svg',
-            tooltip: 'Ver documento',
+            icon: 'assets/icons/tables/view.svg',
+            tooltip: 'Visualizar',
             handler: row => this.onView(row)
           },
           {
@@ -83,19 +81,7 @@ export class DocumentListComponent implements OnInit {
     data: []
   };
 
-  // ── Toast Alert ──
-  alertType       = AlertType;
-  currentAlertType: AlertType = AlertType.Success;
-  alertMessage    = '';
-  alertVisible    = false;
-
-  // ── Confirm Modal ──
-  confirmMode     = true;
-  confirmVisible  = false;
-  confirmMessage  = '';
-  private pendingDelete!: DocumentRow;
-
-  constructor(private documentService: DocumentService) {}
+  constructor(private documentService: DocumentService, private router: Router) {}
 
   ngOnInit(): void {
     this.loadDocuments();
@@ -116,41 +102,30 @@ export class DocumentListComponent implements OnInit {
     });
   }
 
-  /** Mostrar toast */
-  private showToast(type: AlertType, message: string): void {
-    this.currentAlertType = type;
-    this.alertMessage     = message;
-    this.alertVisible     = true;
-    setTimeout(() => this.alertVisible = false, 3000);
-  }
-
   onView(row: DocumentRow) {
-    console.log('Ver documento', row);
+    this.router.navigate(['/documents', row.id], this.navigationExtras());
   }
 
   onEdit(row: DocumentRow) {
     console.log('Editar documento', row);
+    // this.router.navigate(['/documents/edit', row.id]); // opcional
   }
 
   onDelete(row: DocumentRow) {
-    // abre modal de confirmación
-    this.pendingDelete  = row;
-    this.confirmMessage = `¿Seguro que deseas eliminar "${row.name}"?`;
-    this.confirmVisible = true;
+    if (confirm(`¿Seguro que deseas eliminar "${row.name}"?`)) {
+      this.documentService.deleteDocument(row.id)
+        .subscribe(() => this.loadDocuments());
+    }
   }
 
-  /** usuario confirma eliminación */
-  onConfirmedDelete() {
-    this.confirmVisible = false;
-    this.documentService.deleteDocument(this.pendingDelete.id)
-      .subscribe(() => {
-        this.loadDocuments();
-        this.showToast(AlertType.Delete, `Documento "${this.pendingDelete.name}" eliminado con éxito.`);
-      });
+  onCreate(): void {
+    this.router.navigate(['/documents/create'], this.navigationExtras());
   }
 
-  /** usuario cancela */
-  onCancelDelete() {
-    this.confirmVisible = false;
+  private navigationExtras(): NavigationExtras {
+    if (!this.returnTo) {
+      return {};
+    }
+    return { queryParams: { returnTo: this.returnTo } };
   }
 }
