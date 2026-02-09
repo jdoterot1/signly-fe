@@ -16,7 +16,11 @@ import {
   BiometricStartRequest,
   BiometricVerifyData,
   LivenessStartData,
-  FlowErrorDetails
+  FlowErrorDetails,
+  TemplateDownloadData,
+  TemplateSubmitRequest,
+  FlowCompleteRequest,
+  FlowCompleteData
 } from '../../models/flow/flow.model';
 
 export interface FlowError extends Error {
@@ -166,6 +170,48 @@ export class FlowService {
       }
     ).pipe(
       map(res => res.data),
+      catchError(err => this.handleError(err))
+    );
+  }
+
+  // ============ Template Operations ============
+
+  downloadTemplate(processId: string): Observable<TemplateDownloadData> {
+    return this.executeWithFlowToken<ApiResponse<TemplateDownloadData>>(
+      headers => this.http.get<ApiResponse<TemplateDownloadData>>(
+        `${this.baseUrl}/flows/${processId}/template/download`,
+        { headers }
+      )
+    ).pipe(
+      map(res => res.data),
+      catchError(err => this.handleError(err))
+    );
+  }
+
+  submitTemplate(processId: string, request: TemplateSubmitRequest): Observable<void> {
+    return this.executeWithFlowToken<ApiResponse<void>>(
+      headers => this.http.post<ApiResponse<void>>(
+        `${this.baseUrl}/flows/${processId}/template/submit`,
+        request,
+        { headers }
+      )
+    ).pipe(
+      map(() => void 0),
+      catchError(err => this.handleError(err))
+    );
+  }
+
+  // ============ Flow Complete ============
+
+  completeFlow(processId: string, request: FlowCompleteRequest): Observable<FlowCompleteData> {
+    return this.executeWithFlowToken<ApiResponse<FlowCompleteData>>(
+      headers => this.http.post<ApiResponse<FlowCompleteData>>(
+        `${this.baseUrl}/flows/${processId}/complete`,
+        request,
+        { headers }
+      )
+    ).pipe(
+      map(res => res.data ?? { code: 'flow_completed', message: 'Flujo completado' }),
       catchError(err => this.handleError(err))
     );
   }

@@ -351,7 +351,8 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
       otp_sms: 'otp-sms',
       otp_whatsapp: 'otp-whatsapp',
       liveness: 'liveness',
-      biometric: 'biometric'
+      biometric: 'biometric',
+      template_sign: 'template-sign'
     };
 
     const route = routes[nextChallenge.type];

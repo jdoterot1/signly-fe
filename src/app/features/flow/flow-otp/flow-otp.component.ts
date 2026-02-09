@@ -257,7 +257,8 @@ export class FlowOtpComponent implements OnInit, OnDestroy {
       otp_sms: 'otp-sms',
       otp_whatsapp: 'otp-whatsapp',
       biometric: 'biometric',
-      liveness: 'liveness'
+      liveness: 'liveness',
+      template_sign: 'template-sign'
     };
 
     const route = routes[step];

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
-export type FlowProgressStep = 'inicio' | 'biometria' | 'otp' | 'liveness' | 'completado';
+export type FlowProgressStep = 'inicio' | 'biometria' | 'otp' | 'liveness' | 'firma' | 'completado';
 
 interface FlowProgressItem {
   key: FlowProgressStep;
@@ -27,6 +27,7 @@ export class FlowProgressComponent {
     { key: 'biometria', label: 'Biometria', caption: 'Selfie y documento' },
     { key: 'otp', label: 'Codigo OTP', caption: 'Validacion de contacto' },
     { key: 'liveness', label: 'Prueba de vida', caption: 'Validacion en vivo' },
+    { key: 'firma', label: 'Firma', caption: 'Firma del documento' },
     { key: 'completado', label: 'Finalizado', caption: 'Proceso completo' }
   ];
 
