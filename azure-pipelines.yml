@@ -1,0 +1,13 @@
+trigger: none
+
+resources:
+  repositories:
+    - repository: templates
+      type: git
+      name: C0000_util_devOpsUtils
+
+extends:
+  template: base-templates/frontend/angular/angular.yml@templates
+  parameters:
+    par_typeTask: Hosted
+    par_repoName: $(Build.Repository.Name)
