@@ -1,0 +1,30 @@
+<div class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-4">
+  <ng-container *ngIf="!loading && !errorMessage; else auditState">
+    <app-table [model]="tableModel"></app-table>
+  </ng-container>
+</div>
+
+<ng-template #auditState>
+  <div class="flex flex-col items-center justify-center py-12">
+    <ng-container *ngIf="loading; else auditError">
+      <svg class="w-10 h-10 text-[#2b0f60] animate-spin" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+      </svg>
+      <p class="text-sm text-gray-500 mt-4">Consultando auditorías recientes...</p>
+    </ng-container>
+    <ng-template #auditError>
+      <p class="text-sm text-red-500 font-semibold text-center">{{ errorMessage }}</p>
+      <button
+        type="button"
+        class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#2b0f60]"
+        (click)="retry()"
+      >
+        Reintentar
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M5 19L19 5" />
+        </svg>
+      </button>
+    </ng-template>
+  </div>
+</ng-template>

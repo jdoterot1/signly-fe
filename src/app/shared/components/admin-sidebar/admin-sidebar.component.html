@@ -1,0 +1,49 @@
+<aside class="w-full lg:max-w-xs bg-white rounded-3xl border border-gray-100 shadow-xl shadow-indigo-50/60 sticky top-28">
+  <div class="px-6 py-6 border-b border-gray-100">
+    <p class="text-xs font-semibold uppercase tracking-[0.25em] text-gray-400">Cuenta</p>
+    <p class="text-2xl font-semibold text-gray-900 mt-2">{{ ownerName }}</p>
+    <p class="text-sm text-gray-500 mt-1">
+      Id. de la cuenta: <span class="font-semibold text-gray-900">{{ accountId }}</span>
+    </p>
+  </div>
+
+  <nav class="px-6 py-6 space-y-6 text-sm text-gray-700">
+    <ng-container *ngFor="let section of sections; let first = first">
+      <div class="space-y-2">
+        <button
+          type="button"
+          class="flex w-full items-center justify-between text-left text-[11px] font-semibold uppercase tracking-[0.3em] text-gray-400"
+          [ngClass]="{ 'mt-4': !first }"
+          (click)="toggleSection(section)"
+        >
+          <span>{{ section.label }}</span>
+          <svg
+            class="h-4 w-4 text-gray-400 transition-transform"
+            [ngClass]="isSectionOpen(section) ? 'rotate-180' : ''"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div class="space-y-1" *ngIf="isSectionOpen(section)">
+          <button
+            *ngFor="let item of section.items"
+            type="button"
+            class="w-full text-left px-2 py-2 rounded-lg transition"
+            [ngClass]="isOptionSelected(item.label)
+              ? 'text-indigo-600 font-semibold bg-indigo-50'
+              : 'hover:bg-gray-50'"
+            (click)="selectOption(item.label)"
+          >
+            <span class="inline-flex items-center gap-2">
+              <img *ngIf="item.icon" [src]="item.icon" [alt]="item.label" class="h-4 w-4" />
+              <span>{{ item.label }}</span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </ng-container>
+  </nav>
+</aside>

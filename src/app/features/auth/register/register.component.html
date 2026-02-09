@@ -1,0 +1,300 @@
+<div class="bg-white flex items-center justify-center min-h-screen p-3">
+  <div class="w-full max-w-3xl bg-white rounded-xl shadow-lg p-5 sm:p-6 lg:p-7 border border-gray-100">
+    <ng-container *ngIf="!successPayload; else successState">
+      <div class="flex items-start justify-between gap-3 mb-4">
+        <div>
+          <h2 class="text-3xl lg:text-4xl font-bold text-gray-800 leading-tight">Crea tu cuenta</h2>
+          <p class="text-base text-gray-600 mt-1">3 pasos sencillos para empezar</p>
+        </div>
+        <button (click)="backToLogin()" class="text-blue-600 hover:text-blue-500 text-sm font-medium">
+          Ya tengo cuenta
+        </button>
+      </div>
+
+      <div class="space-y-6">
+        <!-- Línea de tiempo horizontal -->
+        <div class="relative">
+          <div class="absolute top-4 left-1 right-1 h-[2px] bg-gray-200"></div>
+          <div
+            class="absolute top-4 left-1 h-[2px] bg-blue-500 transition-all duration-300"
+            [style.width.%]="(currentStep / (steps.length - 1)) * 100"
+          ></div>
+          <div class="flex justify-between relative z-10">
+            <div *ngFor="let stepDef of steps; let idx = index" class="flex flex-col items-center text-center w-full">
+              <div
+                class="h-9 w-9 rounded-full flex items-center justify-center text-xs font-semibold border
+                       transition-all duration-200"
+                [ngClass]="{
+                  'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200': idx === currentStep,
+                  'bg-blue-50 text-blue-700 border-blue-200': idx < currentStep,
+                  'bg-gray-100 text-gray-500 border-gray-200': idx > currentStep
+                }"
+              >
+                {{ idx + 1 }}
+              </div>
+              <p class="mt-1 text-[11px] font-semibold" [ngClass]="idx === currentStep ? 'text-blue-700' : 'text-gray-700'">
+                {{ stepDef.title }}
+              </p>
+              <p class="text-[10px] text-gray-500">{{ stepDef.description }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Formulario -->
+        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-6">
+
+            <!-- Paso 1: Cuenta -->
+            <div *ngIf="step.key === 'user'" class="space-y-4" [formGroup]="userGroup">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2 required-marker">Nombre</label>
+                  <input type="text" formControlName="firstName" placeholder="Ingresa tu nombre"
+                    class="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  <p *ngIf="hasError('user.firstName','required')" class="text-xs text-red-600 mt-1">El nombre es obligatorio.</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2 required-marker">Apellido</label>
+                  <input type="text" formControlName="lastName" placeholder="Ingresa tu apellido"
+                    class="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  <p *ngIf="hasError('user.lastName','required')" class="text-xs text-red-600 mt-1">El apellido es obligatorio.</p>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2 required-marker">Correo corporativo</label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400">
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v.217l-8 4.8-8-4.8V5z" /><path d="M2 7.383l8 4.8 8-4.8V15a2 2 0 01-2 2H4a2 2 0 01-2-2V7.383z" /></svg>
+                  </div>
+                  <input type="email" formControlName="email" placeholder="nombre@empresa.com"
+                    class="w-full pl-12 pr-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                </div>
+                <p *ngIf="hasError('user.email','email')" class="text-xs text-red-600 mt-1">Correo inválido.</p>
+                <p *ngIf="hasError('user.email','required')" class="text-xs text-red-600 mt-1">El correo es obligatorio.</p>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2 required-marker">Teléfono</label>
+                  <input type="tel" formControlName="phone" placeholder="+57 3000000000"
+                    class="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  <p *ngIf="hasError('user.phone','required')" class="text-xs text-red-600 mt-1">El teléfono es obligatorio.</p>
+                  <p *ngIf="hasError('user.phone','pattern')" class="text-xs text-red-600 mt-1">
+                    Usa formato internacional sin espacios. Ej: +57 3126006315.
+                  </p>
+                  <p class="text-[11px] text-gray-500 mt-1">Se enviará en formato E.164; si no incluyes el +57 lo agregamos automáticamente.</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2 required-marker">Contraseña</label>
+                  <div class="relative">
+                    <input [type]="showPassword ? 'text' : 'password'" formControlName="password" placeholder="Mínimo 8 caracteres"
+                      class="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                    <button type="button" (click)="togglePassword()" class="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-blue-600">
+                      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <ng-container *ngIf="showPassword; else eyeClosed">
+                          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </ng-container>
+                        <ng-template #eyeClosed>
+                          <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                          <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                          <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                          <line x1="2" x2="22" y1="2" y2="22" />
+                        </ng-template>
+                      </svg>
+                    </button>
+                  </div>
+                  <p *ngIf="hasError('user.password','required')" class="text-xs text-red-600 mt-1">La contraseña es obligatoria.</p>
+                  <p *ngIf="hasError('user.password','minlength')" class="text-xs text-red-600 mt-1">Debe tener al menos 8 caracteres.</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2 required-marker">Idioma</label>
+                  <input type="text" formControlName="locale"
+                    class="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-600"
+                    readonly />
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2 required-marker">Zona horaria</label>
+                  <input type="text" formControlName="timezone"
+                    class="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-600"
+                    readonly />
+                </div>
+              </div>
+            </div>
+
+            <!-- Paso 2: Empresa -->
+            <div *ngIf="step.key === 'company'" class="space-y-4" [formGroup]="companyGroup">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2 required-marker">Nombre comercial</label>
+                  <input type="text" formControlName="displayName" placeholder="Ej. Apolo Systems"
+                    class="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  <p *ngIf="hasError('company.displayName','required')" class="text-xs text-red-600 mt-1">Requerido.</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2 required-marker">Razón social</label>
+                  <input type="text" formControlName="legalName" placeholder="Ej. Apolo Systems S.A.S"
+                    class="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  <p *ngIf="hasError('company.legalName','required')" class="text-xs text-red-600 mt-1">Requerido.</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2 required-marker">Industria</label>
+                  <select formControlName="industry"
+                    class="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="" disabled>Selecciona industria</option>
+                    <option *ngFor="let industry of industries" [value]="industry">{{ industry }}</option>
+                  </select>
+                  <p *ngIf="hasError('company.industry','required')" class="text-xs text-red-600 mt-1">Selecciona una industria.</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2 required-marker">Tamaño del equipo</label>
+                  <input type="number" min="1" formControlName="size"
+                    class="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  <p *ngIf="hasError('company.size','required')" class="text-xs text-red-600 mt-1">Requerido.</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2 required-marker">País</label>
+                  <select formControlName="country"
+                    class="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option *ngFor="let country of countries" [value]="country.code">{{ country.label }}</option>
+                  </select>
+                  <p *ngIf="hasError('company.country','required')" class="text-xs text-red-600 mt-1">Selecciona un país.</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2 required-marker">Ciudad</label>
+                  <input type="text" formControlName="city" placeholder="Ej. Bogotá"
+                    class="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  <p *ngIf="hasError('company.city','required')" class="text-xs text-red-600 mt-1">Requerido.</p>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2 required-marker">Correo de facturación</label>
+                <input type="email" formControlName="billingEmail" placeholder="billing@tuempresa.com"
+                  class="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <p *ngIf="hasError('company.billingEmail','required')" class="text-xs text-red-600 mt-1">Requerido.</p>
+                <p *ngIf="hasError('company.billingEmail','email')" class="text-xs text-red-600 mt-1">Correo inválido.</p>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">¿Qué harán con Signly?</label>
+                <textarea rows="3" formControlName="about" placeholder="Ej. Firmar contratos, onboarding, aprobaciones internas"
+                  class="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+              </div>
+            </div>
+
+            <!-- Paso 3: Seguridad y envío -->
+            <div *ngIf="step.key === 'security'" class="space-y-4" [formGroup]="securityGroup">
+              <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="lg:col-span-2 space-y-4">
+                  <div class="rounded-2xl border border-gray-200 p-5 bg-gray-50">
+                    <p class="text-sm font-semibold text-gray-700 mb-4">Consentimientos</p>
+                    <label class="flex items-start gap-3 cursor-pointer">
+                      <input type="checkbox" class="mt-1" formControlName="tosAccepted" />
+                      <span class="text-sm text-gray-700">Acepto los Términos y Condiciones de uso de Signly.</span>
+                    </label>
+                    <label class="flex items-start gap-3 cursor-pointer mt-3">
+                      <input type="checkbox" class="mt-1" formControlName="privacyAccepted" />
+                      <span class="text-sm text-gray-700">Acepto el aviso de Privacidad y autorizo el tratamiento de mis datos.</span>
+                    </label>
+                    <p *ngIf="hasError('security.tosAccepted','required') || hasError('security.privacyAccepted','required')"
+                      class="text-xs text-red-600 mt-3">Debes aceptar ambos consentimientos para continuar.</p>
+                  </div>
+
+                  <div class="rounded-2xl border border-gray-200 p-5">
+                    <p class="text-sm font-semibold text-gray-700 mb-3">Código de referido (opcional)</p>
+                    <input type="text" formControlName="referralCode" placeholder="Si alguien te invitó, agrégalo aquí"
+                      class="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
+                </div>
+
+                <div class="rounded-2xl border border-gray-200 p-5 bg-white shadow-sm">
+                  <p class="text-sm font-semibold text-gray-700 mb-4">Revisión rápida</p>
+                  <div class="space-y-3 text-sm text-gray-700">
+                    <div class="flex items-center gap-2">
+                      <span class="h-2 w-2 rounded-full bg-green-500"></span>
+                      <span>{{ userGroup.get('firstName')?.value || 'Nombre' }} {{ userGroup.get('lastName')?.value || '' }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="h-2 w-2 rounded-full bg-green-500"></span>
+                      <span>{{ userGroup.get('email')?.value || 'correo@empresa.com' }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="h-2 w-2 rounded-full bg-blue-500"></span>
+                      <span>{{ companyGroup.get('displayName')?.value || 'Empresa' }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="h-2 w-2 rounded-full bg-blue-500"></span>
+                      <span>{{ companyGroup.get('city')?.value || 'Ciudad' }}, {{ companyGroup.get('country')?.value || 'País' }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="h-2 w-2 rounded-full bg-indigo-500"></span>
+                      <span>{{ companyGroup.get('industry')?.value || 'Industria' }}</span>
+                    </div>
+                  </div>
+                  <div class="mt-6 rounded-xl bg-blue-50 text-blue-800 p-4 text-sm">
+                    <p class="font-semibold">Provisionamiento automático</p>
+                    <p class="mt-1">Crearemos tu tenant y enviaremos un correo para verificar tu email.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Navegación y acciones -->
+            <div class="flex flex-col gap-3 pt-3">
+              <div class="flex items-center gap-3">
+                <button *ngIf="currentStep > 0" type="button" (click)="goPrev()"
+                  class="px-4 py-2.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-medium">
+                  Atrás
+                </button>
+
+                <div class="flex-1"></div>
+
+                <button
+                  type="submit"
+                  [disabled]="loading"
+                  class="px-5 py-2.5 rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-200 text-sm font-semibold disabled:opacity-60"
+                >
+                  <span *ngIf="!loading && currentStep < steps.length - 1">Siguiente</span>
+                  <span *ngIf="!loading && currentStep === steps.length - 1">Guardar</span>
+                  <span *ngIf="loading" class="flex items-center gap-2">
+                    <span class="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    Registrando...
+                  </span>
+                </button>
+              </div>
+
+              <div *ngIf="errorMessage" class="text-red-600 text-sm">{{ errorMessage }}</div>
+              <div class="text-sm text-gray-500">
+                <button type="button" (click)="backToLogin()" class="text-blue-600 hover:text-blue-500 font-medium">Volver al login</button>
+              </div>
+            </div>
+          </form>
+        </div>
+    </ng-container>
+
+    <!-- Estado de éxito -->
+    <ng-template #successState>
+      <div class="text-center space-y-6">
+        <div class="inline-flex h-20 w-20 rounded-full bg-green-100 text-green-700 items-center justify-center text-3xl font-bold">✓</div>
+        <h3 class="text-3xl font-bold text-gray-800">¡Registro completado!</h3>
+        <p class="text-lg text-gray-600 max-w-xl mx-auto">
+          Te enviamos un correo para verificar tu email y terminar de provisionar tu espacio. Mientras tanto, cuéntale a tu equipo que ya pueden firmar digitalmente con Signly.
+        </p>
+        <div class="space-x-4">
+          <button (click)="backToLogin()" class="px-5 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Ir a iniciar sesión</button>
+          <button (click)="currentStep = 0; successPayload = null;" class="px-5 py-3 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">Registrar otro usuario</button>
+        </div>
+      </div>
+    </ng-template>
+  </div>
+</div>

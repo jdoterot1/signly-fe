@@ -21,6 +21,7 @@ export class OtpComponent implements OnInit {
   successMessage: string | null = null;
   errorMessage: string | null = null;
   loading = false;
+  email: string | null = null;
 
   // Para el countdown
   countdown: number = 60;
@@ -36,6 +37,13 @@ export class OtpComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    const navigationEmail = history.state?.email as string | undefined;
+    this.email = navigationEmail || this.authService.getRecoveryEmail();
+
+    if (!this.email) {
+      this.errorMessage = 'No se encontró un correo asociado a la recuperación.';
+    }
+
     // Creamos 6 controles, cada uno para un dígito
     this.otpForm = this.fb.group({
       otp1: ['', [Validators.required, Validators.pattern(/^[0-9]$/)]],
@@ -65,6 +73,11 @@ export class OtpComponent implements OnInit {
     this.errorMessage = null;
     this.successMessage = null;
 
+    if (!this.email) {
+      this.errorMessage = 'Por favor inicia el proceso de recuperación nuevamente.';
+      return;
+    }
+
     if (this.otpForm.invalid) {
       return;
     }
@@ -79,17 +92,14 @@ export class OtpComponent implements OnInit {
       this.f['otp6'].value;
 
     this.loading = true;
-    this.authService.verifyOtp(otpValue).subscribe({
-      next: () => {
-        this.successMessage = 'OTP verificado correctamente. Redirigiendo…';
-        this.loading = false;
-        setTimeout(() => this.router.navigate(['/home']), 1000);
-      },
-      error: (err) => {
-        this.errorMessage = err.message || 'Error al verificar OTP';
-        this.loading = false;
-      }
-    });
+    this.authService.setRecoveryOtp(otpValue);
+    this.successMessage = 'Código verificado, continua con el cambio de contraseña.';
+    this.loading = false;
+    setTimeout(() => {
+      this.router.navigate(['/reset-password'], {
+        state: { email: this.email, otp: otpValue }
+      });
+    }, 600);
   }
 
   // Cuando se escribe un dígito, moverse al siguiente input
