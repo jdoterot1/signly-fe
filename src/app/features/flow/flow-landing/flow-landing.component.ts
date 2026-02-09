@@ -70,7 +70,8 @@ export class FlowLandingComponent implements OnInit, OnDestroy {
       otp_email: 'Codigo por correo',
       otp_sms: 'Codigo por SMS',
       otp_whatsapp: 'Codigo por WhatsApp',
-      liveness: 'Prueba de vida'
+      liveness: 'Prueba de vida',
+      template_sign: 'Firma del documento'
     };
     return labels[step] || step;
   }
@@ -81,7 +82,8 @@ export class FlowLandingComponent implements OnInit, OnDestroy {
       otp_email: 'pi pi-envelope',
       otp_sms: 'pi pi-mobile',
       otp_whatsapp: 'pi pi-whatsapp',
-      liveness: 'pi pi-camera'
+      liveness: 'pi pi-camera',
+      template_sign: 'pi pi-pencil'
     };
     return icons[step] || 'pi pi-check-circle';
   }
@@ -112,7 +114,8 @@ export class FlowLandingComponent implements OnInit, OnDestroy {
       otp_email: 'otp-email',
       otp_sms: 'otp-sms',
       otp_whatsapp: 'otp-whatsapp',
-      liveness: 'liveness'
+      liveness: 'liveness',
+      template_sign: 'template-sign'
     };
 
     const route = routes[step];

@@ -1,20 +1,30 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 
-import { FlowService } from '../../../core/services/flow/flow.service';
+import { FlowService, FlowError } from '../../../core/services/flow/flow.service';
 import { FlowState, FlowChallengeType } from '../../../core/models/flow/flow.model';
 import { FlowProgressComponent } from '../shared/flow-progress/flow-progress.component';
 
 @Component({
   selector: 'app-flow-complete',
   standalone: true,
-  imports: [CommonModule, RouterModule, FlowProgressComponent],
+  imports: [CommonModule, RouterModule, FormsModule, FlowProgressComponent],
   templateUrl: './flow-complete.component.html'
 })
-export class FlowCompleteComponent implements OnInit {
+export class FlowCompleteComponent implements OnInit, OnDestroy {
   processId = '';
   flowState: FlowState | null = null;
+
+  sendCopy = true;
+  email = '';
+  completing = false;
+  completed = false;
+  completeError: string | null = null;
+
+  private subscriptions: Subscription[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -24,6 +34,14 @@ export class FlowCompleteComponent implements OnInit {
   ngOnInit(): void {
     this.processId = this.route.snapshot.paramMap.get('processId') ?? '';
     this.flowState = this.flowService.getFlowState();
+
+    if (this.flowState?.participant?.identity?.email) {
+      this.email = this.flowState.participant.identity.email;
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
   getStepLabel(step: FlowChallengeType): string {
@@ -32,7 +50,8 @@ export class FlowCompleteComponent implements OnInit {
       otp_email: 'Codigo por correo',
       otp_sms: 'Codigo por SMS',
       otp_whatsapp: 'Codigo por WhatsApp',
-      liveness: 'Prueba de vida'
+      liveness: 'Prueba de vida',
+      template_sign: 'Firma del documento'
     };
     return labels[step] || step;
   }
@@ -43,16 +62,38 @@ export class FlowCompleteComponent implements OnInit {
       otp_email: 'pi pi-envelope',
       otp_sms: 'pi pi-mobile',
       otp_whatsapp: 'pi pi-whatsapp',
-      liveness: 'pi pi-camera'
+      liveness: 'pi pi-camera',
+      template_sign: 'pi pi-pencil'
     };
     return icons[step] || 'pi pi-check-circle';
   }
 
+  completeFlow(): void {
+    if (!this.processId || this.completing) return;
+
+    this.completing = true;
+    this.completeError = null;
+
+    const sub = this.flowService.completeFlow(this.processId, {
+      sendCopy: this.sendCopy,
+      email: this.email
+    }).subscribe({
+      next: () => {
+        this.completed = true;
+        this.completing = false;
+      },
+      error: (err: FlowError) => {
+        this.completeError = err.message || 'Error al completar el flujo.';
+        this.completing = false;
+      }
+    });
+
+    this.subscriptions.push(sub);
+  }
+
   closeWindow(): void {
-    // Clear flow state
     this.flowService.clearFlowState();
 
-    // Try to close the window (only works if opened via script)
     if (window.opener) {
       window.close();
     }
