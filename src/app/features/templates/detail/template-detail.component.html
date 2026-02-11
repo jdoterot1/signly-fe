@@ -1,0 +1,171 @@
+<div class="min-h-[calc(100vh-8rem)] py-10 px-4 lg:px-10">
+  <div class="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-indigo-50/60 p-8">
+      <div class="flex items-start justify-between gap-6">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">Plantilla</p>
+          <h1 class="text-2xl font-semibold heading-brand mt-3">Detalle de plantilla</h1>
+          <p class="text-gray-600 mt-3 break-all">{{ templateId }}</p>
+        </div>
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          class="bg-white text-gray-700 px-4 py-2 rounded border border-gray-200 hover:bg-gray-50"
+          (click)="goBack()"
+        >
+          Volver
+        </button>
+        <button
+          type="button"
+          class="bg-white text-gray-700 px-4 py-2 rounded border border-gray-200 hover:bg-gray-50"
+          (click)="downloadPdf()"
+          [disabled]="!template"
+        >
+          Descargar PDF
+        </button>
+        <button
+          type="button"
+          class="bg-white text-gray-700 px-4 py-2 rounded border border-gray-200 hover:bg-gray-50"
+          (click)="goEdit()"
+        >
+          Editar
+        </button>
+        <button
+          type="button"
+          class="bg-[#2b0f60] text-white px-4 py-2 rounded hover:bg-[#1b1034]"
+          (click)="goCreateDocument()"
+          [disabled]="!template"
+        >
+          Crear documento
+        </button>
+      </div>
+    </div>
+
+    <div class="mt-8">
+      <div *ngIf="loading" class="text-gray-500">Cargando...</div>
+      <div *ngIf="!loading && errorMessage" class="text-red-600 font-semibold">{{ errorMessage }}</div>
+
+      <div *ngIf="!loading && template" class="mt-4">
+        <div class="grid gap-4 lg:grid-cols-3">
+          <div class="rounded-2xl border border-gray-100 p-5 lg:col-span-2">
+            <div class="text-xs text-gray-500">Nombre</div>
+            <div class="mt-2 text-xl font-semibold text-gray-900">{{ template.templateName }}</div>
+            <div class="mt-3 text-sm text-gray-600" *ngIf="template.description">
+              {{ template.description }}
+            </div>
+            <div class="mt-3 text-sm text-gray-500" *ngIf="!template.description">
+              Sin descripción
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-gray-100 p-5">
+            <div class="text-xs text-gray-500">Versión actual</div>
+            <div class="mt-2 text-3xl font-semibold heading-brand">{{ versionShort(template.templateVersion) }}</div>
+            <div class="mt-2 text-sm text-gray-600">
+              Actualizado: <span class="font-semibold text-gray-800">{{ formatDate(template.updatedAt) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 grid gap-4 lg:grid-cols-2">
+          <div class="rounded-2xl border border-gray-100 p-5">
+            <div class="text-sm font-semibold text-gray-700">Metadatos</div>
+            <div class="mt-4 space-y-2 text-sm text-gray-700">
+              <div class="flex items-center justify-between gap-4">
+                <span class="text-gray-500">Creado</span>
+                <span class="font-semibold">{{ formatDate(template.createdAt) }}</span>
+              </div>
+              <div class="flex items-center justify-between gap-4">
+                <span class="text-gray-500">Creado por</span>
+                <span class="font-semibold break-all text-right">{{ template.createdBy }}</span>
+              </div>
+              <div class="flex items-center justify-between gap-4">
+                <span class="text-gray-500">Actualizado por</span>
+                <span class="font-semibold break-all text-right">{{ template.updatedBy || 'N/A' }}</span>
+              </div>
+              <div class="flex items-center justify-between gap-4">
+                <span class="text-gray-500">Tenant</span>
+                <span class="font-semibold break-all text-right">{{ template.tenantId || 'N/A' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-gray-100 p-5">
+            <div class="text-sm font-semibold text-gray-700">Archivo</div>
+            <div class="mt-4 text-sm text-gray-700">
+              <div class="text-gray-500">S3 URI</div>
+              <div class="mt-2 break-all font-semibold">{{ template.s3Uri || 'N/A' }}</div>
+            </div>
+            <div class="mt-4 text-sm text-gray-700">
+              <div class="text-gray-500">Campos</div>
+              <div class="mt-2 font-semibold">{{ fields.length }} campo(s)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 rounded-2xl border border-gray-100 p-5">
+          <div class="flex items-center justify-between gap-4">
+            <div class="text-sm font-semibold text-gray-700">Campos</div>
+            <div class="text-xs text-gray-500">Total: {{ fields.length }}</div>
+          </div>
+
+          <div class="mt-4 overflow-x-auto" *ngIf="fields.length; else emptyFields">
+            <table class="min-w-full w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Página</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Posición</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tamaño</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr *ngFor="let f of fields">
+                  <td class="px-4 py-3 text-sm font-semibold text-gray-800">{{ f.fieldName }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">{{ f.fieldType }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">{{ f.page }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">x={{ f.x }}, y={{ f.y }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">{{ f.width }} x {{ f.height }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <ng-template #emptyFields>
+            <div class="mt-4 text-sm text-gray-500">Esta plantilla no tiene campos configurados.</div>
+          </ng-template>
+        </div>
+
+        <div class="mt-6 rounded-2xl border border-gray-100 p-5">
+          <div class="flex items-center justify-between gap-4">
+            <div class="text-sm font-semibold text-gray-700">Historial de versiones</div>
+            <div class="text-xs text-gray-500">Total: {{ history.length }}</div>
+          </div>
+
+          <div class="mt-4 overflow-x-auto" *ngIf="history.length; else emptyHistory">
+            <table class="min-w-full w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Versión</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actualizado</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr *ngFor="let item of history">
+                  <td class="px-4 py-3 text-sm font-semibold text-gray-800">{{ versionShort(item.templateVersion) }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">{{ item.templateName }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">{{ formatDate(item.updatedAt) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <ng-template #emptyHistory>
+            <div class="mt-4 text-sm text-gray-500">Sin historial disponible.</div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,159 @@
+<div class="min-h-full bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-5xl mx-auto space-y-8">
+    <section class="bg-white rounded-3xl shadow px-6 py-8">
+      <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900">Preferencias de facturación</h2>
+          <p class="text-sm text-gray-500">Actualiza correos, moneda, términos y proveedor de cobro.</p>
+        </div>
+      </div>
+
+      <div *ngIf="isLoadingBilling" class="mt-6 text-sm text-gray-500 animate-pulse">
+        Consultando preferencias de facturación...
+      </div>
+
+      <form
+        *ngIf="!isLoadingBilling"
+        class="mt-6 space-y-6"
+        [formGroup]="billingForm"
+        (ngSubmit)="onSaveBilling()"
+      >
+        <div class="grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Correo de facturación</label>
+            <input
+              type="email"
+              formControlName="billing_email"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              placeholder="billing@apolosystems.co"
+            />
+            <p class="mt-1 text-xs text-red-500" *ngIf="billingForm.get('billing_email')?.invalid && billingForm.get('billing_email')?.touched">
+              Ingresa un correo válido.
+            </p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Modelo de cobro</label>
+            <select
+              formControlName="billing_model"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+            >
+              <option value="" disabled>Selecciona un modelo</option>
+              <option *ngIf="showBillingModelFallback" [value]="billingModelValue">
+                {{ billingModelValue }} (actual)
+              </option>
+              <option *ngFor="let model of billingModelOptions" [value]="model.value">{{ model.label }}</option>
+            </select>
+            <p class="mt-1 text-xs text-red-500" *ngIf="billingForm.get('billing_model')?.invalid && billingForm.get('billing_model')?.touched">
+              Selecciona el modelo de facturación.
+            </p>
+          </div>
+        </div>
+
+        <div class="grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Moneda</label>
+            <select
+              formControlName="currency"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+            >
+              <option value="" disabled>Selecciona la moneda</option>
+              <option *ngIf="showCurrencyFallback" [value]="currencyValue">
+                {{ currencyValue }} (actual)
+              </option>
+              <option *ngFor="let currency of currencyOptions" [value]="currency">{{ currency }}</option>
+            </select>
+            <p class="mt-1 text-xs text-red-500" *ngIf="billingForm.get('currency')?.invalid && billingForm.get('currency')?.touched">
+              Selecciona una moneda.
+            </p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Día de facturación</label>
+            <input
+              type="number"
+              min="1"
+              max="31"
+              formControlName="invoice_day"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              placeholder="10"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Dirección legal para facturas</label>
+          <textarea
+            rows="2"
+            formControlName="legal_address"
+            class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+            placeholder="Cra 1 # 23-45, Bogotá D.C., Colombia"
+          ></textarea>
+        </div>
+
+        <div class="grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Términos de pago (días)</label>
+            <input
+              type="number"
+              min="0"
+              formControlName="net_terms_days"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              placeholder="30"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Proveedor de pago</label>
+            <select
+              formControlName="payment_provider"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+            >
+              <option value="" disabled>Selecciona una opción</option>
+              <option *ngIf="showPaymentProviderFallback" [value]="paymentProviderValue">
+                {{ paymentProviderValue }} (actual)
+              </option>
+              <option *ngFor="let provider of paymentProviderOptions" [value]="provider.value">{{ provider.label }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Referencia método de pago</label>
+            <input
+              type="text"
+              formControlName="payment_method_ref"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              placeholder="ID de oferta o referencia externa"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Notas internas</label>
+            <textarea
+              rows="2"
+              formControlName="notes"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              placeholder="Preferencias especiales del cliente"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            class="px-4 py-2 rounded-xl border text-sm text-gray-600 hover:bg-gray-50"
+            (click)="loadBillingPreferences()"
+            [disabled]="isSavingBilling"
+          >
+            Descartar cambios
+          </button>
+          <button
+            type="submit"
+            class="px-5 py-2 rounded-xl bg-[#3366FF] text-white font-semibold hover:bg-[#274FCC] disabled:opacity-60"
+            [disabled]="isSavingBilling"
+          >
+            {{ isSavingBilling ? 'Guardando...' : 'Actualizar facturación' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>

@@ -1,0 +1,6 @@
+<div *ngIf="isLoading$ | async" class="loading-overlay">
+  <div class="loading-overlay__content" role="status" aria-live="assertive">
+    <div class="loading-overlay__spinner"></div>
+    <p class="loading-overlay__label">Cargando...</p>
+  </div>
+</div>

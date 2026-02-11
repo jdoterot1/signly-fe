@@ -1,0 +1,196 @@
+<div class="min-h-full bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-5xl mx-auto space-y-8">
+    <section class="bg-white rounded-3xl shadow px-6 py-8">
+      <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900">Identidad visual</h2>
+          <p class="text-sm text-gray-500">Colores, logos y remitentes usados en correos.</p>
+        </div>
+      </div>
+
+      <div *ngIf="isLoadingBranding" class="mt-6 text-sm text-gray-500 animate-pulse">
+        Trayendo los colores y logos configurados...
+      </div>
+
+      <form
+        *ngIf="!isLoadingBranding"
+        class="mt-6 space-y-6"
+        [formGroup]="brandingForm"
+        (ngSubmit)="onSaveBranding()"
+      >
+        <div class="grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Color primario</label>
+            <div class="flex items-center gap-3">
+              <input
+                type="color"
+                formControlName="primary_color"
+                class="h-12 w-16 rounded-xl border border-gray-200"
+              />
+              <span class="font-mono text-sm text-gray-600">{{ brandingForm.get('primary_color')?.value }}</span>
+            </div>
+            <p class="mt-1 text-xs text-red-500" *ngIf="brandingForm.get('primary_color')?.invalid && brandingForm.get('primary_color')?.touched">
+              Usa un color HEX válido.
+            </p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Color secundario</label>
+            <div class="flex items-center gap-3">
+              <input
+                type="color"
+                formControlName="secondary_color"
+                class="h-12 w-16 rounded-xl border border-gray-200"
+              />
+              <span class="font-mono text-sm text-gray-600">{{ brandingForm.get('secondary_color')?.value }}</span>
+            </div>
+            <p class="mt-1 text-xs text-red-500" *ngIf="brandingForm.get('secondary_color')?.invalid && brandingForm.get('secondary_color')?.touched">
+              Usa un color HEX válido.
+            </p>
+          </div>
+        </div>
+
+        <div class="grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Logo (URL)</label>
+            <input
+              type="url"
+              formControlName="logo_url"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              (input)="updateLogoPreview()"
+              placeholder="https://cdn.signly.app/logo.svg"
+            />
+            <label class="inline-flex items-center gap-2 text-xs text-gray-500 mt-2 cursor-pointer">
+              <span>o sube un archivo</span>
+              <input type="file" accept="image/*" class="sr-only" (change)="onLogoFileSelected($event)" />
+              <span class="px-2 py-1 rounded-full border border-dashed border-gray-300">Buscar</span>
+            </label>
+            <p class="mt-1 text-xs text-red-500" *ngIf="brandingForm.get('logo_url')?.invalid && brandingForm.get('logo_url')?.touched">
+              Agrega una URL válida para el logo.
+            </p>
+            <img
+              *ngIf="logoPreview"
+              [src]="logoPreview"
+              alt="Logo preview"
+              class="mt-4 max-h-16 object-contain"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Favicon (URL)</label>
+            <input
+              type="url"
+              formControlName="favicon_url"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              (input)="updateFaviconPreview()"
+              placeholder="https://cdn.signly.app/favicon.ico"
+            />
+            <label class="inline-flex items-center gap-2 text-xs text-gray-500 mt-2 cursor-pointer">
+              <span>o sube un archivo</span>
+              <input type="file" accept="image/*" class="sr-only" (change)="onFaviconFileSelected($event)" />
+              <span class="px-2 py-1 rounded-full border border-dashed border-gray-300">Buscar</span>
+            </label>
+            <p class="mt-1 text-xs text-red-500" *ngIf="brandingForm.get('favicon_url')?.invalid && brandingForm.get('favicon_url')?.touched">
+              Agrega una URL válida para el favicon.
+            </p>
+            <img
+              *ngIf="faviconPreview"
+              [src]="faviconPreview"
+              alt="Favicon preview"
+              class="mt-4 h-12 w-12 rounded"
+            />
+          </div>
+        </div>
+
+        <div class="grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Nombre remitente (emails)</label>
+            <input
+              type="text"
+              formControlName="email_sender_name"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              placeholder="Apolo Systems"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Correo del remitente</label>
+            <div class="mt-1 flex rounded-xl border border-gray-300 overflow-hidden">
+              <input
+                type="text"
+                formControlName="email_sender_alias"
+                class="flex-1 px-4 py-2 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3366FF] border-r border-gray-200"
+                placeholder="notificaciones"
+              />
+              <span class="px-4 py-2 bg-gray-50 text-sm text-gray-600 font-mono">{{ '@' + senderDomain }}</span>
+            </div>
+            <p class="mt-1 text-xs text-gray-500">
+              Dominio fijo: <strong>{{ senderDomain }}</strong>. Alias permitido: letras, números, . _ -
+            </p>
+            <p class="mt-1 text-xs text-red-500" *ngIf="brandingForm.get('email_sender_alias')?.invalid && brandingForm.get('email_sender_alias')?.touched">
+              Usa solo caracteres válidos.
+            </p>
+          </div>
+        </div>
+
+        <div class="bg-gray-50 rounded-2xl border border-gray-100 p-6 space-y-4">
+          <p class="text-sm font-semibold text-gray-700">Vista previa del correo</p>
+          <div
+            class="rounded-2xl overflow-hidden border shadow-sm"
+            [ngStyle]="{ borderColor: brandingForm.value.primary_color }"
+          >
+            <div
+              class="flex items-center gap-3 px-6 py-4"
+              [ngStyle]="{ backgroundColor: brandingForm.value.primary_color, color: '#fff' }"
+            >
+              <img *ngIf="faviconPreview" [src]="faviconPreview" class="h-8 w-8 rounded" alt="favicon preview" />
+              <div>
+                <p class="text-xs uppercase tracking-[0.2em] opacity-80">Signly Notifications</p>
+                <p class="font-semibold">{{ brandingForm.value.email_sender_name || 'Equipo Signly' }}</p>
+              </div>
+            </div>
+            <div class="px-6 py-5 space-y-4">
+              <div class="flex items-center gap-2 text-sm text-gray-500">
+                <span class="font-semibold text-gray-700">De:</span>
+                <span>{{ brandingForm.value.email_sender_name || 'Equipo Signly' }} &lt;{{ emailPreviewSender }}&gt;</span>
+              </div>
+              <div class="text-sm text-gray-600 leading-relaxed">
+                <p>Hola {{ brandingForm.value.email_sender_name || 'equipo' }},</p>
+                <p class="mt-2">
+                  Tienes documentos pendientes de firma. Ingresa a tu panel para revisar los acuerdos recientes y aprobarlos con un click.
+                </p>
+                <p class="mt-2">Gracias por usar Signly.</p>
+              </div>
+              <button
+                type="button"
+                class="px-4 py-2 rounded-xl text-white font-semibold"
+                [ngStyle]="{ backgroundColor: brandingForm.value.secondary_color || '#FFB600' }"
+              >
+                Abrir documentos
+              </button>
+              <div class="flex items-center gap-2 text-xs text-gray-400 border-t pt-4">
+                <img *ngIf="logoPreview" [src]="logoPreview" class="h-6 object-contain" alt="logo preview footer" />
+                <span>© {{ currentYear }} Signly | Centro de notificaciones</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            class="px-4 py-2 rounded-xl border text-sm text-gray-600 hover:bg-gray-50"
+            (click)="loadBranding()"
+            [disabled]="isSavingBranding"
+          >
+            Descartar cambios
+          </button>
+          <button
+            type="submit"
+            class="px-5 py-2 rounded-xl bg-[#3366FF] text-white font-semibold hover:bg-[#274FCC] disabled:opacity-60"
+            [disabled]="isSavingBranding"
+          >
+            {{ isSavingBranding ? 'Guardando...' : 'Actualizar branding' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>

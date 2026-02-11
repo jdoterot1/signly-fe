@@ -1,0 +1,224 @@
+<!-- src/app/shared/form/form.component.html -->
+<form
+  [formGroup]="form"
+  (ngSubmit)="onSubmit()"
+  class="bg-white shadow-xl rounded-3xl max-w-5xl w-full mx-auto mt-8 px-6 py-8 sm:px-10 sm:py-10"
+>
+  <div class="flex flex-col lg:flex-row gap-10">
+    <!-- Campos principales -->
+    <div class="flex-1">
+      <div class="grid gap-6 sm:grid-cols-2">
+        <ng-container *ngFor="let field of config.fields">
+          <ng-container *ngIf="!field.hidden" [ngSwitch]="field.type">
+
+            <!-- Text -->
+            <ng-container *ngSwitchCase="'text'">
+              <div class="sm:col-span-1">
+                <label [for]="field.key" class="block mb-2 text-sm font-semibold text-gray-700">
+                  {{ field.label }}
+                  <span *ngIf="field.required" class="text-red-500">*</span>
+                </label>
+                <input
+                  pInputText
+                  [id]="field.key"
+                  [placeholder]="field.placeholder"
+                  [formControlName]="field.key"
+                  [disabled]="field.disabled ?? false"
+                  class="w-full rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                />
+              </div>
+            </ng-container>
+
+            <!-- Email -->
+            <ng-container *ngSwitchCase="'email'">
+              <div class="sm:col-span-1">
+                <label [for]="field.key" class="block mb-2 text-sm font-semibold text-gray-700">
+                  {{ field.label }}
+                  <span *ngIf="field.required" class="text-red-500">*</span>
+                </label>
+                <input
+                  pInputText
+                  type="email"
+                  [id]="field.key"
+                  [placeholder]="field.placeholder"
+                  [formControlName]="field.key"
+                  [disabled]="field.disabled ?? false"
+                  class="w-full rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                />
+              </div>
+            </ng-container>
+
+            <!-- Password -->
+            <ng-container *ngSwitchCase="'password'">
+              <div class="sm:col-span-1">
+                <label [for]="field.key" class="block mb-2 text-sm font-semibold text-gray-700">
+                  {{ field.label }}
+                  <span *ngIf="field.required" class="text-red-500">*</span>
+                </label>
+                <p-password
+                  [inputId]="field.key"
+                  [placeholder]="field.placeholder"
+                  [formControlName]="field.key"
+                  [toggleMask]="true"
+                  class="w-full"
+                  [disabled]="field.disabled ?? false"
+                  inputStyleClass="w-full rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  panelStyleClass="w-full"
+                />
+              </div>
+            </ng-container>
+
+            <!-- Select -->
+            <ng-container *ngSwitchCase="'select'">
+              <div class="sm:col-span-1">
+                <label [for]="field.key" class="block mb-2 text-sm font-semibold text-gray-700">
+                  {{ field.label }}
+                  <span *ngIf="field.required" class="text-red-500">*</span>
+                </label>
+                <p-select
+                  [inputId]="field.key"
+                  [options]="field.options"
+                  optionLabel="name"
+                  [placeholder]="field.placeholder"
+                  [formControlName]="field.key"
+                  [disabled]="field.disabled ?? false"
+                  class="w-full"
+                  overlayStyleClass="w-full"
+                />
+              </div>
+            </ng-container>
+
+            <!-- Toggle -->
+            <ng-container *ngSwitchCase="'toggle'">
+              <div class="sm:col-span-1 flex items-center gap-4">
+                <label class="text-sm font-semibold text-gray-700">{{ field.label }}</label>
+                <p-toggleButton
+                  [formControlName]="field.key"
+                  onLabel="Activo"
+                  offLabel="Inactivo"
+                  class="min-w-[5rem]"
+                />
+              </div>
+            </ng-container>
+
+            <!-- Date -->
+            <ng-container *ngSwitchCase="'date'">
+              <div class="sm:col-span-1">
+                <label [for]="field.key" class="block mb-2 text-sm font-semibold text-gray-700">
+                  {{ field.label }}
+                </label>
+                <p-datepicker
+                  [inputId]="field.key"
+                  [placeholder]="field.placeholder"
+                  [formControlName]="field.key"
+                  [disabled]="field.disabled ?? false"
+                  [minDate]="field.minDate"
+                  [showTime]="field.showTime ?? false"
+                  [hourFormat]="field.hourFormat ?? '24'"
+                  [dateFormat]="field.dateFormat"
+                  [showIcon]="true"
+                  class="w-full"
+                  inputStyleClass="w-full rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                />
+              </div>
+            </ng-container>
+
+            <!-- Textarea -->
+            <ng-container *ngSwitchCase="'textarea'">
+              <div class="sm:col-span-2">
+                <label [for]="field.key" class="block mb-2 text-sm font-semibold text-gray-700">
+                  {{ field.label }}
+                </label>
+                <textarea
+                  pTextarea
+                  rows="4"
+                  [id]="field.key"
+                  [placeholder]="field.placeholder"
+                  [formControlName]="field.key"
+                  [disabled]="field.disabled ?? false"
+                  class="w-full rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                ></textarea>
+              </div>
+            </ng-container>
+
+            <!-- Group (recursivo) -->
+            <ng-container *ngSwitchCase="'group'">
+              <div class="sm:col-span-2">
+                <fieldset class="border border-gray-200 rounded-2xl p-4 sm:p-6">
+                  <legend class="px-2 text-sm font-semibold text-gray-700">{{ field.label }}</legend>
+                  <app-form
+                    [config]="{ fields: field.children! }"
+                    [form]="getGroup(field)"
+                    (submitForm)="submitForm.emit($event)"
+                    (cancelForm)="cancelForm.emit()"
+                  ></app-form>
+                </fieldset>
+              </div>
+            </ng-container>
+
+          </ng-container>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- Carga de imagen opcional -->
+    <div *ngIf="showImageUpload" class="w-full lg:w-80 flex flex-col items-center gap-6">
+      <div class="w-40 h-40 sm:w-48 sm:h-48 rounded-full overflow-hidden border-4 border-blue-100 shadow-inner">
+        <img
+          [src]="imagePreview || 'assets/icons/forms/ProfileImage.svg'"
+          alt="Imagen de perfil"
+          class="w-full h-full object-cover"
+        />
+      </div>
+
+      <input
+        #fileInput
+        type="file"
+        accept="image/*"
+        class="hidden"
+        (change)="onFileChange($event)"
+      />
+
+      <div class="flex flex-col sm:flex-row items-center gap-3 w-full">
+        <button
+          type="button"
+          class="w-full sm:w-auto bg-[#2b0f60] hover:bg-[#1b1034] text-white font-semibold px-4 py-2 rounded-xl shadow"
+          (click)="openFileDialog()"
+        >
+          Subir foto
+        </button>
+        <button
+          *ngIf="imagePreview"
+          type="button"
+          class="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-xl shadow"
+          (click)="removeImage()"
+        >
+          Quitar foto
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <ng-container *ngIf="extraTemplate">
+    <div class="mt-10">
+      <ng-container *ngTemplateOutlet="extraTemplate"></ng-container>
+    </div>
+  </ng-container>
+
+  <!-- Acciones -->
+  <div class="mt-10 flex flex-col sm:flex-row justify-end gap-3">
+    <button
+      type="button"
+      class="w-full sm:w-auto px-6 py-3 text-sm font-semibold text-gray-600 bg-gray-200 hover:bg-gray-300 rounded-xl transition"
+      (click)="cancelForm.emit()"
+    >
+      {{ cancelLabel }}
+    </button>
+    <button
+      type="submit"
+      class="w-full sm:w-auto px-6 py-3 text-sm font-semibold text-white bg-[#2b0f60] hover:bg-[#1b1034] rounded-xl shadow transition"
+    >
+      {{ submitLabel }}
+    </button>
+  </div>
+</form>

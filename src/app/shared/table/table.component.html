@@ -1,0 +1,177 @@
+<div class="p-6 bg-white rounded-lg shadow" style="font-family: 'Poppins', sans-serif;">
+  <!-- HEADER: título, filtros, búsqueda y sort -->
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-2xl font-bold">{{ model.entityName }}</h2>
+    <div class="flex space-x-3">
+      <!-- Toggle fila de filtros -->
+      <button
+        (click)="openFiltersModal()"
+        class="flex items-center rounded-full p-2 transition"
+        [ngClass]="hasActiveFilters ? 'bg-[#dbeafe] text-[#1d4ed8]' : 'bg-[#F9FBFF] hover:bg-[#E5EFFF]'"
+      >
+        <img src="assets/icons/tables/Filter.svg"
+             alt="Filters"
+             class="w-5 h-5" />
+      </button>
+      <!-- Search -->
+      <div class="relative">
+        <img src="assets/icons/tables/Search.svg" alt="Search"
+             class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" />
+        <input type="text" placeholder="Buscar" [(ngModel)]="searchTerm"
+               (ngModelChange)="onSearchTermChange()"
+               class="bg-[#F9FBFF] placeholder-[#B5B7C0] text-sm rounded-full pl-10 pr-3 py-2 focus:outline-none" />
+      </div>
+      <!-- Sort by -->
+      <div (click)="onSortToggle()"
+           class="flex items-center bg-[#F9FBFF] rounded-full px-4 py-2 cursor-pointer select-none">
+        <span class="text-sm text-gray-700">
+          Ordenar por: <span class="font-bold">{{ sortLabel }}</span>
+        </span>
+        <img src="assets/icons/tables/ChevronDown.svg" alt="Toggle sort"
+             class="w-4 h-4 ml-2" />
+      </div>
+      <button
+        *ngIf="config.showCreateButton !== false"
+        type="button"
+        (click)="onCreate()"
+        class="bg-[#2b0f60] text-white px-4 py-2 rounded hover:bg-[#1b1034]">
+        Crear
+      </button>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="overflow-x-auto w-full">
+    <table class="min-w-full w-full table-fixed divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <!-- fila de headers -->
+        <tr>
+          <th *ngIf="config.showRowSelection" class="px-4 py-3">
+            <input type="checkbox" [checked]="selectAll" (change)="toggleSelectAll()" />
+          </th>
+          <ng-container *ngFor="let col of columns">
+            <th *ngIf="col.visible"
+                (click)="onSortOptionChange(col)"
+                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer select-none">
+              <div class="inline-flex items-center space-x-1">
+                <span>{{ col.header }}</span>
+                <img *ngIf="col.sortable" src="assets/icons/tables/ChevronDown.svg" alt="Sort"
+                     class="w-3 h-3 transform"
+                     [class.rotate-180]="state.sortBy === col.key && state.sortDir === 'desc'" />
+              </div>
+            </th>
+          </ng-container>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        <tr *ngFor="let row of state.data.filteredData; trackBy: trackByFn">
+          <td *ngIf="config.showRowSelection" class="px-4 py-4">
+            <input type="checkbox" [checked]="isSelected(row)" (change)="toggleRow(row)" />
+          </td>
+          <ng-container *ngFor="let col of columns">
+            <td *ngIf="col.visible" class="px-4 py-4 break-words whitespace-normal">
+              <!-- badge estado -->
+              <ng-container *ngIf="col.key === 'status'; else normalCell">
+                <span class="inline-flex justify-center items-center w-24 px-2 py-1 rounded-full text-sm text-white"
+                      [ngClass]="statusClasses[getCellValue(row, col.key)]">
+                  {{ getCellValue(row, col.key) }}
+                </span>
+              </ng-container>
+              <ng-template #normalCell>
+                <ng-container [ngSwitch]="col.columnType">
+                  <ng-container *ngSwitchCase="'action'">
+                    <div class="inline-flex space-x-4 justify-center w-full">
+                      <ng-container *ngFor="let action of col.actions">
+                        <button *ngIf="!isActionDisabled(action, row)"
+                                type="button"
+                                class="p-0 bg-transparent border-none"
+                                (click)="onActionClick(action, row, $event)"
+                                title="{{ action.tooltip }}">
+                          <img [src]="action.icon" [alt]="action.tooltip"
+                               class="w-6 h-6 hover:opacity-75" />
+                        </button>
+                        <img *ngIf="isActionDisabled(action, row)"
+                             [src]="action.icon" [alt]="action.tooltip"
+                             class="w-6 h-6 opacity-50" />
+                      </ng-container>
+                    </div>
+                  </ng-container>
+                  <ng-container *ngSwitchDefault>
+                    <ng-container *ngIf="isTruncatableKey(col.key); else defaultCell">
+                      <span
+                        class="inline-block max-w-xs truncate align-middle cursor-help"
+                        [pTooltip]="asText(getCellValue(row, col.key))"
+                        tooltipPosition="top"
+                        [tooltipDisabled]="asText(getCellValue(row, col.key)).length <= (truncateLimitForKey(col.key) ?? 0)"
+                      >
+                        {{ asText(getCellValue(row, col.key)) | slice:0:(truncateLimitForKey(col.key) ?? 0) }}
+                        <ng-container *ngIf="asText(getCellValue(row, col.key)).length > (truncateLimitForKey(col.key) ?? 0)">...</ng-container>
+                      </span>
+                    </ng-container>
+                    <ng-template #defaultCell>
+                      {{ getCellValue(row, col.key) }}
+                    </ng-template>
+                  </ng-container>
+                </ng-container>
+              </ng-template>
+            </td>
+          </ng-container>
+        </tr>
+        <tr *ngIf="!state.data.filteredData.length">
+          <td [attr.colspan]="(config.showRowSelection ? 1 : 0) + visibleColumnsCount()"
+              class="px-4 py-4 text-center text-gray-500">
+            {{ config.emptyMessage || 'No hay datos para mostrar' }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PAGINACIÓN -->
+  <div class="flex items-center justify-between mt-4 text-sm">
+    <div class="text-[#B5B7C0]">
+      Showing
+      <strong>{{ (state.data.currentPage - 1) * config.pageSize + 1 }}</strong>
+      to
+      <strong>{{ (state.data.currentPage - 1) * config.pageSize + state.data.filteredData.length }}</strong>
+      of
+      <strong>{{ state.data.totalItems }}</strong>
+      entries
+    </div>
+    <div class="inline-flex items-center">
+      <img src="assets/icons/tables/MoveLeft.svg" alt="Previous"
+           (click)="prevPage()"
+           [class.cursor-pointer]="state.data.currentPage > 1"
+           [class.opacity-50]="state.data.currentPage === 1"
+           class="w-8 h-8 mx-1" />
+      <ul class="inline-flex">
+        <li *ngFor="let p of state.data.pages">
+                  <button (click)="goToPage(p)"
+                  [ngClass]="{
+                    'bg-[#2b0f60] text-white': state.data.currentPage === p,
+                    'border border-gray-300 text-gray-700 hover:bg-gray-200': state.data.currentPage !== p
+                  }"
+                  class="px-3 py-1 mx-1 rounded">
+            {{ p }}
+          </button>
+        </li>
+      </ul>
+      <img src="assets/icons/tables/MoveRight.svg" alt="Next"
+           (click)="nextPage()"
+           [class.cursor-pointer]="state.data.currentPage < state.data.totalPages"
+           [class.opacity-50]="state.data.currentPage === state.data.totalPages"
+           class="w-8 h-8 mx-1" />
+    </div>
+  </div>
+
+  <app-table-filters-modal
+    [visible]="isFiltersModalOpen"
+    [columns]="filterableColumns"
+    [values]="modalColumnFilters"
+    [hasActiveFilters]="hasActiveFilters"
+    (close)="closeFiltersModal()"
+    (clearFields)="clearModalFilters()"
+    (clearFilters)="clearAllFilters()"
+    (apply)="applyFiltersFromModal()"
+  ></app-table-filters-modal>
+</div>

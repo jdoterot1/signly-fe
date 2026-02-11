@@ -1,0 +1,49 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "email": "oterot1812@gmail.com",
+      "password": "password123",
+      "name": "Apolo Systems",
+      "status": "Active",
+      "workload": "Administrador General",
+      "rol": "admin"
+    },
+    {
+      "id": "2",
+      "email": "apolo@example.com",
+      "password": "password123",
+      "name": "Apolo Systems",
+      "status": "Active",
+      "workload": "Líder Técnico",
+      "rol": "admin"
+    },
+    {
+      "id": "3",
+      "email": "juan@example.com",
+      "password": "secret456",
+      "name": "Juan Pérez",
+      "status": "Inactive",
+      "workload": "Analista de Datos",
+      "rol": "usuario"
+    },
+    {
+      "id": "4",
+      "email": "laura@example.com",
+      "password": "laura123",
+      "name": "Laura González",
+      "status": "Active",
+      "workload": "Coordinadora de Proyectos",
+      "rol": "editor"
+    },
+    {
+      "id": "5",
+      "email": "samuel@example.com",
+      "password": "sam789",
+      "name": "Samuel Torres",
+      "status": "Unresolved",
+      "workload": "Soporte Técnico",
+      "rol": "usuario"
+    }
+  ]
+}
