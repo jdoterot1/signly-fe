@@ -1,5 +1,5 @@
 <div class="min-h-[calc(100vh-8rem)] py-10 px-4 lg:px-10">
-  <div class="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-indigo-50/60 p-8">
+  <div class="bg-brand-surface-card rounded-3xl border border-brand-subtle shadow-xl p-8">
     <div class="flex items-start justify-between gap-6">
       <div>
         <p class="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">Documento</p>
@@ -8,7 +8,7 @@
       </div>
       <button
         type="button"
-        class="bg-[#2b0f60] text-white px-4 py-2 rounded hover:bg-[#1b1034]"
+        class="bg-brand-primary text-white px-4 py-2 rounded hover:bg-brand-primary-hover"
         (click)="goBack()"
       >
         Volver
@@ -16,7 +16,7 @@
     </div>
 
     <div class="mt-8">
-      <div *ngIf="loading" class="text-gray-500">Cargando...</div>
+      <div *ngIf="loading" class="text-brand-muted-light">Cargando...</div>
       <div *ngIf="!loading && errorMessage" class="text-red-600 font-semibold">{{ errorMessage }}</div>
 
       <div *ngIf="!loading && document" class="mt-4">

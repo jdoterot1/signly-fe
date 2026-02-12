@@ -13,27 +13,27 @@
 }
 
 .pdf-shell {
-  background: #f4f1fb;
-  border: 1px solid #ebe5f7;
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-border);
 }
 
 .docx-shell {
-  background: #f4f1fb;
-  border: 1px solid #ebe5f7;
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-border);
 }
 
 .pdf-scroll {
   height: 100%;
   overflow: auto;
   padding: 16px 0 32px;
-  background: linear-gradient(180deg, #f4f1fb 0%, #f6f7fb 100%);
+  background: linear-gradient(180deg, var(--brand-surface) 0%, var(--brand-surface-raised) 100%);
 }
 
 .docx-scroll {
   height: 100%;
   overflow: auto;
   padding: 16px 0 32px;
-  background: linear-gradient(180deg, #f4f1fb 0%, #f6f7fb 100%);
+  background: linear-gradient(180deg, var(--brand-surface) 0%, var(--brand-surface-raised) 100%);
 }
 
 .pdf-page-block {
@@ -78,7 +78,7 @@
 }
 
 .pdf-page--drop {
-  outline: 2px dashed #2b0f60;
+  outline: 2px dashed var(--brand-primary);
   outline-offset: 12px;
 }
 
@@ -241,8 +241,8 @@
 }
 
 .docx-editor .doc-quote-intense {
-  border-left-color: #2b0f60;
-  background: #f6f3fb;
+  border-left-color: var(--brand-primary);
+  background: var(--brand-surface-raised);
   color: #374151;
   font-weight: 500;
 }
@@ -278,7 +278,7 @@
 
 .docx-editor .doc-intense-emphasis {
   font-style: italic;
-  color: #2b0f60;
+  color: var(--brand-primary);
 }
 
 .docx-editor .doc-subtle-ref {
@@ -347,7 +347,7 @@
 
 /* Links */
 .docx-editor a {
-  color: #2b0f60;
+  color: var(--brand-primary);
   text-decoration: underline;
 }
 
@@ -387,7 +387,7 @@
   border: 1px solid rgba(87, 73, 173, 0.5);
   font-size: 0.85em;
   font-weight: 600;
-  color: #2b0f60;
+  color: var(--brand-primary);
   cursor: pointer;
   gap: 0.35rem;
 }

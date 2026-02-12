@@ -10,11 +10,83 @@
 
 @layer base {
   :root {
+    /* ── Brand ── */
     --brand-primary: #2b0f60;
     --brand-primary-strong: #5d28e0;
+    --brand-primary-hover: #1b1034;
+    --brand-primary-medium: #361681;
+
+    /* ── Surfaces ── */
     --brand-surface: #f7f5fb;
+    --brand-surface-alt: #f3ecff;
+    --brand-surface-card: #ffffff;
+    --brand-surface-raised: #f3effb;
+
+    /* ── Text ── */
     --brand-ink: #1b1034;
+    --brand-ink-secondary: #4b3c69;
     --brand-muted: #7b6aa3;
+    --brand-muted-light: #9b93b8;
+
+    /* ── Borders ── */
+    --brand-border: #e0d7f4;
+    --brand-border-subtle: #e4dff3;
+
+    /* ── Accent (blue action) ── */
+    --brand-accent: #3366FF;
+    --brand-accent-hover: #274FCC;
+
+    /* ── Status ── */
+    --brand-success: #4FD1A5;
+    --brand-warning: #FFB347;
+    --brand-danger: #E35D5D;
+    --brand-notification: #ff6b81;
+
+    /* ── Misc ── */
+    --brand-avatar: #c5e5f4;
+    --brand-disabled: #ded6f6;
+    --brand-selection: rgba(45, 12, 96, 0.15);
+    --brand-placeholder: #9ca3af;
+  }
+
+  .my-app-dark {
+    /* ── Brand ── */
+    --brand-primary: #a78bfa;
+    --brand-primary-strong: #7c5ce0;
+    --brand-primary-hover: #c4b5fd;
+    --brand-primary-medium: #8b6fd4;
+
+    /* ── Surfaces ── */
+    --brand-surface: #0f0a1a;
+    --brand-surface-alt: #1a1128;
+    --brand-surface-card: #161024;
+    --brand-surface-raised: #1e1533;
+
+    /* ── Text ── */
+    --brand-ink: #e8e0f5;
+    --brand-ink-secondary: #c4b8db;
+    --brand-muted: #9585b3;
+    --brand-muted-light: #7a6d99;
+
+    /* ── Borders ── */
+    --brand-border: #2e2446;
+    --brand-border-subtle: #251c3a;
+
+    /* ── Accent (blue action) ── */
+    --brand-accent: #5c8aff;
+    --brand-accent-hover: #4a74e0;
+
+    /* ── Status ── */
+    --brand-success: #34d399;
+    --brand-warning: #fbbf24;
+    --brand-danger: #f87171;
+    --brand-notification: #fb7185;
+
+    /* ── Misc ── */
+    --brand-avatar: #1e3a4d;
+    --brand-disabled: #2e2446;
+    --brand-selection: rgba(167, 139, 250, 0.2);
+    --brand-placeholder: #6b6280;
   }
 
   * {
@@ -30,7 +102,7 @@
   }
 
   ::selection {
-    background-color: rgba(45, 12, 96, 0.15);
+    background-color: var(--brand-selection);
     color: var(--brand-ink);
   }
 
@@ -40,14 +112,119 @@
 
   .required-marker::after {
     content: ' *';
-    color: #dc2626;
+    color: var(--brand-danger);
   }
 
-  /* Placeholder más claro para todos los inputs/textarea */
   input::placeholder,
   textarea::placeholder {
-    color: #9ca3af;
+    color: var(--brand-placeholder);
     opacity: 1;
   }
 
+  /* ── Dark mode overrides for Tailwind gray classes ── */
+  .my-app-dark .bg-white { background-color: var(--brand-surface-card); }
+  .my-app-dark .bg-gray-50 { background-color: var(--brand-surface-raised); }
+  .my-app-dark .bg-gray-100 { background-color: var(--brand-surface-alt); }
+
+  .my-app-dark .text-gray-900 { color: var(--brand-ink); }
+  .my-app-dark .text-gray-800 { color: var(--brand-ink); }
+  .my-app-dark .text-gray-700 { color: var(--brand-ink-secondary); }
+  .my-app-dark .text-gray-600 { color: var(--brand-muted); }
+  .my-app-dark .text-gray-500 { color: var(--brand-muted-light); }
+  .my-app-dark .text-gray-400 { color: var(--brand-muted-light); }
+
+  .my-app-dark .text-slate-900 { color: var(--brand-ink); }
+  .my-app-dark .text-slate-600 { color: var(--brand-muted); }
+  .my-app-dark .text-slate-500 { color: var(--brand-muted-light); }
+  .my-app-dark .text-slate-400 { color: var(--brand-muted-light); }
+
+  .my-app-dark .border-gray-100 { border-color: var(--brand-border-subtle); }
+  .my-app-dark .border-gray-200 { border-color: var(--brand-border); }
+  .my-app-dark .border-gray-300 { border-color: var(--brand-border); }
+  .my-app-dark .border-gray-400 { border-color: var(--brand-border); }
+  .my-app-dark .divide-gray-100 > :not(:last-child) { border-color: var(--brand-border-subtle); }
+  .my-app-dark .divide-gray-200 > :not(:last-child) { border-color: var(--brand-border); }
+
+  .my-app-dark .border-slate-100 { border-color: var(--brand-border-subtle); }
+  .my-app-dark .border-slate-200 { border-color: var(--brand-border); }
+
+  .my-app-dark .hover\:bg-gray-50:hover { background-color: var(--brand-surface-raised); }
+  .my-app-dark .hover\:bg-gray-100:hover { background-color: var(--brand-surface-alt); }
+
+  .my-app-dark .shadow-indigo-50\/60 { --tw-shadow-color: transparent; }
+
+  .my-app-dark .text-indigo-500 { color: var(--brand-primary); }
+  .my-app-dark .text-indigo-600 { color: var(--brand-primary); }
+  .my-app-dark .bg-indigo-50 { background-color: var(--brand-surface-alt); }
+}
+
+/* ── Utility classes for theming ── */
+@layer utilities {
+  /* Backgrounds */
+  .bg-brand-primary { background-color: var(--brand-primary); }
+  .bg-brand-primary-strong { background-color: var(--brand-primary-strong); }
+  .bg-brand-primary-medium { background-color: var(--brand-primary-medium); }
+  .bg-brand-surface { background-color: var(--brand-surface); }
+  .bg-brand-surface-alt { background-color: var(--brand-surface-alt); }
+  .bg-brand-surface-card { background-color: var(--brand-surface-card); }
+  .bg-brand-surface-raised { background-color: var(--brand-surface-raised); }
+  .bg-brand-accent { background-color: var(--brand-accent); }
+  .bg-brand-disabled { background-color: var(--brand-disabled); }
+  .bg-brand-avatar { background-color: var(--brand-avatar); }
+  .bg-brand-notification { background-color: var(--brand-notification); }
+  .bg-brand-success { background-color: var(--brand-success); }
+  .bg-brand-warning { background-color: var(--brand-warning); }
+  .bg-brand-danger { background-color: var(--brand-danger); }
+
+  /* Hover backgrounds */
+  .hover\:bg-brand-primary:hover { background-color: var(--brand-primary); }
+  .hover\:bg-brand-primary-hover:hover { background-color: var(--brand-primary-hover); }
+  .hover\:bg-brand-primary-medium:hover { background-color: var(--brand-primary-medium); }
+  .hover\:bg-brand-surface:hover { background-color: var(--brand-surface); }
+  .hover\:bg-brand-surface-alt:hover { background-color: var(--brand-surface-alt); }
+  .hover\:bg-brand-surface-raised:hover { background-color: var(--brand-surface-raised); }
+  .hover\:bg-brand-accent-hover:hover { background-color: var(--brand-accent-hover); }
+
+  /* Text */
+  .text-brand-primary { color: var(--brand-primary); }
+  .text-brand-primary-strong { color: var(--brand-primary-strong); }
+  .text-brand-primary-medium { color: var(--brand-primary-medium); }
+  .text-brand-ink { color: var(--brand-ink); }
+  .text-brand-ink-secondary { color: var(--brand-ink-secondary); }
+  .text-brand-muted { color: var(--brand-muted); }
+  .text-brand-muted-light { color: var(--brand-muted-light); }
+  .text-brand-accent { color: var(--brand-accent); }
+  .text-brand-success { color: var(--brand-success); }
+  .text-brand-warning { color: var(--brand-warning); }
+  .text-brand-danger { color: var(--brand-danger); }
+
+  /* Hover text */
+  .hover\:text-brand-primary:hover { color: var(--brand-primary); }
+  .hover\:text-brand-primary-hover:hover { color: var(--brand-primary-hover); }
+  .hover\:text-brand-ink:hover { color: var(--brand-ink); }
+  .hover\:text-brand-accent:hover { color: var(--brand-accent); }
+
+  /* Borders */
+  .border-brand { border-color: var(--brand-border); }
+  .border-brand-subtle { border-color: var(--brand-border-subtle); }
+  .border-brand-primary { border-color: var(--brand-primary); }
+  .border-brand-primary-medium { border-color: var(--brand-primary-medium); }
+  .border-brand-accent { border-color: var(--brand-accent); }
+
+  /* Hover borders */
+  .hover\:border-brand-primary:hover { border-color: var(--brand-primary); }
+  .hover\:border-brand-primary-medium:hover { border-color: var(--brand-primary-medium); }
+
+  /* Focus */
+  .focus\:ring-brand-primary:focus { --tw-ring-color: var(--brand-primary); }
+  .focus\:ring-brand-accent:focus { --tw-ring-color: var(--brand-accent); }
+  .focus\:border-brand-primary:focus { border-color: var(--brand-primary); }
+  .focus\:border-brand-accent:focus { border-color: var(--brand-accent); }
+
+  /* Accent (checkbox/radio) */
+  .accent-brand-primary-medium { accent-color: var(--brand-primary-medium); }
+  .accent-brand-accent { accent-color: var(--brand-accent); }
+
+  /* Stroke (for SVGs) */
+  .stroke-brand-primary-strong { stroke: var(--brand-primary-strong); }
 }

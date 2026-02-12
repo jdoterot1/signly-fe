@@ -1,8 +1,8 @@
-<section class="h-[calc(100vh-6rem)] bg-[#f5f6fb] flex flex-col">
+<section class="h-[calc(100vh-6rem)] bg-brand-surface flex flex-col">
   <header class="flex items-center justify-between px-6 py-3 bg-white border-b border-slate-200 shadow-sm">
     <div class="flex items-center gap-3">
       <div
-        class="h-8 w-8 rounded-full bg-[#2b0f60] text-white text-sm font-semibold flex items-center justify-center"
+        class="h-8 w-8 rounded-full bg-brand-primary text-white text-sm font-semibold flex items-center justify-center"
       >
         {{ (form.controls.documentName.value || 'D')[0] || 'D' }}
       </div>
@@ -79,20 +79,20 @@
         </div>
         <button
           type="button"
-          class="h-8 w-8 rounded-full border border-slate-200 text-[#2b0f60] font-semibold text-lg leading-none flex items-center justify-center"
+          class="h-8 w-8 rounded-full border border-slate-200 text-brand-primary font-semibold text-lg leading-none flex items-center justify-center"
           aria-label="Agregar campo"
         >
           +
         </button>
       </div>
 
-      <div class="bg-[#f6f3fb] rounded-2xl p-3 shadow-inner">
+      <div class="bg-brand-surface-raised rounded-2xl p-3 shadow-inner">
         <label class="text-[11px] uppercase text-gray-500 font-semibold">
           Nombre del documento
         </label>
         <input
           type="text"
-          class="mt-1 w-full rounded-xl border border-transparent bg-white px-3 py-2 text-sm focus:border-[#2b0f60] focus:ring-[#2b0f60] outline-none"
+          class="mt-1 w-full rounded-xl border border-transparent bg-white px-3 py-2 text-sm focus:border-brand-primary focus:ring-brand-primary outline-none"
           [formControl]="form.controls.documentName"
           placeholder="Ej. Contrato_comercial"
         />
@@ -102,7 +102,7 @@
         <button
           *ngFor="let field of fieldPalette"
           type="button"
-          class="w-full text-left px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-[#f3effb] hover:border-[#d7cfee] shadow-[0_1px_0_#edeef2] transition cursor-grab active:scale-[0.99]"
+          class="w-full text-left px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-brand-surface-raised hover:border-brand shadow-[0_1px_0_#edeef2] transition cursor-grab active:scale-[0.99]"
           draggable="true"
           (dragstart)="onPaletteDragStart($event, field.type)"
           (dragend)="onPaletteDragEnd()"
@@ -127,7 +127,7 @@
 
       <p class="text-[11px] text-gray-400 mt-3">
         Inserta campos con el formato
-        <span class="font-mono text-[#2b0f60]">
+        <span class="font-mono text-brand-primary">
           {{ '{{CAMPO}}' }}
         </span>.
       </p>
@@ -246,7 +246,7 @@
 
         <ng-template #emptyState>
           <div
-            class="h-full flex flex-col items-center justify-center text-center gap-4 px-8 text-gray-500 bg-[#f5f6fb] rounded-3xl border border-dashed border-slate-200"
+            class="h-full flex flex-col items-center justify-center text-center gap-4 px-8 text-gray-500 bg-brand-surface rounded-3xl border border-dashed border-slate-200"
           >
             <div class="text-5xl">📄</div>
             <div>
@@ -260,7 +260,7 @@
             <div class="flex gap-3">
               <button
                 type="button"
-                class="px-5 py-2 rounded-2xl border border-[#2b0f60] text-sm font-semibold text-[#2b0f60] hover:bg-[#f3effb]"
+                class="px-5 py-2 rounded-2xl border border-brand-primary text-sm font-semibold text-brand-primary hover:bg-brand-surface-raised"
                 (click)="openFilePicker()"
               >
                 Cargar archivo
@@ -305,9 +305,9 @@
           <button
             *ngFor="let field of mappedFields"
             type="button"
-            class="w-full text-left px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-[#f3effb] hover:border-[#d7cfee] shadow-[0_1px_0_#edeef2] transition"
-            [class.border-[#2b0f60]]="field.id === selectedFieldId"
-            [class.bg-[#f3effb]]="field.id === selectedFieldId"
+            class="w-full text-left px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-brand-surface-raised hover:border-brand shadow-[0_1px_0_#edeef2] transition"
+            [class.border-brand-primary]="field.id === selectedFieldId"
+            [class.bg-brand-surface-raised]="field.id === selectedFieldId"
             (click)="selectField(field.id)"
           >
             <div class="flex items-center justify-between gap-2">
@@ -350,7 +350,7 @@
               </label>
               <input
                 type="text"
-                class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-[#2b0f60] focus:ring-[#2b0f60] outline-none"
+                class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-brand-primary focus:ring-brand-primary outline-none"
                 [value]="selectedField.label"
                 (input)="updateSelectedFieldLabel($event)"
               />
@@ -362,7 +362,7 @@
               </label>
               <input
                 type="text"
-                class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-[#2b0f60] focus:ring-[#2b0f60] outline-none"
+                class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-brand-primary focus:ring-brand-primary outline-none"
                 [value]="selectedField.name"
                 (input)="updateSelectedFieldName($event)"
               />
@@ -431,7 +431,7 @@
               </div>
               <input
                 type="checkbox"
-                class="h-4 w-4 text-[#2b0f60] border-gray-300 rounded"
+                class="h-4 w-4 text-brand-primary border-gray-300 rounded"
                 [checked]="selectedField.required"
                 (change)="toggleSelectedFieldRequired($event)"
               />
@@ -443,7 +443,7 @@
               </label>
               <textarea
                 rows="3"
-                class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-[#2b0f60] focus:ring-[#2b0f60] outline-none"
+                class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-brand-primary focus:ring-brand-primary outline-none"
                 [value]="getOptionsText(selectedField)"
                 (input)="updateSelectedFieldOptions($event)"
                 placeholder="Ej. Opción 1, Opción 2"
@@ -456,7 +456,7 @@
               </label>
               <input
                 type="text"
-                class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-[#2b0f60] focus:ring-[#2b0f60] outline-none"
+                class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-brand-primary focus:ring-brand-primary outline-none"
                 [value]="selectedField.helpText"
                 (input)="updateSelectedFieldHelp($event)"
                 placeholder="Texto de apoyo para el usuario"

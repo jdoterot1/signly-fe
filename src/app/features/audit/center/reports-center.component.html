@@ -10,7 +10,7 @@
     ></app-admin-sidebar>
 
     <section class="flex-1 space-y-6 w-full">
-      <div class="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-indigo-50/60 p-8">
+      <div class="bg-brand-surface-card rounded-3xl border border-brand-subtle shadow-xl p-8">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p class="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">Centro de reportes</p>
@@ -22,7 +22,7 @@
         </div>
       </div>
 
-      <div class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-4">
+      <div class="bg-brand-surface-card rounded-3xl border border-brand-subtle shadow-lg p-4">
         <ng-container *ngIf="showUsageSummary; else noContent">
           <app-usage-summary></app-usage-summary>
         </ng-container>

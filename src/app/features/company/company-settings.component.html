@@ -24,7 +24,7 @@
             <input
               type="text"
               formControlName="display_name"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
               placeholder="Apolo Systems Co."
             />
             <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('display_name')?.invalid && generalForm.get('display_name')?.touched">
@@ -36,7 +36,7 @@
             <input
               type="text"
               formControlName="legal_name"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
               placeholder="Apolo Systems Company S.A.S."
             />
             <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('legal_name')?.invalid && generalForm.get('legal_name')?.touched">
@@ -51,7 +51,7 @@
             <input
               type="text"
               formControlName="country"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
               placeholder="CO"
             />
             <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('country')?.invalid && generalForm.get('country')?.touched">
@@ -63,7 +63,7 @@
             <input
               type="text"
               formControlName="city"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
               placeholder="Bogotá"
             />
             <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('city')?.invalid && generalForm.get('city')?.touched">
@@ -78,7 +78,7 @@
             <input
               type="text"
               formControlName="industry"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
               placeholder="Software & Cloud"
             />
           </div>
@@ -88,7 +88,7 @@
               type="number"
               min="1"
               formControlName="size"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
               placeholder="25"
             />
           </div>
@@ -100,7 +100,7 @@
             <input
               type="url"
               formControlName="website"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
               placeholder="https://www.apolosystems.co"
             />
             <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('website')?.invalid && generalForm.get('website')?.touched">
@@ -112,7 +112,7 @@
             <input
               type="text"
               formControlName="tax_id"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
               placeholder="901234567-8"
             />
             <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('tax_id')?.invalid && generalForm.get('tax_id')?.touched">
@@ -126,7 +126,7 @@
             <label class="block text-sm font-medium text-gray-700">Locale</label>
             <select
               formControlName="locale"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent"
             >
               <option value="" disabled>Selecciona un locale</option>
               <option
@@ -146,7 +146,7 @@
             <input
               type="text"
               formControlName="timezone"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
               placeholder="America/Bogota"
             />
             <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('timezone')?.invalid && generalForm.get('timezone')?.touched">
@@ -160,7 +160,7 @@
           <textarea
             rows="3"
             formControlName="about"
-            class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+            class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
             placeholder="We build modern SaaS for LATAM."
           ></textarea>
         </div>
@@ -176,7 +176,7 @@
           </button>
           <button
             type="submit"
-            class="px-5 py-2 rounded-xl bg-[#3366FF] text-white font-semibold hover:bg-[#274FCC] disabled:opacity-60"
+            class="px-5 py-2 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-hover disabled:opacity-60"
             [disabled]="isSavingGeneral"
           >
             {{ isSavingGeneral ? 'Guardando...' : 'Guardar cambios' }}

@@ -46,7 +46,7 @@ export class BillingOrdersComponent implements OnInit {
         actions: [
           {
             label: '',
-            icon: 'assets/icons/tables/view.svg',
+            icon: 'view',
             tooltip: 'Ver detalle',
             handler: row => this.onView(row)
           }

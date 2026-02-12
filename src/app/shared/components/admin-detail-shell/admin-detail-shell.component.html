@@ -1,7 +1,7 @@
-<div class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-6">
+<div class="bg-brand-surface-card rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-6">
   <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
     <div>
-      <p *ngIf="eyebrow" class="text-xs font-semibold uppercase tracking-[0.25em] text-[#2b0f60]">{{ eyebrow }}</p>
+      <p *ngIf="eyebrow" class="text-xs font-semibold uppercase tracking-[0.25em] text-brand-primary">{{ eyebrow }}</p>
       <h2 class="text-2xl font-semibold text-gray-900 mt-2">{{ title }}</h2>
       <p *ngIf="subtitle" class="text-sm text-gray-600 mt-2">{{ subtitle }}</p>
     </div>
@@ -9,7 +9,7 @@
       <a
         *ngIf="backLink"
         [routerLink]="backLink"
-        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-[#2b0f60] hover:bg-[#f3ecff]"
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-brand-primary hover:bg-brand-surface-alt"
       >
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12H5m7 7-7-7 7-7" />

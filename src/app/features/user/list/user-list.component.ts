@@ -53,19 +53,19 @@ export class UsersListComponent implements OnInit {
         actions: [
           {
             label: '',
-            icon: 'assets/icons/tables/view.svg',
+            icon: 'view',
             tooltip: 'Ver',
             handler: row => this.onView(row)
           },
           {
             label: '',
-            icon: 'assets/icons/tables/Edit.svg',
+            icon: 'edit',
             tooltip: 'Editar',
             handler: row => this.onEdit(row)
           },
           {
             label: '',
-            icon: 'assets/icons/tables/Delete.svg',
+            icon: 'delete',
             tooltip: 'Eliminar',
             handler: row => this.onDelete(row)
           }
