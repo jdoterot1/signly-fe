@@ -1,4 +1,12 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+// En los imports del archivo
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  ViewChild,
+  ElementRef,
+  ChangeDetectorRef,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subscription, forkJoin, from } from 'rxjs';
@@ -6,16 +14,27 @@ import { switchMap } from 'rxjs/operators';
 
 import { FaceMesh, Results } from '@mediapipe/face_mesh';
 
-import { FlowService, FlowError } from '../../../core/services/flow/flow.service';
+import {
+  FlowService,
+  FlowError,
+} from '../../../core/services/flow/flow.service';
 import {
   FlowState,
   BiometricStartData,
   BiometricRequirement,
-  BiometricUpload
+  BiometricUpload,
 } from '../../../core/models/flow/flow.model';
 import { FlowProgressComponent } from '../shared/flow-progress/flow-progress.component';
 
-type BiometricStep = 'intro' | 'selfie' | 'idFront' | 'idBack' | 'uploading' | 'verifying' | 'success' | 'error';
+type BiometricStep =
+  | 'intro'
+  | 'selfie'
+  | 'idFront'
+  | 'idBack'
+  | 'uploading'
+  | 'verifying'
+  | 'success'
+  | 'error';
 
 interface CapturedImage {
   blob: Blob;
@@ -26,7 +45,7 @@ interface CapturedImage {
   selector: 'app-flow-biometric',
   standalone: true,
   imports: [CommonModule, RouterModule, FlowProgressComponent],
-  templateUrl: './flow-biometric.component.html'
+  templateUrl: './flow-biometric.component.html',
 })
 export class FlowBiometricComponent implements OnInit, OnDestroy {
   @ViewChild('video') videoRef?: ElementRef<HTMLVideoElement>;
@@ -69,7 +88,8 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private flowService: FlowService
+    private flowService: FlowService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -86,7 +106,7 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
     this.stopFaceDetection();
     this.stopCamera();
   }
@@ -95,28 +115,35 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = null;
 
-    const requirements: BiometricRequirement[] = ['selfie', 'idFront', 'idBack'];
+    const requirements: BiometricRequirement[] = [
+      'selfie',
+      'idFront',
+      'idBack',
+    ];
     const contentTypes: Record<BiometricRequirement, string> = {
       selfie: 'image/jpeg',
       idFront: 'image/jpeg',
-      idBack: 'image/jpeg'
+      idBack: 'image/jpeg',
     };
 
-    const sub = this.flowService.startBiometric(this.processId, {
-      require: requirements,
-      contentTypes
-    }).subscribe({
-      next: (data) => {
-        this.biometricData = data;
-        this.currentStep = 'selfie';
-        this.loading = false;
-        this.resetCaptureState();
-      },
-      error: (err: FlowError) => {
-        this.error = err.message || 'Error al iniciar la verificacion biometrica.';
-        this.loading = false;
-      }
-    });
+    const sub = this.flowService
+      .startBiometric(this.processId, {
+        require: requirements,
+        contentTypes,
+      })
+      .subscribe({
+        next: (data) => {
+          this.biometricData = data;
+          this.currentStep = 'selfie';
+          this.loading = false;
+          this.resetCaptureState();
+        },
+        error: (err: FlowError) => {
+          this.error =
+            err.message || 'Error al iniciar la verificacion biometrica.';
+          this.loading = false;
+        },
+      });
 
     this.subscriptions.push(sub);
   }
@@ -136,7 +163,11 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
 
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: this.currentStep === 'selfie' ? 'user' : 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+        video: {
+          facingMode: this.currentStep === 'selfie' ? 'user' : 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
       });
 
       // Esperar un tick para que Angular renderice el elemento video
@@ -146,6 +177,7 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
           video.srcObject = this.stream;
           await video.play();
           this.cameraActive = true;
+           this.cdr.detectChanges(); 
           if (this.currentStep === 'selfie') {
             this.startFaceDetection();
           } else {
@@ -169,7 +201,7 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
 
   stopCamera(): void {
     if (this.stream) {
-      this.stream.getTracks().forEach(track => track.stop());
+      this.stream.getTracks().forEach((track) => track.stop());
       this.stream = undefined;
     }
     this.cameraActive = false;
@@ -197,18 +229,22 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
 
     ctx.drawImage(video, 0, 0);
 
-    canvas.toBlob((blob) => {
-      if (!blob) return;
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) return;
 
-      const requirement = this.currentStep as BiometricRequirement;
-      this.capturedImages[requirement] = {
-        blob,
-        preview: URL.createObjectURL(blob)
-      };
+        const requirement = this.currentStep as BiometricRequirement;
+        this.capturedImages[requirement] = {
+          blob,
+          preview: URL.createObjectURL(blob),
+        };
 
-      this.stopCamera();
-      this.moveToNextStep();
-    }, 'image/jpeg', 0.9);
+        this.stopCamera();
+        this.cdr.detectChanges();
+      },
+      'image/jpeg',
+      0.9,
+    );
   }
 
   retakePhoto(): void {
@@ -231,7 +267,10 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
 
     if (!file) return;
 
-    if (file.type !== 'image/jpeg' && !file.name.toLowerCase().match(/\.(jpe?g)$/)) {
+    if (
+      file.type !== 'image/jpeg' &&
+      !file.name.toLowerCase().match(/\.(jpe?g)$/)
+    ) {
       this.error = 'Por favor selecciona una imagen JPG/JPEG.';
       return;
     }
@@ -241,7 +280,7 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
 
     this.capturedImages[requirement] = {
       blob: file,
-      preview
+      preview,
     };
 
     this.stopCamera();
@@ -249,6 +288,13 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
   }
 
   moveToNextStep(): void {
+    if (
+      ['selfie', 'idFront', 'idBack'].includes(this.currentStep) &&
+      !this.hasCurrentCapture()
+    ) {
+      return;
+    }
+
     const steps: BiometricStep[] = ['selfie', 'idFront', 'idBack'];
     const currentIndex = steps.indexOf(this.currentStep as BiometricStep);
 
@@ -260,6 +306,8 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
       }
       this.currentStep = steps[currentIndex + 1];
       this.resetCaptureState();
+      this.cdr.detectChanges();
+      // Sin auto-inicio — el usuario presiona "Empezar" cuando tenga el documento listo
     } else {
       this.uploadImages();
     }
@@ -280,9 +328,14 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
     this.uploadProgress = 0;
 
     const uploads = Object.entries(this.capturedImages)
-      .filter(([key, value]) => value && this.biometricData?.uploads[key as BiometricRequirement])
+      .filter(
+        ([key, value]) =>
+          value && this.biometricData?.uploads[key as BiometricRequirement],
+      )
       .map(([key, value]) => {
-        const upload = this.biometricData!.uploads[key as BiometricRequirement] as BiometricUpload;
+        const upload = this.biometricData!.uploads[
+          key as BiometricRequirement
+        ] as BiometricUpload;
         return from(this.uploadSingleImage(upload.uploadUrl, value!.blob));
       });
 
@@ -292,28 +345,30 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const sub = forkJoin(uploads).pipe(
-      switchMap(() => {
-        this.currentStep = 'verifying';
-        return this.flowService.verifyBiometric(this.processId);
-      })
-    ).subscribe({
-      next: (result) => {
-        this.verificationResult = {
-          approved: result.approved,
-          similarity: result.similarity
-        };
-        this.currentStep = result.approved ? 'success' : 'error';
+    const sub = forkJoin(uploads)
+      .pipe(
+        switchMap(() => {
+          this.currentStep = 'verifying';
+          return this.flowService.verifyBiometric(this.processId);
+        }),
+      )
+      .subscribe({
+        next: (result) => {
+          this.verificationResult = {
+            approved: result.approved,
+            similarity: result.similarity,
+          };
+          this.currentStep = result.approved ? 'success' : 'error';
 
-        if (result.approved) {
-          setTimeout(() => this.navigateToNextStep(), 2000);
-        }
-      },
-      error: (err: FlowError) => {
-        this.error = err.message || 'Error al verificar la identidad.';
-        this.currentStep = 'error';
-      }
-    });
+          if (result.approved) {
+            setTimeout(() => this.navigateToNextStep(), 2000);
+          }
+        },
+        error: (err: FlowError) => {
+          this.error = err.message || 'Error al verificar la identidad.';
+          this.currentStep = 'error';
+        },
+      });
 
     this.subscriptions.push(sub);
   }
@@ -323,8 +378,8 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
       method: 'PUT',
       body: blob,
       headers: {
-        'Content-Type': 'image/jpeg'
-      }
+        'Content-Type': 'image/jpeg',
+      },
     });
 
     if (!response.ok) {
@@ -339,7 +394,9 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
     if (!state) return;
 
     // Find the next pending step
-    const nextChallenge = state.challenges.find(c => c.status === 'PENDING' || c.status === 'ACTIVE');
+    const nextChallenge = state.challenges.find(
+      (c) => c.status === 'PENDING' || c.status === 'ACTIVE',
+    );
 
     if (!nextChallenge) {
       this.router.navigate(['/flow', this.processId, 'complete']);
@@ -352,7 +409,7 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
       otp_whatsapp: 'otp-whatsapp',
       liveness: 'liveness',
       biometric: 'biometric',
-      template_sign: 'template-sign'
+      template_sign: 'template-sign',
     };
 
     const route = routes[nextChallenge.type];
@@ -363,7 +420,7 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
 
   retryVerification(): void {
     // Clear captured images and start over
-    Object.values(this.capturedImages).forEach(img => {
+    Object.values(this.capturedImages).forEach((img) => {
       if (img?.preview) URL.revokeObjectURL(img.preview);
     });
     this.capturedImages = {};
@@ -381,21 +438,23 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
       uploading: 'Subiendo imagenes',
       verifying: 'Verificando identidad',
       success: 'Verificacion exitosa',
-      error: 'Verificacion fallida'
+      error: 'Verificacion fallida',
     };
     return titles[this.currentStep];
   }
 
   getStepDescription(): string {
     const descriptions: Record<BiometricStep, string> = {
-      intro: 'Necesitamos verificar tu identidad comparando una foto de tu rostro con tu documento de identidad.',
-      selfie: 'Mira directamente a la camara y asegurate de tener buena iluminacion.',
+      intro:
+        'Necesitamos verificar tu identidad comparando una foto de tu rostro con tu documento de identidad.',
+      selfie:
+        'Mira directamente a la camara y asegurate de tener buena iluminacion.',
       idFront: 'Captura la parte frontal de tu documento de identidad.',
       idBack: 'Captura la parte trasera de tu documento de identidad.',
       uploading: 'Estamos procesando tus imagenes...',
       verifying: 'Estamos verificando tu identidad...',
       success: 'Tu identidad ha sido verificada correctamente.',
-      error: 'No pudimos verificar tu identidad. Por favor intenta de nuevo.'
+      error: 'No pudimos verificar tu identidad. Por favor intenta de nuevo.',
     };
     return descriptions[this.currentStep];
   }
@@ -417,15 +476,16 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
 
     if (!this.faceMesh) {
       this.faceMesh = new FaceMesh({
-        locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+        locateFile: (file) =>
+          `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
       });
       this.faceMesh.setOptions({
         maxNumFaces: 1,
         refineLandmarks: true,
         minDetectionConfidence: 0.6,
-        minTrackingConfidence: 0.6
+        minTrackingConfidence: 0.6,
       });
-      this.faceMesh.onResults(results => this.handleFaceResults(results));
+      this.faceMesh.onResults((results) => this.handleFaceResults(results));
     }
 
     this.faceDetecting = true;
@@ -461,7 +521,11 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
   }
 
   private handleFaceResults(results: Results): void {
-    if (this.currentStep !== 'selfie' || !this.faceDetecting || this.hasCurrentCapture()) {
+    if (
+      this.currentStep !== 'selfie' ||
+      !this.faceDetecting ||
+      this.hasCurrentCapture()
+    ) {
       return;
     }
     const face = results.multiFaceLandmarks?.[0];
@@ -472,8 +536,8 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const xs = face.map(p => p.x);
-    const ys = face.map(p => p.y);
+    const xs = face.map((p) => p.x);
+    const ys = face.map((p) => p.y);
     const minX = Math.min(...xs);
     const maxX = Math.max(...xs);
     const minY = Math.min(...ys);
@@ -488,7 +552,7 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
     const ry = 0.36;
 
     const isInside = (x: number, y: number) =>
-      ((x - cx) ** 2) / (rx ** 2) + ((y - cy) ** 2) / (ry ** 2) <= 1;
+      (x - cx) ** 2 / rx ** 2 + (y - cy) ** 2 / ry ** 2 <= 1;
 
     const insideOval =
       isInside(minX, minY) &&
@@ -521,7 +585,10 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
     this.faceHint = 'Perfecto, no te muevas';
     this.stableFrames += 1;
 
-    if (this.stableFrames >= this.requiredStableFrames && !this.autoCaptureLocked) {
+    if (
+      this.stableFrames >= this.requiredStableFrames &&
+      !this.autoCaptureLocked
+    ) {
       this.autoCaptureLocked = true;
       this.capturePhoto();
     }
@@ -536,14 +603,22 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
     this.documentHint = 'Alinea el documento dentro del recuadro';
 
     this.documentHintTimeout = setTimeout(() => {
-      if (!this.documentCaptureActive || !this.cameraActive || this.hasCurrentCapture()) {
+      if (
+        !this.documentCaptureActive ||
+        !this.cameraActive ||
+        this.hasCurrentCapture()
+      ) {
         return;
       }
       this.documentHint = 'Mantén el documento fijo...';
     }, 1200);
 
     this.documentCaptureTimeout = setTimeout(() => {
-      if (!this.documentCaptureActive || !this.cameraActive || this.hasCurrentCapture()) {
+      if (
+        !this.documentCaptureActive ||
+        !this.cameraActive ||
+        this.hasCurrentCapture()
+      ) {
         return;
       }
       if (this.autoCaptureLocked) {
