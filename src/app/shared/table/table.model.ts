@@ -32,7 +32,7 @@ export interface TableColumn {
 
 export interface TableCellAction {
     label: string;
-    icon?: string;
+    icon: string;
     tooltip?: string;
     disabled?: boolean | ((row: any) => boolean);
     handler: (row: any) => void;

@@ -58,7 +58,7 @@ export class AuditListComponent implements OnInit {
         actions: [
           {
             label: '',
-            icon: 'assets/icons/tables/view.svg',
+            icon: 'view',
             tooltip: 'Ver auditoría',
             handler: row => this.onView(row)
           }

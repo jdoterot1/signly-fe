@@ -1,14 +1,14 @@
 <div class="space-y-6">
-  <div class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-6">
+  <div class="bg-brand-surface-card rounded-3xl border border-brand-subtle shadow-lg p-6">
     <div class="flex flex-col gap-4 md:flex-row md:justify-between md:items-start">
       <div>
-        <p class="text-xs uppercase tracking-[0.3em] text-[#9b93b8]">Billetera</p>
+        <p class="text-xs uppercase tracking-[0.3em] text-brand-muted-light">Billetera</p>
         <h2 class="text-3xl font-semibold heading-brand mt-2">Créditos disponibles</h2>
         <p class="text-sm text-gray-500 mt-1">Consulta tu saldo actual y los créditos apartados.</p>
       </div>
       <button
         type="button"
-        class="inline-flex items-center gap-2 text-sm font-semibold text-[#2b0f60]"
+        class="inline-flex items-center gap-2 text-sm font-semibold text-brand-primary"
         (click)="fetchWallet()"
         [disabled]="loadingInfo"
       >
@@ -27,8 +27,8 @@
           <p class="text-xs text-gray-500 mt-2">Actualizado el {{ walletInfo?.updatedAt | date: 'short' }}</p>
         </div>
         <div class="rounded-2xl border border-gray-100 bg-[#fff8f3] p-5">
-          <p class="text-xs uppercase tracking-[0.3em] text-[#ff8a4c] font-semibold">Reservados</p>
-          <p class="text-4xl font-semibold text-[#ff8a4c] mt-3">{{ walletInfo?.reserved | number }} créditos</p>
+          <p class="text-xs uppercase tracking-[0.3em] text-brand-warning font-semibold">Reservados</p>
+          <p class="text-4xl font-semibold text-brand-warning mt-3">{{ walletInfo?.reserved | number }} créditos</p>
           <p class="text-xs text-gray-500 mt-2">Créditos apartados para procesos en curso.</p>
         </div>
       </div>
@@ -37,7 +37,7 @@
     <ng-template #walletState>
       <div class="flex flex-col items-center justify-center py-10 text-sm text-gray-500">
         <ng-container *ngIf="loadingInfo; else walletError">
-          <svg class="w-8 h-8 text-[#2b0f60] animate-spin" viewBox="0 0 24 24">
+          <svg class="w-8 h-8 text-brand-primary animate-spin" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
           </svg>
@@ -50,15 +50,15 @@
     </ng-template>
   </div>
 
-  <div class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-6">
+  <div class="bg-brand-surface-card rounded-3xl border border-brand-subtle shadow-lg p-6">
     <div class="flex items-center justify-between mb-4">
       <div>
-        <p class="text-xs uppercase tracking-[0.3em] text-[#9b93b8] font-semibold">Movimientos</p>
+        <p class="text-xs uppercase tracking-[0.3em] text-brand-muted-light font-semibold">Movimientos</p>
         <h3 class="text-2xl font-semibold heading-brand mt-1">Historial del ledger</h3>
       </div>
       <button
         type="button"
-        class="inline-flex items-center gap-2 text-sm font-semibold text-[#2b0f60]"
+        class="inline-flex items-center gap-2 text-sm font-semibold text-brand-primary"
         (click)="fetchLedger()"
         [disabled]="loadingLedger"
       >
@@ -76,7 +76,7 @@
     <ng-template #ledgerState>
       <div class="flex flex-col items-center justify-center py-10 text-sm text-gray-500">
         <ng-container *ngIf="loadingLedger; else ledgerErrorState">
-          <svg class="w-8 h-8 text-[#2b0f60] animate-spin" viewBox="0 0 24 24">
+          <svg class="w-8 h-8 text-brand-primary animate-spin" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
           </svg>

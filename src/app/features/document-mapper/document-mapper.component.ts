@@ -37,9 +37,34 @@ interface PdfEditableTextItem {
   width: number;
   height: number;
   fontSize: number;
+  pageWidth: number;
+  pageHeight: number;
   text: string;
   originalText: string;
   edited: boolean;
+}
+
+export interface DocumentPdfTextEdit {
+  pageNumber: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fontSize: number;
+  pageWidth: number;
+  pageHeight: number;
+  text: string;
+}
+
+interface ApiTemplateFieldLike {
+  page: number | string;
+  x: number | string;
+  y: number | string;
+  width: number | string;
+  height: number | string;
+  fieldName: string;
+  fieldType: string;
+  fieldCode: number | string;
 }
 
 export interface DocumentMappedField {
@@ -188,6 +213,82 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
 
   getMappedFields(): DocumentMappedField[] {
     return [...this.mappedFields];
+  }
+
+  getEditedPdfTextItems(): DocumentPdfTextEdit[] {
+    if (this.documentMode !== 'pdf') {
+      return [];
+    }
+
+    return this.pdfTextItems
+      .filter(item => item.edited)
+      .map(item => ({
+        pageNumber: item.pageNumber,
+        x: item.x,
+        y: item.y,
+        width: item.width,
+        height: item.height,
+        fontSize: item.fontSize,
+        pageWidth: item.pageWidth,
+        pageHeight: item.pageHeight,
+        text: item.text
+      }));
+  }
+
+  loadMappedFieldsFromApi(fields: ApiTemplateFieldLike[]): void {
+    if (!fields.length) {
+      this.mappedFields = [];
+      this.selectedFieldId = null;
+      this.fieldCounter = 0;
+      this.undoStack = [];
+      this.redoStack = [];
+      return;
+    }
+
+    const next: DocumentMappedField[] = fields.map((field, index) => {
+      const pageNumber = this.toPositiveInt(field.page, 1);
+      const pageMeta = this.pdfPages.find(page => page.pageNumber === pageNumber);
+      const pageWidth = pageMeta?.width ?? 1000;
+      const pageHeight = pageMeta?.height ?? 1400;
+
+      const widthPx = this.toNumber(field.width, 180);
+      const heightPx = this.toNumber(field.height, 70);
+      const xPx = this.toNumber(field.x, 0);
+      const yPx = this.toNumber(field.y, 0);
+
+      const normalizedWidth = this.clamp(widthPx / pageWidth, 0.01, 1);
+      const normalizedHeight = this.clamp(heightPx / pageHeight, 0.01, 1);
+      const normalizedX = this.clamp(xPx / pageWidth, 0, Math.max(1 - normalizedWidth, 0));
+      const normalizedY = this.clamp(yPx / pageHeight, 0, Math.max(1 - normalizedHeight, 0));
+
+      const name = this.normalizeFieldName(field.fieldName || `CAMPO_${index + 1}`) || `CAMPO_${index + 1}`;
+      const type = this.mapApiFieldTypeToUi(field.fieldType);
+      const suffix = this.toPositiveInt(field.fieldCode, index + 1);
+
+      return {
+        id: `field_api_${Date.now()}_${index}`,
+        type,
+        label: this.toDisplayLabel(name),
+        name,
+        required: false,
+        helpText: '',
+        options: [],
+        page: pageNumber,
+        x: normalizedX,
+        y: normalizedY,
+        width: normalizedWidth,
+        height: normalizedHeight,
+        pageWidth,
+        pageHeight
+      };
+    });
+
+    this.mappedFields = next;
+    this.selectedFieldId = next[0]?.id ?? null;
+    this.fieldCounter = next.length;
+    this.undoStack = [];
+    this.redoStack = [];
+    this.stripUnderlyingPdfText(next);
   }
 
   onPaletteDragStart(event: DragEvent, type: FormFieldType): void {
@@ -477,8 +578,8 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
     }
 
     if (metric === 'width' || metric === 'height') {
-      const min = metric === 'width' ? 0.08 : 0.035;
-      const max = metric === 'width' ? 0.8 : 0.3;
+      const min = metric === 'width' ? 0.01 : 0.01;
+      const max = metric === 'width' ? 0.9 : 0.5;
       const size = this.clamp(normalized, min, max);
       if (metric === 'width') {
         const nextX = this.clamp(current.x, 0, 1 - size);
@@ -859,6 +960,8 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
         width,
         height,
         fontSize,
+        pageWidth,
+        pageHeight,
         text: value,
         originalText: value,
         edited: false
@@ -881,5 +984,92 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
       file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
       file.name.toLowerCase().endsWith('.docx')
     );
+  }
+
+  private toNumber(value: number | string | null | undefined, fallback: number): number {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+
+  private toPositiveInt(value: number | string | null | undefined, fallback: number): number {
+    const parsed = Math.trunc(Number(value));
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      return fallback;
+    }
+    return parsed;
+  }
+
+  private mapApiFieldTypeToUi(fieldType: string): FormFieldType {
+    switch ((fieldType || '').toLowerCase()) {
+      case 'number':
+        return 'number';
+      case 'sign':
+        return 'sign';
+      case 'img':
+        return 'file';
+      case 'text':
+      default:
+        return 'string';
+    }
+  }
+
+  private toDisplayLabel(fieldName: string): string {
+    return fieldName
+      .toLowerCase()
+      .split('_')
+      .filter(Boolean)
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  }
+
+  private stripUnderlyingPdfText(fields: DocumentMappedField[]): void {
+    if (this.documentMode !== 'pdf' || !this.pdfTextItems.length || !fields.length) {
+      return;
+    }
+
+    const placeholderSet = new Set(
+      fields.map(field => `{{${field.name}}}`.replace(/\s+/g, '').toUpperCase())
+    );
+
+    this.pdfTextItems = this.pdfTextItems.filter(item => {
+      const normalizedText = (item.text || '').replace(/\s+/g, '').toUpperCase();
+      if (placeholderSet.has(normalizedText)) {
+        return false;
+      }
+
+      const overlappingField = fields.find(field => {
+        if (field.page !== item.pageNumber) {
+          return false;
+        }
+        const fieldRect = {
+          x: field.x * field.pageWidth,
+          y: field.y * field.pageHeight,
+          width: field.width * field.pageWidth,
+          height: field.height * field.pageHeight
+        };
+        return this.rectOverlapRatio(item, fieldRect) > 0.35;
+      });
+
+      return !overlappingField;
+    });
+  }
+
+  private rectOverlapRatio(
+    a: { x: number; y: number; width: number; height: number },
+    b: { x: number; y: number; width: number; height: number }
+  ): number {
+    const xOverlap = Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x));
+    const yOverlap = Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
+    const intersection = xOverlap * yOverlap;
+    if (intersection <= 0) {
+      return 0;
+    }
+
+    const minArea = Math.min(a.width * a.height, b.width * b.height);
+    if (minArea <= 0) {
+      return 0;
+    }
+
+    return intersection / minArea;
   }
 }

@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 import { LoadingOverlayComponent } from './shared/components/loading-overlay/loading-overlay.component';
+import { ThemeService } from './core/services/theme/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -12,4 +13,5 @@ import { LoadingOverlayComponent } from './shared/components/loading-overlay/loa
 })
 export class AppComponent {
   title = 'Signly';
+  private themeService = inject(ThemeService);
 }

@@ -7,6 +7,7 @@ import { FlowOtpComponent } from '../../../features/flow/flow-otp/flow-otp.compo
 import { FlowLivenessComponent } from '../../../features/flow/flow-liveness/flow-liveness.component';
 import { FlowTemplateSignComponent } from '../../../features/flow/flow-template-sign/flow-template-sign.component';
 import { FlowCompleteComponent } from '../../../features/flow/flow-complete/flow-complete.component';
+import { FlowDoneComponent } from '../../../features/flow/flow-done/flow-done.component';
 
 const routes: Routes = [
   { path: ':processId', component: FlowLandingComponent },
@@ -16,7 +17,8 @@ const routes: Routes = [
   { path: ':processId/otp-whatsapp', component: FlowOtpComponent },
   { path: ':processId/liveness', component: FlowLivenessComponent },
   { path: ':processId/template-sign', component: FlowTemplateSignComponent },
-  { path: ':processId/complete', component: FlowCompleteComponent }
+  { path: ':processId/complete', component: FlowCompleteComponent },
+  { path: ':processId/done', component: FlowDoneComponent }
 ];
 
 @NgModule({
@@ -27,7 +29,8 @@ const routes: Routes = [
     FlowOtpComponent,
     FlowLivenessComponent,
     FlowTemplateSignComponent,
-    FlowCompleteComponent
+    FlowCompleteComponent,
+    FlowDoneComponent
   ]
 })
 export class FlowModule {}

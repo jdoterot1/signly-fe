@@ -4,6 +4,7 @@ import { Router, RouterModule } from '@angular/router';
 import { finalize, take } from 'rxjs/operators';
 
 import { UserProfileDropdownComponent } from '../../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
+import { ThemeToggleComponent } from '../../../shared/components/theme-toggle/theme-toggle.component';
 import { AuthService } from '../../services/auth/auth.service';
 import { CompanyService } from '../../services/company/company.service';
 
@@ -33,7 +34,7 @@ interface HeaderUserProfile {
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterModule, UserProfileDropdownComponent],
+  imports: [CommonModule, RouterModule, UserProfileDropdownComponent, ThemeToggleComponent],
   templateUrl: './header.component.html'
 })
 export class HeaderComponent implements OnInit {
@@ -212,13 +213,16 @@ export class HeaderComponent implements OnInit {
       .pipe(take(1))
       .subscribe({
         next: payload => {
-          const resolvedName = payload.username || this.userProfile.name
+          const meAttributes = (payload.attributes ?? {}) as Record<string, string | undefined>
+          const attributeName = meAttributes['name'] || meAttributes['given_name']
+          const resolvedName = attributeName || this.userProfile.name || this.userProfile.displayName
           const resolvedEmail = payload.attributes?.email || this.userProfile.email
+          const fallbackDisplay = resolvedName || resolvedEmail || this.userProfile.displayName
 
           this.userProfile = {
             ...this.userProfile,
             name: resolvedName,
-            displayName: resolvedName || this.userProfile.displayName,
+            displayName: fallbackDisplay,
             email: resolvedEmail
           }
         },

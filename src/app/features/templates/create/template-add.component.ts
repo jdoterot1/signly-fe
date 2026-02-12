@@ -4,11 +4,16 @@ import { Component, ViewChild, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { PDFDocument, rgb } from 'pdf-lib';
 
 import { TemplateService } from '../../../core/services/templates/template.service';
 import type { CreateTemplateRequest, TemplateApi, TemplateField } from '../../../core/models/templates/template.model';
 import { AlertService } from '../../../shared/alert/alert.service';
-import { DocumentMapperComponent } from '../../document-mapper/document-mapper.component';
+import {
+  DocumentMappedField,
+  DocumentMapperComponent,
+  DocumentPdfTextEdit
+} from '../../document-mapper/document-mapper.component';
 import { GuideModalComponent } from '../../../shared/components/guide-modal/guide-modal.component';
 import { GuideFlowService, GuideStep } from '../../../shared/services/guide-flow/guide-flow.service';
 
@@ -38,6 +43,7 @@ export class TemplateCreateComponent {
   templateId: string | null = null;
   versions: Array<{ name: string; code: string }> = [];
   readonly versionControl = this.fb.control<string | null>(null, [Validators.required]);
+  private versionLoadSession = 0;
 
   showGuideModal = false;
   guideSteps: GuideStep[] = [];
@@ -58,7 +64,7 @@ export class TemplateCreateComponent {
       this.showGuideModal = true;
     }
 
-    const templateIdParam = this.route.snapshot.queryParamMap.get('templateId');
+    const templateIdParam = this.route.snapshot.queryParamMap.get('templateId') ?? this.route.snapshot.paramMap.get('templateId');
     if (templateIdParam) {
       this.templateId = templateIdParam;
       // Start in step 2 when editing a template.
@@ -141,7 +147,7 @@ export class TemplateCreateComponent {
     });
   }
 
-  private finalizeTemplateSave(): void {
+  private async finalizeTemplateSave(): Promise<void> {
     if (!this.templateId) {
       this.isSaving = false;
       return;
@@ -160,11 +166,23 @@ export class TemplateCreateComponent {
       return;
     }
 
-    const fields = this.buildTemplateFields();
+    const mappedFields = this.mapperComponent?.getMappedFields() ?? [];
+    const editedTextItems = this.mapperComponent?.getEditedPdfTextItems() ?? [];
+    const fields = this.buildTemplateFields(mappedFields);
+    let fileToUpload = file;
+    try {
+      fileToUpload = await this.prepareFileForUpload(file, editedTextItems);
+    } catch (error) {
+      console.error('No se pudo preparar el archivo del template para guardar', error);
+      this.alertService.showError('No se pudieron aplicar los cambios al documento antes de guardar.', 'Error');
+      this.isSaving = false;
+      return;
+    }
+
     this.templateService.getTemplateUploadUrl(this.templateId, version).subscribe({
       next: res => {
-        const headers = new HttpHeaders().set('Content-Type', file.type || 'application/octet-stream');
-        this.http.put(res.uploadUrl, file, { headers, responseType: 'text' }).subscribe({
+        const headers = new HttpHeaders().set('Content-Type', fileToUpload.type || 'application/octet-stream');
+        this.http.put(res.uploadUrl, fileToUpload, { headers, responseType: 'text' }).subscribe({
           next: () => this.saveFieldsAndFinish(fields),
           error: err => {
             console.error('No se pudo subir el archivo', err);
@@ -177,7 +195,28 @@ export class TemplateCreateComponent {
         const errorMsg: string = err?.message || err?.error?.message || '';
         const isAlreadyUploaded = errorMsg.toLowerCase().includes('already uploaded');
         if (isAlreadyUploaded) {
-          this.saveFieldsAndFinish(fields);
+          const nextVersion = this.getNextVersionCode();
+          this.templateService.getTemplateUploadUrl(this.templateId!, nextVersion).subscribe({
+            next: nextRes => {
+              const nextHeaders = new HttpHeaders().set('Content-Type', fileToUpload.type || 'application/octet-stream');
+              this.http.put(nextRes.uploadUrl, fileToUpload, { headers: nextHeaders, responseType: 'text' }).subscribe({
+                next: () => {
+                  this.versionControl.setValue(nextVersion, { emitEvent: false });
+                  this.saveFieldsAndFinish(fields);
+                },
+                error: uploadErr => {
+                  console.error('No se pudo subir el archivo en la nueva versión', uploadErr);
+                  this.alertService.showError('No se pudo actualizar el documento en una nueva versión.', 'Error');
+                  this.isSaving = false;
+                }
+              });
+            },
+            error: versionErr => {
+              console.error('No se pudo crear la siguiente versión para guardar el documento', versionErr);
+              this.alertService.showError('No se pudo crear una nueva versión del template.', 'Error');
+              this.isSaving = false;
+            }
+          });
           return;
         }
         console.error('No se pudo generar el upload URL', err);
@@ -203,8 +242,7 @@ export class TemplateCreateComponent {
     });
   }
 
-  private buildTemplateFields(): TemplateField[] {
-    const mapped = this.mapperComponent?.getMappedFields() ?? [];
+  private buildTemplateFields(mapped: DocumentMappedField[]): TemplateField[] {
     return mapped.map((field, index) => ({
       page: String(field.page),
       x: this.toPixelString(field.x, field.pageWidth),
@@ -212,9 +250,88 @@ export class TemplateCreateComponent {
       width: this.toPixelString(field.width, field.pageWidth),
       height: this.toPixelString(field.height, field.pageHeight),
       fieldName: field.name,
-      fieldType: field.type,
+      fieldType: this.mapFieldTypeForApi(field.type),
       fieldCode: String(index + 1)
     }));
+  }
+
+  private async prepareFileForUpload(file: File, editedTextItems: DocumentPdfTextEdit[]): Promise<File> {
+    if (!this.isPdf(file) || !editedTextItems.length) {
+      return file;
+    }
+
+    const pdfDoc = await PDFDocument.load(await file.arrayBuffer());
+    const pages = pdfDoc.getPages();
+
+    // Persist text edits from the inline PDF editor (deletions/changes).
+    for (const item of editedTextItems) {
+      const page = pages[item.pageNumber - 1];
+      if (!page) {
+        continue;
+      }
+
+      const { width: pageWidth, height: pageHeight } = page.getSize();
+      const normalizedX = this.clamp(item.x / Math.max(item.pageWidth, 1), 0, 1);
+      const normalizedY = this.clamp(item.y / Math.max(item.pageHeight, 1), 0, 1);
+      const normalizedWidth = this.clamp(item.width / Math.max(item.pageWidth, 1), 0, 1);
+      const normalizedHeight = this.clamp(item.height / Math.max(item.pageHeight, 1), 0, 1);
+
+      const left = this.clamp(normalizedX * pageWidth - 1.5, 0, pageWidth);
+      const top = this.clamp(normalizedY * pageHeight - 1.5, 0, pageHeight);
+      const rectWidth = this.clamp(normalizedWidth * pageWidth + 3, 0, pageWidth - left);
+      const rectHeight = this.clamp(normalizedHeight * pageHeight + 3, 0, pageHeight);
+      const bottom = this.clamp(pageHeight - (top + rectHeight), 0, pageHeight);
+
+      page.drawRectangle({
+        x: left,
+        y: bottom,
+        width: rectWidth,
+        height: rectHeight,
+        color: rgb(1, 1, 1),
+        opacity: 1
+      });
+
+      const nextText = (item.text || '').trim();
+      if (nextText) {
+        const sizeScale = pageHeight / Math.max(item.pageHeight, 1);
+        const fontSize = this.clamp(item.fontSize * sizeScale, 6, 64);
+        page.drawText(nextText, {
+          x: left + 1,
+          y: this.clamp(bottom + rectHeight - fontSize * 0.95, 0, pageHeight),
+          size: fontSize,
+          color: rgb(0, 0, 0)
+        });
+      }
+    }
+
+    const bytes = await pdfDoc.save();
+    return new File([bytes], file.name, { type: file.type || 'application/pdf' });
+  }
+
+  private clamp(value: number, min: number, max: number): number {
+    return Math.min(Math.max(value, min), max);
+  }
+
+  private getNextVersionCode(): string {
+    const fromHistory = this.versions
+      .map(item => Number(item.code))
+      .filter(num => Number.isFinite(num) && num > 0);
+    const current = Number(this.versionControl.value);
+    const maxVersion = Math.max(current || 0, ...fromHistory, 0);
+    return String(Math.trunc(maxVersion + 1)).padStart(4, '0');
+  }
+
+  private mapFieldTypeForApi(type: string): 'text' | 'number' | 'sign' | 'img' {
+    switch (type) {
+      case 'number':
+        return 'number';
+      case 'file':
+        return 'img';
+      case 'sign':
+        return 'sign';
+      default:
+        return 'text';
+    }
   }
 
   private toPixelString(value: number, dimension: number): string {
@@ -399,16 +516,121 @@ export class TemplateCreateComponent {
     if (!this.templateId) {
       return;
     }
+    const session = ++this.versionLoadSession;
     this.templateService.getTemplateVersion(this.templateId, version).subscribe({
       next: tpl => {
+        if (session !== this.versionLoadSession) {
+          return;
+        }
         // When switching versions, show name/description from that version in step 1.
         this.stepForm.patchValue({
           name: tpl.templateName,
           description: tpl.description ?? ''
         });
+        this.loadDocumentAndFieldsForVersion(version, session);
       },
       error: err => console.error('No se pudo cargar la versión del template', err)
     });
+  }
+
+  private loadDocumentAndFieldsForVersion(version: string, session: number): void {
+    if (!this.templateId) {
+      return;
+    }
+
+    this.templateService.getTemplateDownloadUrl(this.templateId, version).subscribe({
+      next: res => {
+        void this.hydrateMapperFromDownload(res.downloadUrl, version, session);
+      },
+      error: err => {
+        console.error('No se pudo obtener el PDF de la versión para edición', err);
+        void this.hydrateFieldsOnly(session);
+      }
+    });
+  }
+
+  private async hydrateMapperFromDownload(downloadUrl: string, version: string, session: number): Promise<void> {
+    if (!this.templateId) {
+      return;
+    }
+
+    try {
+      const response = await fetch(downloadUrl);
+      if (!response.ok) {
+        throw new Error(`Descarga fallida (${response.status})`);
+      }
+
+      const blob = await response.blob();
+      if (session !== this.versionLoadSession) {
+        return;
+      }
+
+      const filenameBase = this.stepForm.controls.name.value?.trim() || this.templateId;
+      const file = new File([blob], `${filenameBase}-${version}.pdf`, {
+        type: blob.type || 'application/pdf'
+      });
+
+      const mapper = await this.waitForMapperComponent();
+      if (!mapper || session !== this.versionLoadSession) {
+        return;
+      }
+
+      await mapper.processFile(file);
+      if (session !== this.versionLoadSession) {
+        return;
+      }
+
+      this.templateService.getTemplateFields(this.templateId).subscribe({
+        next: fields => {
+          if (session !== this.versionLoadSession) {
+            return;
+          }
+          mapper.loadMappedFieldsFromApi(fields);
+        },
+        error: err => {
+          console.error('No se pudieron cargar los fields del template', err);
+        }
+      });
+    } catch (error) {
+      console.error('No se pudo hidratar la versión del template en el mapper', error);
+      await this.hydrateFieldsOnly(session);
+    }
+  }
+
+  private async hydrateFieldsOnly(session: number): Promise<void> {
+    if (!this.templateId) {
+      return;
+    }
+    const mapper = await this.waitForMapperComponent();
+    if (!mapper || session !== this.versionLoadSession) {
+      return;
+    }
+
+    this.templateService.getTemplateFields(this.templateId).subscribe({
+      next: fields => {
+        if (session !== this.versionLoadSession) {
+          return;
+        }
+        mapper.loadMappedFieldsFromApi(fields);
+      },
+      error: err => {
+        console.error('No se pudieron cargar los fields del template', err);
+      }
+    });
+  }
+
+  private async waitForMapperComponent(maxAttempts = 40): Promise<DocumentMapperComponent | undefined> {
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      if (this.mapperComponent) {
+        return this.mapperComponent;
+      }
+      await this.sleep(50);
+    }
+    return undefined;
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => window.setTimeout(resolve, ms));
   }
 
   private buildVersionOptions(history: TemplateApi[]): Array<{ name: string; code: string }> {

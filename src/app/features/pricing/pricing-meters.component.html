@@ -3,7 +3,7 @@
     <section class="bg-white rounded-3xl shadow px-6 py-8">
       <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.3em] text-[#2b0f60]">Precios</p>
+          <p class="text-xs font-semibold uppercase tracking-[0.3em] text-brand-primary">Precios</p>
           <h2 class="text-2xl font-semibold text-gray-900 mt-2">Precios por canal de firma</h2>
           <p class="text-sm text-gray-600 mt-2 max-w-3xl">
             Revisa las escalas de precio por volumen para cada tipo de firma. Para estimar tu costo mensual, usa la calculadora.
@@ -11,7 +11,7 @@
           <div class="mt-4">
             <a
               routerLink="/administration/calculator"
-              class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#3366FF] text-white text-sm font-semibold hover:bg-[#274FCC]"
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-accent text-white text-sm font-semibold hover:bg-brand-accent-hover"
             >
               Abrir calculadora
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -25,14 +25,14 @@
           <label class="inline-flex items-center gap-2 text-sm text-gray-700">
             <input
               type="checkbox"
-              class="h-4 w-4 rounded border-gray-300 text-[#3366FF] focus:ring-[#3366FF]"
+              class="h-4 w-4 rounded border-gray-300 text-brand-accent focus:ring-brand-accent"
               [(ngModel)]="showOnlyActive"
             />
             Solo activos
           </label>
 
           <select
-            class="w-full sm:w-56 rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+            class="w-full sm:w-56 rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent"
             [(ngModel)]="selectedCategory"
           >
             <option value="all">Todas las categorías</option>
@@ -40,7 +40,7 @@
           </select>
 
           <select
-            class="w-full sm:w-28 rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+            class="w-full sm:w-28 rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent"
             [(ngModel)]="region"
             (ngModelChange)="onRegionChanged()"
           >
@@ -48,7 +48,7 @@
           </select>
 
           <select
-            class="w-full sm:w-28 rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+            class="w-full sm:w-28 rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent"
             [(ngModel)]="currency"
             (ngModelChange)="onCurrencyChanged()"
           >
@@ -87,7 +87,7 @@
           >
             <div>
               <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-semibold uppercase tracking-[0.25em] text-[#2b0f60]">
+                <span class="text-xs font-semibold uppercase tracking-[0.25em] text-brand-primary">
                   {{ meter.category }} · {{ meter.unit }}
                 </span>
                 <span
@@ -118,7 +118,7 @@
 
         <aside class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
           <div class="px-5 py-4 bg-gray-50 border-b border-gray-100">
-            <p class="text-xs font-semibold uppercase tracking-[0.25em] text-[#2b0f60]">Detalle</p>
+            <p class="text-xs font-semibold uppercase tracking-[0.25em] text-brand-primary">Detalle</p>
             <p class="text-sm font-semibold text-gray-900 mt-1">{{ selectedMeter?.display_name || 'Selecciona un canal' }}</p>
             <p class="text-xs text-gray-500 mt-1">Región {{ region }} · {{ currency }}</p>
           </div>

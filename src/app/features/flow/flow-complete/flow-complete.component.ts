@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 
@@ -23,11 +23,13 @@ export class FlowCompleteComponent implements OnInit, OnDestroy {
   completing = false;
   completed = false;
   completeError: string | null = null;
+  signedDocumentUrl: string | null = null;
 
   private subscriptions: Subscription[] = [];
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private flowService: FlowService
   ) {}
 
@@ -38,6 +40,8 @@ export class FlowCompleteComponent implements OnInit, OnDestroy {
     if (this.flowState?.participant?.identity?.email) {
       this.email = this.flowState.participant.identity.email;
     }
+
+    this.signedDocumentUrl = this.flowService.getSignedDocumentUrl();
   }
 
   ngOnDestroy(): void {
@@ -93,9 +97,17 @@ export class FlowCompleteComponent implements OnInit, OnDestroy {
 
   closeWindow(): void {
     this.flowService.clearFlowState();
+    this.router.navigate(['/flow', this.processId, 'done']);
+  }
 
-    if (window.opener) {
-      window.close();
-    }
+  downloadSignedDocument(): void {
+    if (!this.signedDocumentUrl) return;
+
+    const anchor = document.createElement('a');
+    anchor.href = this.signedDocumentUrl;
+    anchor.download = `documento-firmado-${this.processId}.pdf`;
+    anchor.target = '_blank';
+    anchor.rel = 'noopener noreferrer';
+    anchor.click();
   }
 }

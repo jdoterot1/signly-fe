@@ -53,7 +53,9 @@ export class TemplateDetailComponent implements OnInit, OnDestroy {
   }
 
   goEdit(): void {
-    this.router.navigate(['/templates', this.templateId, 'edit']);
+    this.router.navigate(['/templates/create'], {
+      queryParams: { templateId: this.templateId, returnTo: '/templates' }
+    });
   }
 
   goCreateDocument(): void {
