@@ -7,6 +7,7 @@ interface FlowProgressItem {
   key: FlowProgressStep;
   label: string;
   caption: string;
+  accent: string;
 }
 
 @Component({
@@ -23,12 +24,12 @@ export class FlowProgressComponent {
   helpOpen = false;
 
   readonly steps: FlowProgressItem[] = [
-    { key: 'inicio', label: 'Bienvenida', caption: 'Invitacion y resumen' },
-    { key: 'biometria', label: 'Biometria', caption: 'Selfie y documento' },
-    { key: 'otp', label: 'Codigo OTP', caption: 'Validacion de contacto' },
-    { key: 'liveness', label: 'Prueba de vida', caption: 'Validacion en vivo' },
-    { key: 'firma', label: 'Firma', caption: 'Firma del documento' },
-    { key: 'completado', label: 'Finalizado', caption: 'Proceso completo' }
+    { key: 'inicio', label: 'Bienvenida', caption: 'Invitacion y resumen', accent: 'from-sky-500 to-indigo-500' },
+    { key: 'biometria', label: 'Biometria', caption: 'Selfie y documento', accent: 'from-violet-500 to-fuchsia-500' },
+    { key: 'otp', label: 'Codigo OTP', caption: 'Validacion de contacto', accent: 'from-amber-500 to-orange-500' },
+    { key: 'liveness', label: 'Prueba de vida', caption: 'Validacion en vivo', accent: 'from-cyan-500 to-blue-500' },
+    { key: 'firma', label: 'Firma', caption: 'Firma del documento', accent: 'from-emerald-500 to-teal-500' },
+    { key: 'completado', label: 'Finalizado', caption: 'Proceso completo', accent: 'from-rose-500 to-pink-500' }
   ];
 
   readonly helpChecklist: string[] = [
@@ -45,6 +46,16 @@ export class FlowProgressComponent {
 
   isCompleted(step: FlowProgressStep): boolean {
     return this.stepOrder(step) < this.stepOrder(this.currentStep);
+  }
+
+  cardClasses(step: FlowProgressItem): string {
+    if (this.isActive(step.key)) {
+      return `border-transparent bg-gradient-to-br ${step.accent} text-white shadow-xl`;
+    }
+    if (this.isCompleted(step.key)) {
+      return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+    }
+    return 'border-slate-200 bg-white/90 text-slate-500';
   }
 
   private stepOrder(step: FlowProgressStep): number {

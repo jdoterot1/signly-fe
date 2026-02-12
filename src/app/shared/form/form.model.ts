@@ -6,6 +6,7 @@ export type FieldType =
   | 'email'
   | 'password'
   | 'select'
+  | 'multiselect'
   | 'toggle'
   | 'date'
   | 'textarea'
@@ -16,7 +17,7 @@ export interface FormField {
   type: FieldType;
   label: string;
   placeholder?: string;
-  options?: { name: string; code: any }[];     // para 'select'
+  options?: { name: string; code: any }[];     // para 'select' y 'multiselect'
   required?: boolean;                           // muestra asterisco y agrega Validators.required
   validators?: ValidatorFn[];                   // otros validadotes
   children?: FormField[];                       // solo para type = 'group'

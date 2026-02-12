@@ -30,6 +30,13 @@ export interface FlowError extends Error {
   details?: FlowErrorDetails;
 }
 
+export interface FlowTemplateSnapshot {
+  downloadUrl: string;
+  templateId?: string;
+  templateName?: string;
+  templateVersion?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -39,7 +46,7 @@ export class FlowService {
 
   private flowStateSubject = new BehaviorSubject<FlowState | null>(null);
   flowState$ = this.flowStateSubject.asObservable();
-  private signedDocumentUrl: string | null = null;
+  private templateSnapshot: FlowTemplateSnapshot | null = null;
 
   constructor(private http: HttpClient) {
     this.loadFlowState();
@@ -186,6 +193,14 @@ export class FlowService {
       )
     ).pipe(
       map(res => res.data),
+      tap(data => {
+        this.templateSnapshot = {
+          downloadUrl: data.downloadUrl,
+          templateId: data.templateId,
+          templateName: data.templateName,
+          templateVersion: data.templateVersion
+        };
+      }),
       catchError(err => this.handleError(err))
     );
   }
@@ -241,24 +256,12 @@ export class FlowService {
 
   clearFlowState(): void {
     this.flowStateSubject.next(null);
-    this.setSignedDocumentUrl(null);
+    this.templateSnapshot = null;
     this.clearStoredState();
   }
 
-  setSignedDocumentUrl(url: string | null): void {
-    if (
-      this.signedDocumentUrl &&
-      this.signedDocumentUrl.startsWith('blob:') &&
-      this.signedDocumentUrl !== url &&
-      typeof URL !== 'undefined'
-    ) {
-      URL.revokeObjectURL(this.signedDocumentUrl);
-    }
-    this.signedDocumentUrl = url;
-  }
-
-  getSignedDocumentUrl(): string | null {
-    return this.signedDocumentUrl;
+  getTemplateSnapshot(): FlowTemplateSnapshot | null {
+    return this.templateSnapshot;
   }
 
   getNextPipelineStep(currentStep: FlowChallengeType): FlowChallengeType | null {

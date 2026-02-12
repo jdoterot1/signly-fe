@@ -1,15 +1,6 @@
-<div class="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-emerald-50/30 relative overflow-hidden">
-  <div class="absolute -top-32 -right-24 h-72 w-72 rounded-full bg-green-200/40 blur-3xl"></div>
-  <div class="absolute -bottom-24 -left-16 h-64 w-64 rounded-full bg-emerald-200/40 blur-3xl"></div>
-
-  <!-- Confetti animation (CSS-only) -->
-  <div *ngIf="completed" class="absolute inset-0 overflow-hidden pointer-events-none">
-    <div class="confetti confetti-1"></div>
-    <div class="confetti confetti-2"></div>
-    <div class="confetti confetti-3"></div>
-    <div class="confetti confetti-4"></div>
-    <div class="confetti confetti-5"></div>
-  </div>
+<div class="min-h-screen bg-[radial-gradient(circle_at_10%_20%,#dbeafe_0%,#f8fafc_35%,#dcfce7_100%)] relative overflow-hidden">
+  <div class="absolute -top-28 -left-20 h-80 w-80 rounded-[30%] bg-gradient-to-br from-cyan-200/40 to-blue-200/20 blur-3xl animate-aurora"></div>
+  <div class="absolute -bottom-28 -right-20 h-80 w-80 rounded-[38%] bg-gradient-to-br from-emerald-200/50 to-lime-100/20 blur-3xl animate-aurora-delayed"></div>
 
   <app-flow-progress [currentStep]="'completado'" [processId]="processId" [companyName]="'Apolo'"></app-flow-progress>
 
@@ -26,7 +17,7 @@
           <p class="text-xs font-semibold uppercase tracking-[0.35em] text-green-600">Ultimo paso</p>
           <h1 class="mt-3 text-2xl md:text-3xl font-semibold text-slate-900">Finalizar proceso</h1>
           <p class="mt-3 text-sm text-slate-500 max-w-sm">
-            Has completado todas las verificaciones. Confirma tu correo para recibir una copia del documento firmado.
+            Todo ya fue validado. Deja tu correo para enviarte una copia del documento como adjunto.
           </p>
         </div>
 
@@ -51,6 +42,9 @@
         <!-- Error -->
         <div *ngIf="completeError" class="bg-red-50 border border-red-200 rounded-2xl p-4 text-left w-full">
           <p class="text-xs text-red-700"><i class="pi pi-exclamation-triangle mr-2"></i>{{ completeError }}</p>
+        </div>
+        <div *ngIf="completeNotice" class="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-left w-full">
+          <p class="text-xs text-blue-700"><i class="pi pi-info-circle mr-2"></i>{{ completeNotice }}</p>
         </div>
 
         <!-- Complete button -->
@@ -121,30 +115,24 @@
         </div>
 
         <!-- Info Note -->
-        <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-left w-full">
+        <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-left w-full" *ngIf="completeNotice">
           <div class="flex items-start gap-3">
             <i class="pi pi-info-circle text-blue-500 mt-0.5"></i>
             <div>
-              <p class="text-xs font-medium text-blue-700">Siguiente paso</p>
+              <p class="text-xs font-medium text-blue-700">Correo de respaldo</p>
               <p class="text-xs text-blue-600 mt-1">
-                Recibiras una notificacion cuando el documento este completamente firmado por todas las partes involucradas.
+                {{ completeNotice }}
               </p>
             </div>
           </div>
         </div>
 
         <!-- Action Button -->
-        <div class="flex flex-col sm:flex-row gap-3 w-full">
-          <button *ngIf="signedDocumentUrl"
-                  (click)="downloadSignedDocument()"
-                  class="rounded-full bg-indigo-600 px-8 py-3 text-sm font-semibold text-white shadow-lg hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 w-full sm:w-auto">
-            Descargar documento
-            <i class="pi pi-download text-xs"></i>
-          </button>
+        <div class="flex flex-col sm:flex-row gap-3 w-full justify-center">
           <button (click)="closeWindow()"
                 class="rounded-full bg-slate-800 px-8 py-3 text-sm font-semibold text-white shadow-lg hover:bg-slate-900 transition-all flex items-center gap-2">
-            Cerrar ventana
-            <i class="pi pi-times text-xs"></i>
+            Continuar
+            <i class="pi pi-arrow-right text-xs"></i>
           </button>
         </div>
 
@@ -172,52 +160,23 @@
     }
   }
 
-  .confetti {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    animation: confetti-fall 3s ease-in-out infinite;
+  .animate-aurora {
+    animation: aurora 9s ease-in-out infinite;
   }
 
-  .confetti-1 {
-    left: 10%;
-    background: #22c55e;
-    animation-delay: 0s;
+  .animate-aurora-delayed {
+    animation: aurora 10s ease-in-out infinite reverse;
   }
 
-  .confetti-2 {
-    left: 30%;
-    background: #3b82f6;
-    animation-delay: 0.5s;
-  }
-
-  .confetti-3 {
-    left: 50%;
-    background: #f59e0b;
-    animation-delay: 1s;
-  }
-
-  .confetti-4 {
-    left: 70%;
-    background: #ec4899;
-    animation-delay: 1.5s;
-  }
-
-  .confetti-5 {
-    left: 90%;
-    background: #8b5cf6;
-    animation-delay: 2s;
-  }
-
-  @keyframes confetti-fall {
+  @keyframes aurora {
     0% {
-      transform: translateY(-100vh) rotate(0deg);
-      opacity: 1;
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(16px, -14px) scale(1.08);
     }
     100% {
-      transform: translateY(100vh) rotate(720deg);
-      opacity: 0;
+      transform: translate(0, 0) scale(1);
     }
   }
 </style>

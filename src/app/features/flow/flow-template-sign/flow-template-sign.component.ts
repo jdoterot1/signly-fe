@@ -14,7 +14,6 @@ import { FlowProgressComponent } from '../shared/flow-progress/flow-progress.com
 
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf';
 import type { PDFDocumentProxy } from 'pdfjs-dist/types/src/display/api';
-import { PDFDocument, rgb } from 'pdf-lib';
 
 const PDF_WORKER_SRC = 'assets/pdf.worker.min.mjs';
 GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
@@ -139,16 +138,29 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
   }
 
   getFieldsForPage(page: number): FieldWithValue[] {
-    return this.fields.filter(f => parseInt(f.page, 10) === page);
+    return this.fields.filter(f => this.toInteger(f.page, 1) === page);
   }
 
   getFieldStyle(field: TemplateDownloadField): Record<string, string> {
     return {
-      left: field.x + 'px',
-      top: field.y + 'px',
-      width: field.width + 'px',
-      height: field.height + 'px'
+      left: `${this.toInteger(field.x)}px`,
+      top: `${this.toInteger(field.y)}px`,
+      width: `${this.toPositiveInteger(field.width, 1)}px`,
+      height: `${this.toPositiveInteger(field.height, 1)}px`
     };
+  }
+
+  getFieldDisplayName(field: TemplateDownloadField): string {
+    const raw = (field.fieldName || '').trim();
+    if (!raw) {
+      return 'Campo';
+    }
+    const formatted = raw
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .toLowerCase()
+      .replace(/\b\w/g, letter => letter.toUpperCase());
+    return formatted || raw;
   }
 
   isSignField(field: TemplateDownloadField): boolean {
@@ -274,17 +286,16 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
       fieldCode: f.fieldCode,
       fieldName: f.fieldName,
       fieldType: f.fieldType,
-      height: f.height,
-      page: f.page,
-      width: f.width,
-      x: f.x,
-      y: f.y,
+      height: this.toPositiveInteger(f.height, 1),
+      page: this.toPositiveInteger(f.page, 1),
+      width: this.toPositiveInteger(f.width, 1),
+      x: this.toPositiveInteger(f.x, 0),
+      y: this.toPositiveInteger(f.y, 0),
       value: f.value
     }));
 
     const sub = this.flowService.submitTemplate(this.processId, { fields: submitFields }).subscribe({
       next: () => {
-        void this.prepareSignedDocumentForDownload();
         this.currentStep = 'success';
         setTimeout(() => this.navigateToNextStep(), 1400);
       },
@@ -310,101 +321,16 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
     this.router.navigate(['/flow', this.processId]);
   }
 
-  private async prepareSignedDocumentForDownload(): Promise<void> {
-    if (!this.templateData?.downloadUrl) {
-      return;
+  private toInteger(value: string | number, fallback = 0): number {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) {
+      return fallback;
     }
-
-    try {
-      const response = await fetch(this.templateData.downloadUrl);
-      if (!response.ok) {
-        return;
-      }
-
-      const sourcePdfBytes = await response.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(sourcePdfBytes);
-      const pages = pdfDoc.getPages();
-
-      for (const field of this.fields) {
-        if (!field.value) {
-          continue;
-        }
-
-        const pageIndex = Math.max(0, this.toNumber(field.page) - 1);
-        const page = pages[pageIndex];
-        if (!page) {
-          continue;
-        }
-
-        const { height: pageHeight } = page.getSize();
-        const x = this.toNumber(field.x);
-        const y = this.toNumber(field.y);
-        const width = Math.max(1, this.toNumber(field.width));
-        const height = Math.max(1, this.toNumber(field.height));
-        const bottomY = Math.max(0, pageHeight - y - height);
-
-        if (this.isSignField(field)) {
-          const pngBytes = this.base64ToUint8Array(field.value);
-          const signatureImage = await pdfDoc.embedPng(pngBytes);
-          page.drawRectangle({
-            x,
-            y: bottomY,
-            width,
-            height,
-            color: rgb(1, 1, 1),
-            opacity: 1
-          });
-          page.drawImage(signatureImage, {
-            x,
-            y: bottomY,
-            width,
-            height
-          });
-          continue;
-        }
-
-        const fontSize = this.clamp(height * 0.45, 8, 18);
-        page.drawRectangle({
-          x,
-          y: bottomY,
-          width,
-          height,
-          color: rgb(1, 1, 1),
-          opacity: 1
-        });
-        page.drawText(field.value, {
-          x: x + 2,
-          y: Math.max(0, bottomY + height - fontSize - 2),
-          size: fontSize,
-          color: rgb(0, 0, 0),
-          maxWidth: Math.max(10, width - 4)
-        });
-      }
-
-      const finalPdfBytes = await pdfDoc.save();
-      const finalPdfBlob = new Blob([finalPdfBytes], { type: 'application/pdf' });
-      const finalPdfUrl = URL.createObjectURL(finalPdfBlob);
-      this.flowService.setSignedDocumentUrl(finalPdfUrl);
-    } catch {
-      // Keep flow working even if local download artifact generation fails.
-    }
+    return Math.round(parsed);
   }
 
-  private toNumber(raw: string): number {
-    const parsed = parseFloat(raw);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-
-  private clamp(value: number, min: number, max: number): number {
-    return Math.min(Math.max(value, min), max);
-  }
-
-  private base64ToUint8Array(base64: string): Uint8Array {
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    return bytes;
+  private toPositiveInteger(value: string | number, fallback = 1): number {
+    const integer = this.toInteger(value, fallback);
+    return Math.max(integer, fallback);
   }
 }

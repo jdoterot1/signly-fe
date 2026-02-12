@@ -102,7 +102,7 @@
                   <input type="text"
                          [value]="field.value"
                          (input)="onFieldInput(field, $event)"
-                         [placeholder]="field.fieldName"
+                         [placeholder]="getFieldDisplayName(field)"
                          class="w-full h-full border border-slate-300 rounded bg-white/90 px-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400" />
                 </div>
               </ng-container>
@@ -149,7 +149,7 @@
                    }"></i>
               </div>
               <div class="min-w-0 flex-1">
-                <p class="text-xs font-medium text-slate-700 truncate">{{ field.fieldName }}</p>
+                <p class="text-xs font-medium text-slate-700 truncate">{{ getFieldDisplayName(field) }}</p>
                 <p class="text-[10px] text-slate-400">
                   {{ isSignField(field) ? 'Firma' : 'Texto' }} - Pagina {{ field.page }}
                 </p>

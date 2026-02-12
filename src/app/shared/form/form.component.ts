@@ -5,6 +5,7 @@ import { ReactiveFormsModule, FormGroup, FormBuilder, Validators } from '@angula
 
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { ToggleButton } from 'primeng/togglebutton';
 import { PasswordModule } from 'primeng/password';
 import { DatePicker } from 'primeng/datepicker';
@@ -20,6 +21,7 @@ import { FormConfig, FormField } from './form.model';
     ReactiveFormsModule,
     InputTextModule,
     SelectModule,
+    MultiSelectModule,
     ToggleButton,
     PasswordModule,
     DatePicker,

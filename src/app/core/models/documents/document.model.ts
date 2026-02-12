@@ -13,6 +13,8 @@ export type DocumentOrderMode = 'SEQUENTIAL' | 'PARALLEL' | string;
 export type DocumentSignatureMode =
   | 'SIGNATURE_EMAIL'
   | 'SIGNATURE_SMS'
+  | 'SIGNATURE_WHATSAPP'
+  | 'SIGNATURE_BIOMETRIC'
   | 'SIGNATURE_BIOMETRIC_PLUS'
   | string;
 export type DocumentApiStatus =
