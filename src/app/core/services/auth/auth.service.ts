@@ -178,11 +178,9 @@ export class AuthService {
 
   me(): Observable<MePayload> {
     const url = `${this.baseUrl}/auth/me`;
-    // The API expects a POST with an empty body (curl uses `--data ''`).
-    // Using `{}` makes Angular send JSON, which can be rejected by the gateway/backend.
-    const headers = this.buildSignlyHeaders().set('Content-Type', 'application/x-www-form-urlencoded');
+    const headers = this.buildSignlyHeaders();
     return this.http
-      .post<ApiResponse<MePayload>>(url, '', { headers })
+      .get<ApiResponse<MePayload>>(url, { headers })
       .pipe(
         map(res => res.data),
         tap(data => this.applyMeToSession(data)),
