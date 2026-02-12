@@ -14,6 +14,7 @@ import { FlowProgressComponent } from '../shared/flow-progress/flow-progress.com
 
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf';
 import type { PDFDocumentProxy } from 'pdfjs-dist/types/src/display/api';
+import { PDFDocument, rgb } from 'pdf-lib';
 
 const PDF_WORKER_SRC = 'assets/pdf.worker.min.mjs';
 GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
@@ -283,8 +284,9 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
 
     const sub = this.flowService.submitTemplate(this.processId, { fields: submitFields }).subscribe({
       next: () => {
+        void this.prepareSignedDocumentForDownload();
         this.currentStep = 'success';
-        setTimeout(() => this.navigateToNextStep(), 2000);
+        setTimeout(() => this.navigateToNextStep(), 1400);
       },
       error: (err: FlowError) => {
         this.error = err.message || 'Error al enviar la firma.';
@@ -296,37 +298,7 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
   }
 
   private navigateToNextStep(): void {
-    const state = this.flowService.getFlowState();
-    if (!state) {
-      this.router.navigate(['/flow', this.processId, 'complete']);
-      return;
-    }
-
-    const currentIndex = state.pipeline.indexOf('template_sign');
-    const nextSteps = state.pipeline.slice(currentIndex + 1);
-    const nextPendingStep = nextSteps.find(step => {
-      const challenge = state.challenges.find(c => c.type === step);
-      return challenge && challenge.status !== 'COMPLETED';
-    });
-
-    if (!nextPendingStep) {
-      this.router.navigate(['/flow', this.processId, 'complete']);
-      return;
-    }
-
-    const routes: Record<string, string> = {
-      otp_email: 'otp-email',
-      otp_sms: 'otp-sms',
-      otp_whatsapp: 'otp-whatsapp',
-      biometric: 'biometric',
-      liveness: 'liveness',
-      template_sign: 'template-sign'
-    };
-
-    const route = routes[nextPendingStep];
-    if (route) {
-      this.router.navigate(['/flow', this.processId, route]);
-    }
+    this.router.navigate(['/flow', this.processId, 'complete']);
   }
 
   retry(): void {
@@ -336,5 +308,103 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
 
   goBack(): void {
     this.router.navigate(['/flow', this.processId]);
+  }
+
+  private async prepareSignedDocumentForDownload(): Promise<void> {
+    if (!this.templateData?.downloadUrl) {
+      return;
+    }
+
+    try {
+      const response = await fetch(this.templateData.downloadUrl);
+      if (!response.ok) {
+        return;
+      }
+
+      const sourcePdfBytes = await response.arrayBuffer();
+      const pdfDoc = await PDFDocument.load(sourcePdfBytes);
+      const pages = pdfDoc.getPages();
+
+      for (const field of this.fields) {
+        if (!field.value) {
+          continue;
+        }
+
+        const pageIndex = Math.max(0, this.toNumber(field.page) - 1);
+        const page = pages[pageIndex];
+        if (!page) {
+          continue;
+        }
+
+        const { height: pageHeight } = page.getSize();
+        const x = this.toNumber(field.x);
+        const y = this.toNumber(field.y);
+        const width = Math.max(1, this.toNumber(field.width));
+        const height = Math.max(1, this.toNumber(field.height));
+        const bottomY = Math.max(0, pageHeight - y - height);
+
+        if (this.isSignField(field)) {
+          const pngBytes = this.base64ToUint8Array(field.value);
+          const signatureImage = await pdfDoc.embedPng(pngBytes);
+          page.drawRectangle({
+            x,
+            y: bottomY,
+            width,
+            height,
+            color: rgb(1, 1, 1),
+            opacity: 1
+          });
+          page.drawImage(signatureImage, {
+            x,
+            y: bottomY,
+            width,
+            height
+          });
+          continue;
+        }
+
+        const fontSize = this.clamp(height * 0.45, 8, 18);
+        page.drawRectangle({
+          x,
+          y: bottomY,
+          width,
+          height,
+          color: rgb(1, 1, 1),
+          opacity: 1
+        });
+        page.drawText(field.value, {
+          x: x + 2,
+          y: Math.max(0, bottomY + height - fontSize - 2),
+          size: fontSize,
+          color: rgb(0, 0, 0),
+          maxWidth: Math.max(10, width - 4)
+        });
+      }
+
+      const finalPdfBytes = await pdfDoc.save();
+      const finalPdfBlob = new Blob([finalPdfBytes], { type: 'application/pdf' });
+      const finalPdfUrl = URL.createObjectURL(finalPdfBlob);
+      this.flowService.setSignedDocumentUrl(finalPdfUrl);
+    } catch {
+      // Keep flow working even if local download artifact generation fails.
+    }
+  }
+
+  private toNumber(raw: string): number {
+    const parsed = parseFloat(raw);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  private clamp(value: number, min: number, max: number): number {
+    return Math.min(Math.max(value, min), max);
+  }
+
+  private base64ToUint8Array(base64: string): Uint8Array {
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
   }
 }

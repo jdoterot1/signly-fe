@@ -212,13 +212,16 @@ export class HeaderComponent implements OnInit {
       .pipe(take(1))
       .subscribe({
         next: payload => {
-          const resolvedName = payload.username || this.userProfile.name
+          const meAttributes = (payload.attributes ?? {}) as Record<string, string | undefined>
+          const attributeName = meAttributes['name'] || meAttributes['given_name']
+          const resolvedName = attributeName || this.userProfile.name || this.userProfile.displayName
           const resolvedEmail = payload.attributes?.email || this.userProfile.email
+          const fallbackDisplay = resolvedName || resolvedEmail || this.userProfile.displayName
 
           this.userProfile = {
             ...this.userProfile,
             name: resolvedName,
-            displayName: resolvedName || this.userProfile.displayName,
+            displayName: fallbackDisplay,
             email: resolvedEmail
           }
         },

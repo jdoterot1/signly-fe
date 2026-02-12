@@ -174,22 +174,11 @@ export class FlowLivenessComponent implements OnInit, OnDestroy {
   private navigateToNextStep(): void {
     const state = this.flowService.getFlowState();
     if (!state) {
-      this.router.navigate(['/flow', this.processId, 'complete']);
+      this.router.navigate(['/flow', this.processId, 'template-sign']);
       return;
     }
 
-    // Find next pending step
-    const currentIndex = state.pipeline.indexOf('liveness');
-    const nextSteps = state.pipeline.slice(currentIndex + 1);
-    const nextPendingStep = nextSteps.find(step => {
-      const challenge = state.challenges.find(c => c.type === step);
-      return challenge && challenge.status !== 'COMPLETED';
-    });
-
-    if (!nextPendingStep) {
-      this.router.navigate(['/flow', this.processId, 'complete']);
-      return;
-    }
+    const nextStep = this.flowService.getNextPipelineStep('liveness');
 
     const routes: Record<string, string> = {
       otp_email: 'otp-email',
@@ -200,10 +189,13 @@ export class FlowLivenessComponent implements OnInit, OnDestroy {
       template_sign: 'template-sign'
     };
 
-    const route = routes[nextPendingStep];
+    const route = nextStep ? routes[nextStep] : null;
     if (route) {
       this.router.navigate(['/flow', this.processId, route]);
+      return;
     }
+
+    this.router.navigate(['/flow', this.processId, 'template-sign']);
   }
 
   retry(): void {

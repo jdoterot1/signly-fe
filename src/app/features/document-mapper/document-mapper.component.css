@@ -383,8 +383,8 @@
   align-items: center;
   padding: 0.15rem 0.45rem;
   border-radius: 999px;
-  background-color: rgba(87, 73, 173, 0.1);
-  border: 1px solid rgba(87, 73, 173, 0.3);
+  background-color: #ffffff;
+  border: 1px solid rgba(87, 73, 173, 0.5);
   font-size: 0.85em;
   font-weight: 600;
   color: #2b0f60;
@@ -399,6 +399,8 @@
   white-space: nowrap;
   padding: 0.15rem 0.35rem;
   z-index: 6;
+  overflow: hidden;
+  opacity: 1;
 }
 
 .placeholder-chip__label {
@@ -409,7 +411,7 @@
 .mapper-chip--active {
   box-shadow: 0 0 0 2px rgba(43, 15, 96, 0.25);
   border-color: rgba(43, 15, 96, 0.55);
-  background-color: rgba(87, 73, 173, 0.18);
+  background-color: #eef0ff;
 }
 
 .mapper-chip[draggable='true'] {

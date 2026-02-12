@@ -393,15 +393,7 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
     const state = this.flowService.getFlowState();
     if (!state) return;
 
-    // Find the next pending step
-    const nextChallenge = state.challenges.find(
-      (c) => c.status === 'PENDING' || c.status === 'ACTIVE',
-    );
-
-    if (!nextChallenge) {
-      this.router.navigate(['/flow', this.processId, 'complete']);
-      return;
-    }
+    const nextStep = this.flowService.getNextPipelineStep('biometric');
 
     const routes: Record<string, string> = {
       otp_email: 'otp-email',
@@ -412,10 +404,14 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
       template_sign: 'template-sign',
     };
 
-    const route = routes[nextChallenge.type];
+    const route = nextStep ? routes[nextStep] : null;
     if (route) {
       this.router.navigate(['/flow', this.processId, route]);
+      return;
     }
+
+    // If there are no more auth steps in pipeline, continue with document signing.
+    this.router.navigate(['/flow', this.processId, 'template-sign']);
   }
 
   retryVerification(): void {

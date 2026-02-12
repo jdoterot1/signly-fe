@@ -84,7 +84,8 @@ export class TemplateListComponent implements OnInit {
   private loadTemplates(): void {
     this.templateService.getAllTemplates()
       .subscribe((list: Template[]) => {
-        const rows: TemplateRow[] = list.map(t => ({
+        const sortedByMostRecent = [...list].sort((a, b) => b.creationDate.getTime() - a.creationDate.getTime());
+        const rows: TemplateRow[] = sortedByMostRecent.map(t => ({
           id:            t.id,
           name:          t.name,
           description:   t.description,
@@ -104,7 +105,14 @@ export class TemplateListComponent implements OnInit {
   }
 
   onEdit(row: TemplateRow) {
-    this.router.navigate(['/templates', row.id, 'edit'], this.navigationExtras());
+    const extras = this.navigationExtras();
+    this.router.navigate(['/templates/create'], {
+      ...extras,
+      queryParams: {
+        ...(extras.queryParams ?? {}),
+        templateId: row.id
+      }
+    });
   }
 
   onDelete(row: TemplateRow) {

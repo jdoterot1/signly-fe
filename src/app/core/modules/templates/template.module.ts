@@ -7,12 +7,11 @@ import { RouterModule,
 import { TemplateCreateComponent }      from '../../../features/templates/create/template-add.component';
 import { TemplatesCenterComponent } from '../../../features/templates/center/templates-center.component';
 import { TemplateDetailComponent } from '../../../features/templates/detail/template-detail.component';
-import { TemplateEditComponent } from '../../../features/templates/edit/template-edit.component';
 
 const routes: Routes = [
   { path: '',                    component: TemplatesCenterComponent },
   { path: 'create', component: TemplateCreateComponent},
-  { path: ':templateId/edit', component: TemplateEditComponent },
+  { path: ':templateId/edit', component: TemplateCreateComponent },
   { path: ':templateId', component: TemplateDetailComponent },
 
 ];
@@ -22,8 +21,7 @@ const routes: Routes = [
     RouterModule.forChild(routes),
     TemplatesCenterComponent,
     TemplateCreateComponent,
-    TemplateDetailComponent,
-    TemplateEditComponent
+    TemplateDetailComponent
   ]
 })
 export class TemplateModule {}

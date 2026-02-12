@@ -117,8 +117,9 @@ export class AuthService {
     }
 
     const url = `${this.baseUrl}/auth/token/refresh`;
+    const headers = this.buildSignlyHeaders();
     return this.http
-      .post<ApiResponse<RefreshTokenPayload>>(url, { refresh_token: token })
+      .post<ApiResponse<RefreshTokenPayload>>(url, { refresh_token: token }, { headers })
       .pipe(
         map(res => this.mergeRefreshTokens(res.data)),
         tap(session => this.persistSession(session)),

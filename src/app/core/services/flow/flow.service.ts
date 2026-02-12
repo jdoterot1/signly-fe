@@ -8,6 +8,7 @@ import { ApiResponse } from '../../models/auth/auth-session.model';
 import {
   FlowInitiateData,
   FlowState,
+  FlowChallengeType,
   OtpSendData,
   OtpVerifyData,
   OtpChannel,
@@ -38,6 +39,7 @@ export class FlowService {
 
   private flowStateSubject = new BehaviorSubject<FlowState | null>(null);
   flowState$ = this.flowStateSubject.asObservable();
+  private signedDocumentUrl: string | null = null;
 
   constructor(private http: HttpClient) {
     this.loadFlowState();
@@ -239,7 +241,34 @@ export class FlowService {
 
   clearFlowState(): void {
     this.flowStateSubject.next(null);
+    this.setSignedDocumentUrl(null);
     this.clearStoredState();
+  }
+
+  setSignedDocumentUrl(url: string | null): void {
+    if (
+      this.signedDocumentUrl &&
+      this.signedDocumentUrl.startsWith('blob:') &&
+      this.signedDocumentUrl !== url &&
+      typeof URL !== 'undefined'
+    ) {
+      URL.revokeObjectURL(this.signedDocumentUrl);
+    }
+    this.signedDocumentUrl = url;
+  }
+
+  getSignedDocumentUrl(): string | null {
+    return this.signedDocumentUrl;
+  }
+
+  getNextPipelineStep(currentStep: FlowChallengeType): FlowChallengeType | null {
+    const state = this.flowStateSubject.getValue();
+    if (!state) return null;
+
+    const currentIndex = state.pipeline.indexOf(currentStep);
+    if (currentIndex < 0) return null;
+
+    return state.pipeline[currentIndex + 1] ?? null;
   }
 
   isTokenExpired(): boolean {

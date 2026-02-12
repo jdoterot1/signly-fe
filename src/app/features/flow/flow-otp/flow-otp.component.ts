@@ -222,10 +222,13 @@ export class FlowOtpComponent implements OnInit, OnDestroy {
 
         // Navigate to next step after a short delay
         setTimeout(() => {
-          if (data.completed) {
-            this.router.navigate(['/flow', this.processId, 'complete']);
-          } else if (data.nextStep) {
+          if (data.nextStep) {
             this.navigateToNextStep(data.nextStep);
+          } else if (data.completed) {
+            // After auth pipeline is done, signer must fill/sign the template.
+            this.router.navigate(['/flow', this.processId, 'template-sign']);
+          } else {
+            this.router.navigate(['/flow', this.processId, 'template-sign']);
           }
         }, 1500);
       },
@@ -265,7 +268,7 @@ export class FlowOtpComponent implements OnInit, OnDestroy {
     if (route) {
       this.router.navigate(['/flow', this.processId, route]);
     } else {
-      this.router.navigate(['/flow', this.processId, 'complete']);
+      this.router.navigate(['/flow', this.processId, 'template-sign']);
     }
   }
 
