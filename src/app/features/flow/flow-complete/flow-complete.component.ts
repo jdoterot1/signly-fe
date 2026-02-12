@@ -2,13 +2,11 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Subscription, of } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
 import { FlowService, FlowError } from '../../../core/services/flow/flow.service';
 import { FlowState, FlowChallengeType } from '../../../core/models/flow/flow.model';
 import { FlowProgressComponent } from '../shared/flow-progress/flow-progress.component';
-import { NotifyService } from '../../../core/services/notify/notify.service';
 
 @Component({
   selector: 'app-flow-complete',
@@ -32,8 +30,7 @@ export class FlowCompleteComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private flowService: FlowService,
-    private notifyService: NotifyService
+    private flowService: FlowService
   ) {}
 
   ngOnInit(): void {
@@ -81,46 +78,14 @@ export class FlowCompleteComponent implements OnInit, OnDestroy {
     this.completeNotice = null;
     const recipientEmail = (this.email || '').trim();
     const shouldSendCopy = this.sendCopy && !!recipientEmail;
-    const snapshot = this.flowService.getTemplateSnapshot();
 
     const sub = this.flowService.completeFlow(this.processId, {
-      // We centralize copy delivery through Notify API.
-      sendCopy: false,
+      sendCopy: shouldSendCopy,
       email: recipientEmail
-    }).pipe(
-      switchMap(() => {
-        if (!shouldSendCopy) {
-          return of(void 0);
-        }
-
-        if (!snapshot?.downloadUrl) {
-          return of(void 0);
-        }
-
-        const participantName = this.flowState?.participant?.displayName || 'Usuario';
-        const templateTitle = snapshot.templateName || 'Documento firmado';
-        const attachmentName = this.buildAttachmentFileName(snapshot.templateName, snapshot.templateVersion);
-
-        return this.notifyService.sendEmail({
-          to: [recipientEmail],
-          subject: `Documento firmado: ${templateTitle}`,
-          html: this.buildNotifyHtml(participantName, templateTitle),
-          attachments: [
-            {
-              url: snapshot.downloadUrl,
-              filename: attachmentName
-            }
-          ]
-        });
-      })
-    ).subscribe({
+    }).subscribe({
       next: () => {
         if (shouldSendCopy) {
-          if (snapshot?.downloadUrl) {
-            this.completeNotice = `Enviamos una copia del documento a ${recipientEmail}.`;
-          } else {
-            this.completeNotice = 'Flujo completado. No encontramos URL para adjuntar el documento en el correo.';
-          }
+          this.completeNotice = `Enviamos una copia del documento a ${recipientEmail}.`;
         }
         this.completed = true;
         this.completing = false;
@@ -137,35 +102,5 @@ export class FlowCompleteComponent implements OnInit, OnDestroy {
   closeWindow(): void {
     this.flowService.clearFlowState();
     this.router.navigate(['/flow', this.processId, 'done']);
-  }
-
-  private buildNotifyHtml(participantName: string, templateTitle: string): string {
-    return `
-      <!DOCTYPE html>
-      <html lang="es">
-      <head>
-        <meta charset="UTF-8">
-        <title>Documento firmado</title>
-      </head>
-      <body style="font-family: Arial, sans-serif; color: #0f172a;">
-        <h2 style="margin: 0 0 12px 0;">Documento firmado</h2>
-        <p style="margin: 0 0 10px 0;">Hola <strong>${participantName}</strong>,</p>
-        <p style="margin: 0 0 10px 0;">
-          Tu proceso de firma fue completado correctamente.
-          Adjuntamos el documento <strong>${templateTitle}</strong> para tu respaldo.
-        </p>
-        <p style="margin: 0;">Equipo Signly</p>
-      </body>
-      </html>
-    `;
-  }
-
-  private buildAttachmentFileName(templateName?: string, templateVersion?: string): string {
-    const safeName = (templateName || 'documento-firmado')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-    const version = templateVersion ? `-${templateVersion.replace(/[^a-zA-Z0-9]+/g, '-')}` : '';
-    return `${safeName || 'documento-firmado'}${version}.pdf`;
   }
 }
