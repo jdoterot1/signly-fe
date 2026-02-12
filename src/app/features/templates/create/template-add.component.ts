@@ -165,21 +165,7 @@ export class TemplateCreateComponent {
       next: res => {
         const headers = new HttpHeaders().set('Content-Type', file.type || 'application/octet-stream');
         this.http.put(res.uploadUrl, file, { headers, responseType: 'text' }).subscribe({
-          next: () => {
-            this.templateService.updateTemplateFields(this.templateId!, fields).subscribe({
-              next: () => {
-                this.alertService.showSuccess('Plantilla guardada correctamente', '¡Listo!');
-                setTimeout(() => this.navigateAfterSave(), 900);
-              },
-              error: err => {
-                console.error('No se pudieron guardar los campos', err);
-                this.alertService.showError('Se subió el archivo, pero fallaron los campos.', 'Error');
-              },
-              complete: () => {
-                this.isSaving = false;
-              }
-            });
-          },
+          next: () => this.saveFieldsAndFinish(fields),
           error: err => {
             console.error('No se pudo subir el archivo', err);
             this.alertService.showError('No se pudo subir el archivo.', 'Error');
@@ -188,8 +174,30 @@ export class TemplateCreateComponent {
         });
       },
       error: err => {
+        const errorMsg: string = err?.message || err?.error?.message || '';
+        const isAlreadyUploaded = errorMsg.toLowerCase().includes('already uploaded');
+        if (isAlreadyUploaded) {
+          this.saveFieldsAndFinish(fields);
+          return;
+        }
         console.error('No se pudo generar el upload URL', err);
         this.alertService.showError('No se pudo generar el link de subida.', 'Error');
+        this.isSaving = false;
+      }
+    });
+  }
+
+  private saveFieldsAndFinish(fields: TemplateField[]): void {
+    this.templateService.updateTemplateFields(this.templateId!, fields).subscribe({
+      next: () => {
+        this.alertService.showSuccess('Plantilla guardada correctamente', '¡Listo!');
+        setTimeout(() => this.navigateAfterSave(), 900);
+      },
+      error: err => {
+        console.error('No se pudieron guardar los campos', err);
+        this.alertService.showError('Se subió el archivo, pero fallaron los campos.', 'Error');
+      },
+      complete: () => {
         this.isSaving = false;
       }
     });

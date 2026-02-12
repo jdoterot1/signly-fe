@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
+  AfterViewChecked,
   Component,
   EventEmitter,
   ElementRef,
@@ -8,6 +9,7 @@ import {
   QueryList,
   ViewChild,
   ViewChildren,
+  ViewEncapsulation,
   inject
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -36,6 +38,8 @@ interface PdfEditableTextItem {
   height: number;
   fontSize: number;
   text: string;
+  originalText: string;
+  edited: boolean;
 }
 
 export interface DocumentMappedField {
@@ -60,9 +64,10 @@ export interface DocumentMappedField {
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './document-mapper.component.html',
-  styleUrl: './document-mapper.component.css'
+  styleUrl: './document-mapper.component.css',
+  encapsulation: ViewEncapsulation.None
 })
-export class DocumentMapperComponent implements OnDestroy {
+export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
   @ViewChild('fileInput')
   private fileInputRef?: ElementRef<HTMLInputElement>;
 
@@ -103,16 +108,82 @@ export class DocumentMapperComponent implements OnDestroy {
   docxHtml = '<p></p>';
 
   private draggedFieldType?: FormFieldType;
+  private draggedFieldId: string | null = null;
   private fieldCounter = 0;
   private pdfDocument: any | null = null;
   private renderSession = 0;
+  private initializedTextIds = new Set<string>();
   private readonly targetPageWidth = 820;
   private readonly defaultFieldWidth = 0.22;
   private readonly defaultFieldHeight = 0.065;
 
+  private undoStack: DocumentMappedField[][] = [];
+  private redoStack: DocumentMappedField[][] = [];
+  private readonly maxHistorySize = 50;
+
   ngOnDestroy(): void {
     this.renderSession += 1;
     this.pdfDocument = null;
+  }
+
+  ngAfterViewChecked(): void {
+    if (this.documentMode !== 'pdf' || !this.pdfTextItems.length) {
+      return;
+    }
+    for (const item of this.pdfTextItems) {
+      if (this.initializedTextIds.has(item.id)) {
+        continue;
+      }
+      const el = document.querySelector(`[data-text-id="${item.id}"]`) as HTMLElement | null;
+      if (el) {
+        el.textContent = item.text;
+        this.initializedTextIds.add(item.id);
+      }
+    }
+  }
+
+  trackTextItem(_index: number, item: PdfEditableTextItem): string {
+    return item.id;
+  }
+
+  onPdfTextKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Backspace' || event.key === 'Delete') {
+      event.stopPropagation();
+    }
+  }
+
+  get canUndo(): boolean {
+    return this.undoStack.length > 0;
+  }
+
+  get canRedo(): boolean {
+    return this.redoStack.length > 0;
+  }
+
+  undo(): void {
+    if (!this.undoStack.length) {
+      return;
+    }
+    this.redoStack.push([...this.mappedFields]);
+    this.mappedFields = this.undoStack.pop()!;
+    this.selectedFieldId = this.mappedFields.find(f => f.id === this.selectedFieldId)?.id ?? this.mappedFields[0]?.id ?? null;
+  }
+
+  redo(): void {
+    if (!this.redoStack.length) {
+      return;
+    }
+    this.undoStack.push([...this.mappedFields]);
+    this.mappedFields = this.redoStack.pop()!;
+    this.selectedFieldId = this.mappedFields.find(f => f.id === this.selectedFieldId)?.id ?? this.mappedFields[0]?.id ?? null;
+  }
+
+  private pushHistory(): void {
+    this.undoStack.push([...this.mappedFields]);
+    if (this.undoStack.length > this.maxHistorySize) {
+      this.undoStack.shift();
+    }
+    this.redoStack = [];
   }
 
   getMappedFields(): DocumentMappedField[] {
@@ -121,6 +192,7 @@ export class DocumentMapperComponent implements OnDestroy {
 
   onPaletteDragStart(event: DragEvent, type: FormFieldType): void {
     this.draggedFieldType = type;
+    this.draggedFieldId = null;
     if (event.dataTransfer) {
       event.dataTransfer.setData('text/plain', type);
       event.dataTransfer.setData('application/x-signly-field', type);
@@ -130,15 +202,29 @@ export class DocumentMapperComponent implements OnDestroy {
 
   onPaletteDragEnd(): void {
     this.draggedFieldType = undefined;
+    this.draggedFieldId = null;
+  }
+
+  onChipDragStart(event: DragEvent, field: DocumentMappedField): void {
+    event.stopPropagation();
+    this.draggedFieldId = field.id;
+    this.draggedFieldType = undefined;
+    if (event.dataTransfer) {
+      event.dataTransfer.setData('application/x-signly-move', field.id);
+      event.dataTransfer.effectAllowed = 'move';
+    }
+  }
+
+  onChipDragEnd(): void {
+    this.draggedFieldId = null;
+    this.draggedFieldType = undefined;
   }
 
   onPdfPageDragOver(event: DragEvent, pageNumber: number): void {
-    const type = this.getDragType(event);
-    if (!type) {
-      return;
+    if (this.draggedFieldId || this.getDragType(event)) {
+      event.preventDefault();
+      this.dropTargetPage = pageNumber;
     }
-    event.preventDefault();
-    this.dropTargetPage = pageNumber;
   }
 
   onPdfPageDragLeave(event: DragEvent, pageNumber: number): void {
@@ -153,10 +239,6 @@ export class DocumentMapperComponent implements OnDestroy {
   }
 
   onPdfPageDrop(event: DragEvent, pageNumber: number): void {
-    const type = this.getDragType(event);
-    if (!type) {
-      return;
-    }
     event.preventDefault();
     this.dropTargetPage = null;
     const pageElement = event.currentTarget as HTMLElement | null;
@@ -164,8 +246,19 @@ export class DocumentMapperComponent implements OnDestroy {
       return;
     }
 
-    const point = this.getNormalizedPoint(event.clientX, event.clientY, pageElement);
-    this.placeFieldOnPage(type, pageNumber, point.x, point.y);
+    const moveId = this.draggedFieldId || event.dataTransfer?.getData('application/x-signly-move');
+    if (moveId) {
+      const point = this.getNormalizedPoint(event.clientX, event.clientY, pageElement);
+      this.moveFieldToPage(moveId, pageNumber, point.x, point.y);
+      this.draggedFieldId = null;
+      return;
+    }
+
+    const type = this.getDragType(event);
+    if (type) {
+      const point = this.getNormalizedPoint(event.clientX, event.clientY, pageElement);
+      this.placeFieldOnPage(type, pageNumber, point.x, point.y);
+    }
   }
 
   onPaletteClick(type: FormFieldType): void {
@@ -196,7 +289,7 @@ export class DocumentMapperComponent implements OnDestroy {
   onPdfTextInput(itemId: string, event: Event): void {
     const value = (event.target as HTMLElement).innerText.replace(/\n/g, ' ');
     this.pdfTextItems = this.pdfTextItems.map(item =>
-      item.id === itemId ? { ...item, text: value } : item
+      item.id === itemId ? { ...item, text: value, edited: value !== item.originalText } : item
     );
   }
 
@@ -220,6 +313,22 @@ export class DocumentMapperComponent implements OnDestroy {
       return;
     }
     this.docxHtml = editor.innerHTML;
+  }
+
+  onDocxDragOver(event: DragEvent): void {
+    const type = this.getDragType(event);
+    if (type) {
+      event.preventDefault();
+    }
+  }
+
+  onDocxDrop(event: DragEvent): void {
+    const type = this.getDragType(event);
+    if (!type) {
+      return;
+    }
+    event.preventDefault();
+    this.placeFieldInDocx(type);
   }
 
   async onFileSelected(event: Event): Promise<void> {
@@ -276,12 +385,15 @@ export class DocumentMapperComponent implements OnDestroy {
     this.documentMode = null;
     this.pdfPages = [];
     this.pdfTextItems = [];
+    this.initializedTextIds = new Set<string>();
     this.docxHtml = '<p></p>';
     this.pdfDocument = null;
     this.mappedFields = [];
     this.selectedFieldId = null;
     this.dropTargetPage = null;
     this.activePageNumber = 1;
+    this.undoStack = [];
+    this.redoStack = [];
     if (this.fileInputRef) {
       this.fileInputRef.nativeElement.value = '';
     }
@@ -393,6 +505,7 @@ export class DocumentMapperComponent implements OnDestroy {
   }
 
   removeField(fieldId: string): void {
+    this.pushHistory();
     this.mappedFields = this.mappedFields.filter(field => field.id !== fieldId);
     if (this.selectedFieldId === fieldId) {
       this.selectedFieldId = this.mappedFields[0]?.id ?? null;
@@ -481,8 +594,30 @@ export class DocumentMapperComponent implements OnDestroy {
       page.width,
       page.height
     );
+    this.pushHistory();
     this.mappedFields = [...this.mappedFields, field];
     this.selectedFieldId = field.id;
+    this.activePageNumber = pageNumber;
+  }
+
+  private moveFieldToPage(fieldId: string, pageNumber: number, x: number, y: number): void {
+    const existing = this.mappedFields.find(f => f.id === fieldId);
+    if (!existing) {
+      return;
+    }
+    const page = this.pdfPages.find(item => item.pageNumber === pageNumber);
+    if (!page) {
+      return;
+    }
+    const normalizedX = this.clamp(x - existing.width / 2, 0, 1 - existing.width);
+    const normalizedY = this.clamp(y - existing.height / 2, 0, 1 - existing.height);
+    this.pushHistory();
+    this.mappedFields = this.mappedFields.map(f =>
+      f.id === fieldId
+        ? { ...f, page: pageNumber, x: normalizedX, y: normalizedY, pageWidth: page.width, pageHeight: page.height }
+        : f
+    );
+    this.selectedFieldId = fieldId;
     this.activePageNumber = pageNumber;
   }
 
@@ -491,6 +626,7 @@ export class DocumentMapperComponent implements OnDestroy {
     const fieldsOnDocx = this.mappedFields.length;
     const y = this.clamp(0.12 + fieldsOnDocx * 0.06, 0, 0.92);
     const field = this.createMappedField(type, 1, 0.08, y, size.width, size.height, 1000, 1400);
+    this.pushHistory();
     this.mappedFields = [...this.mappedFields, field];
     this.selectedFieldId = field.id;
     this.insertDocxPlaceholder(this.buildPlaceholderFromName(field.name));
@@ -500,6 +636,7 @@ export class DocumentMapperComponent implements OnDestroy {
     if (!this.selectedFieldId) {
       return;
     }
+    this.pushHistory();
     this.mappedFields = this.mappedFields.map(field =>
       field.id === this.selectedFieldId ? { ...field, ...patch } : field
     );
@@ -546,6 +683,8 @@ export class DocumentMapperComponent implements OnDestroy {
     this.mappedFields = [];
     this.selectedFieldId = null;
     this.fieldCounter = 0;
+    this.undoStack = [];
+    this.redoStack = [];
     this.docxHtml = result.content?.trim() ? result.content : '<p></p>';
     await this.sleep(0);
     if (this.docxEditorRef?.nativeElement) {
@@ -596,12 +735,15 @@ export class DocumentMapperComponent implements OnDestroy {
     this.pdfDocument = pdf;
     this.pdfPages = pages;
     this.pdfTextItems = textItems;
+    this.initializedTextIds = new Set<string>();
     this.docxHtml = '<p></p>';
     this.activePageNumber = pages[0]?.pageNumber ?? 1;
     this.dropTargetPage = null;
     this.mappedFields = [];
     this.selectedFieldId = null;
     this.fieldCounter = 0;
+    this.undoStack = [];
+    this.redoStack = [];
 
     await this.waitForCanvasElements(pages.length);
     await this.renderPdfPages(currentSession);
@@ -717,7 +859,9 @@ export class DocumentMapperComponent implements OnDestroy {
         width,
         height,
         fontSize,
-        text: value
+        text: value,
+        originalText: value,
+        edited: false
       });
     }
 
