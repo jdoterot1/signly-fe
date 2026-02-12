@@ -1,4 +1,4 @@
-<div class="bg-white min-h-screen flex flex-col">
+<div class="bg-brand-surface min-h-screen flex flex-col">
   <app-guide-modal
     *ngIf="showGuideModal"
     title="Tu primer documento en Signly"
@@ -10,11 +10,11 @@
     (closed)="closeGuideModal()"
   ></app-guide-modal>
   <!-- <CHANGE> Updated primary color from dark purple (#2b0f60) to modern blue (#0066cc) -->
-  <section class="bg-[#0066cc] text-white">
+  <section class="bg-brand-accent text-white">
     <div class="max-w-6xl mx-auto px-6 lg:px-10 py-10">
       <div class="flex flex-col md:flex-row items-center md:items-center justify-between gap-6">
         <div class="flex items-center gap-4 text-white">
-          <div class="w-12 h-12 rounded-full bg-white text-[#0066cc] flex items-center justify-center text-2xl font-semibold shadow">
+          <div class="w-12 h-12 rounded-full bg-white text-brand-accent flex items-center justify-center text-2xl font-semibold shadow">
             {{ getInitials() }}
           </div>
           <div>
@@ -32,7 +32,7 @@
             </div>
             <button
               type="button"
-              class="inline-flex items-center justify-center px-4 py-2 bg-white text-[#0066cc] rounded-full text-sm font-semibold hover:bg-blue-50 transition"
+              class="inline-flex items-center justify-center px-4 py-2 bg-white text-brand-accent rounded-full text-sm font-semibold hover:bg-blue-50 transition"
               (click)="startGuide()"
             >
               Guíame
@@ -49,15 +49,15 @@
     </div>
   </section>
 
-  <section class="flex-1 bg-white">
+  <section class="flex-1 bg-brand-surface">
     <div class="max-w-7xl mx-auto px-6 lg:px-10 py-4 mt-8">
       <div class="flex items-center justify-between mb-3">
         <!-- <CHANGE> Updated text color to modern neutral gray -->
-        <h2 class="text-2xl font-semibold text-[#1f2937]">Comienza o usa plantillas</h2>
+        <h2 class="text-2xl font-semibold text-brand-ink">Comienza o usa plantillas</h2>
         <!-- <CHANGE> Updated link color to match new blue theme -->
         <a
           routerLink="/templates"
-          class="text-sm font-semibold text-[#0066cc] hover:text-[#0052a3] flex items-center gap-2 transition"
+          class="text-sm font-semibold text-brand-accent hover:text-brand-accent-hover flex items-center gap-2 transition"
         >
           Ver todas las plantillas
           <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -70,19 +70,19 @@
         <a
           *ngFor="let template of starterTemplates"
           [routerLink]="template.path"
-          class="rounded-xl border border-[#e5e7eb] bg-white p-5 hover:shadow-md hover:border-[#d1d5db] transition"
+          class="rounded-xl border border-brand bg-brand-surface-card p-5 hover:shadow-md hover:border-brand-primary transition"
         >
           <!-- <CHANGE> Updated tag color to neutral -->
           <div class="flex items-center justify-between mb-4">
-            <span class="text-xs uppercase tracking-[0.15em] text-[#6b7280] font-semibold">{{ template.tag }}</span>
+            <span class="text-xs uppercase tracking-[0.15em] text-brand-muted font-semibold">{{ template.tag }}</span>
           </div>
           <!-- <CHANGE> Updated background and border to neutral gray -->
-          <div class="h-32 rounded-lg border border-dashed border-[#d1d5db] bg-[#f9fafb] flex items-center justify-center mb-4">
-            <span class="text-xs text-[#9ca3af]">Vista previa</span>
+          <div class="h-32 rounded-lg border border-dashed border-brand bg-brand-surface-raised flex items-center justify-center mb-4">
+            <span class="text-xs text-brand-muted-light">Vista previa</span>
           </div>
           <!-- <CHANGE> Updated text colors to match new color scheme -->
-          <h3 class="text-base font-semibold text-[#1f2937] mb-2">{{ template.title }}</h3>
-          <p class="text-sm text-[#6b7280] line-clamp-2">{{ template.description }}</p>
+          <h3 class="text-base font-semibold text-brand-ink mb-2">{{ template.title }}</h3>
+          <p class="text-sm text-brand-muted line-clamp-2">{{ template.description }}</p>
         </a>
       </div>
     </div>

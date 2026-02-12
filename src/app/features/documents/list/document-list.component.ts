@@ -59,19 +59,19 @@ export class DocumentListComponent implements OnInit {
         actions: [
           {
             label: '',
-            icon: 'assets/icons/tables/view.svg',
+            icon: 'view',
             tooltip: 'Visualizar',
             handler: row => this.onView(row)
           },
           {
             label: '',
-            icon: 'assets/icons/tables/Edit.svg',
+            icon: 'edit',
             tooltip: 'Editar documento',
             handler: row => this.onEdit(row)
           },
           {
             label: '',
-            icon: 'assets/icons/tables/Delete.svg',
+            icon: 'delete',
             tooltip: 'Eliminar documento',
             handler: row => this.onDelete(row)
           }

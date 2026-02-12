@@ -1,9 +1,9 @@
 <div class="min-h-full bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
   <div class="max-w-6xl mx-auto space-y-8">
-    <section class="bg-white rounded-3xl border border-gray-100 shadow px-6 py-8">
+    <section class="bg-brand-surface-card rounded-3xl border border-brand-subtle shadow px-6 py-8">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.3em] text-[#2b0f60]">Calculadora</p>
+          <p class="text-xs font-semibold uppercase tracking-[0.3em] text-brand-primary">Calculadora</p>
           <h2 class="text-2xl font-semibold text-gray-900 mt-2">Créditos vs On-demand</h2>
           <p class="text-sm text-gray-600 mt-2 max-w-3xl">
             Define tu volumen mensual por tipo de firma y mira el costo estimado. Recuerda: <strong>1 crédito = 1 COP</strong>.
@@ -11,12 +11,12 @@
         </div>
 
         <div class="flex flex-col sm:flex-row gap-3 sm:items-center">
-          <div class="rounded-2xl border border-[#d6cdf4] shadow-sm overflow-hidden">
-            <div class="flex bg-[#efe9ff]">
+          <div class="rounded-2xl border border-brand shadow-sm overflow-hidden">
+            <div class="flex bg-brand-surface-alt">
               <button
                 type="button"
                 class="px-4 py-2 text-sm font-semibold transition"
-                [ngClass]="mode === 'credits' ? 'bg-white text-[#2b0f60] shadow-sm' : 'text-[#6b5a94]'"
+                [ngClass]="mode === 'credits' ? 'bg-white text-brand-primary shadow-sm' : 'text-brand-muted'"
                 (click)="setMode('credits')"
               >
                 Créditos (prepago)
@@ -24,7 +24,7 @@
               <button
                 type="button"
                 class="px-4 py-2 text-sm font-semibold transition"
-                [ngClass]="mode === 'ondemand' ? 'bg-white text-[#2b0f60] shadow-sm' : 'text-[#6b5a94]'"
+                [ngClass]="mode === 'ondemand' ? 'bg-white text-brand-primary shadow-sm' : 'text-brand-muted'"
                 (click)="setMode('ondemand')"
               >
                 On-demand (pospago)
@@ -51,12 +51,12 @@
           </p>
         </div>
         <div class="rounded-2xl border border-gray-200 bg-white p-5">
-          <p class="text-xs font-semibold uppercase tracking-[0.25em] text-[#2b0f60]">Parámetros</p>
+          <p class="text-xs font-semibold uppercase tracking-[0.25em] text-brand-primary">Parámetros</p>
           <div class="mt-3 grid grid-cols-2 gap-3">
             <div>
               <label class="text-xs text-gray-500">Región</label>
               <select
-                class="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+                class="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
                 [(ngModel)]="region"
               >
                 <option *ngFor="let r of availableRegions()" [value]="r">{{ r }}</option>
@@ -65,7 +65,7 @@
             <div>
               <label class="text-xs text-gray-500">Moneda</label>
               <select
-                class="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+                class="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
                 [(ngModel)]="currency"
               >
                 <option *ngFor="let c of availableCurrencies()" [value]="c">{{ c }}</option>
@@ -109,7 +109,7 @@
             <div class="mt-4 grid md:grid-cols-[1fr_140px] gap-4 items-center">
               <input
                 type="range"
-                class="w-full accent-[#361681]"
+                class="w-full accent-brand-primary-medium"
                 min="0"
                 max="5000"
                 step="10"
@@ -122,7 +122,7 @@
                 <input
                   type="number"
                   min="0"
-                  class="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+                  class="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
                   [ngModel]="item.qty"
                   (ngModelChange)="setQty(item, $event)"
                 />
@@ -138,7 +138,7 @@
 
         <aside class="space-y-4 lg:sticky lg:top-24">
           <div class="rounded-2xl border border-gray-200 bg-white p-5">
-            <p class="text-xs font-semibold uppercase tracking-[0.25em] text-[#2b0f60]">Resumen</p>
+            <p class="text-xs font-semibold uppercase tracking-[0.25em] text-brand-primary">Resumen</p>
             <div class="mt-4 grid gap-3">
               <div class="rounded-2xl bg-gray-50 border border-gray-100 p-4">
                 <p class="text-xs text-gray-500">Total documentos/mes</p>

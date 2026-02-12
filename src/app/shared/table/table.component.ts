@@ -18,6 +18,7 @@ import {
   TableCellAction,
 } from './table.model';
 import { TableFiltersModalComponent } from './table-filters-modal.component';
+import { IconComponent } from "../icon/icon.component";
 
 interface TableState<T> {
   filteredData: T[];
@@ -30,7 +31,7 @@ interface TableState<T> {
 @Component({
   selector: 'app-table',
   standalone: true,
-  imports: [CommonModule, FormsModule, TooltipModule, TableFiltersModalComponent],
+  imports: [CommonModule, FormsModule, TooltipModule, TableFiltersModalComponent, IconComponent],
   templateUrl: './table.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -66,6 +67,7 @@ export class TableComponent<T = any> implements OnChanges {
     Pending: 'bg-[#E35D5D]',         // rojo medio
     'In Progress': 'bg-[#FFB347]',   // naranja medio
     Completed: 'bg-[#4FD1A5]',       // verde medio
+    Completado: 'bg-[#4FD1A5]', 
     Active: 'bg-[#4FD1A5]',          // verde medio
     Inactive: 'bg-[#E35D5D]',        // rojo medio
     Unresolved: 'bg-[#FFB347]',      // naranja medio
