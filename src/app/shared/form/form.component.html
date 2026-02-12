@@ -88,6 +88,29 @@
               </div>
             </ng-container>
 
+            <!-- MultiSelect -->
+            <ng-container *ngSwitchCase="'multiselect'">
+              <div class="sm:col-span-1">
+                <label [for]="field.key" class="block mb-2 text-sm font-semibold text-gray-700">
+                  {{ field.label }}
+                  <span *ngIf="field.required" class="text-red-500">*</span>
+                </label>
+                <p-multiselect
+                  [inputId]="field.key"
+                  [options]="field.options"
+                  optionLabel="name"
+                  [placeholder]="field.placeholder"
+                  [formControlName]="field.key"
+                  [disabled]="field.disabled ?? false"
+                  [filter]="true"
+                  filterBy="name,code"
+                  display="chip"
+                  class="w-full"
+                  appendTo="body"
+                />
+              </div>
+            </ng-container>
+
             <!-- Toggle -->
             <ng-container *ngSwitchCase="'toggle'">
               <div class="sm:col-span-1 flex items-center gap-4">

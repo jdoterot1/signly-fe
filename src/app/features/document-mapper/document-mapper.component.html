@@ -209,6 +209,22 @@
                       (dragend)="onChipDragEnd()"
                     >
                       <span class="placeholder-chip__label">{{ buildPlaceholderFromName(field.name) }}</span>
+                      <span
+                        class="mapper-chip__resize-handle mapper-chip__resize-handle--nw"
+                        (mousedown)="onResizeHandleMouseDown($event, field, 'nw')"
+                      ></span>
+                      <span
+                        class="mapper-chip__resize-handle mapper-chip__resize-handle--ne"
+                        (mousedown)="onResizeHandleMouseDown($event, field, 'ne')"
+                      ></span>
+                      <span
+                        class="mapper-chip__resize-handle mapper-chip__resize-handle--sw"
+                        (mousedown)="onResizeHandleMouseDown($event, field, 'sw')"
+                      ></span>
+                      <span
+                        class="mapper-chip__resize-handle mapper-chip__resize-handle--se"
+                        (mousedown)="onResizeHandleMouseDown($event, field, 'se')"
+                      ></span>
                     </button>
                   </div>
                 </div>

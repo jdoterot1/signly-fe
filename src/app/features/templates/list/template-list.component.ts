@@ -6,6 +6,7 @@ import { FormsModule }          from '@angular/forms';
 import { TableComponent }       from '../../../shared/table/table.component';
 import { TableModel }           from '../../../shared/table/table.model';
 import { TemplateService }      from '../../../core/services/templates/template.service';
+import { AuthService } from '../../../core/services/auth/auth.service';
 import { Template, TemplateStatus } from '../../../core/models/templates/template.model';
 
 interface TemplateRow {
@@ -26,6 +27,7 @@ interface TemplateRow {
 })
 export class TemplateListComponent implements OnInit {
   @Input() returnTo: string | null = null;
+
   tableModel: TableModel<TemplateRow> = {
     entityName: 'Lista de Plantillas',
     tableConfig: {
@@ -39,15 +41,15 @@ export class TemplateListComponent implements OnInit {
       trackByField: 'id'
     },
     columns: [
-      { key: 'name',         header: 'Template Name',    columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'description',  header: 'Description',      columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'creationDate', header: 'Creation Date',    columnType: 'text', sortable: true, filterable: false, visible: true },
-      { key: 'createdBy',    header: 'Created By',       columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'language',     header: 'Language',         columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'status',       header: 'Status',           columnType: 'text', sortable: true, filterable: false, visible: true },
+      { key: 'name',         header: 'Nombre de plantilla', columnType: 'text', sortable: true, filterable: true, visible: true },
+      { key: 'description',  header: 'Descripción',         columnType: 'text', sortable: true, filterable: true, visible: true },
+      { key: 'creationDate', header: 'Fecha de creación',   columnType: 'text', sortable: true, filterable: false, visible: true },
+      { key: 'createdBy',    header: 'Creado por',          columnType: 'text', sortable: true, filterable: true, visible: true },
+      { key: 'language',     header: 'Idioma',              columnType: 'text', sortable: true, filterable: true, visible: true },
+      { key: 'status',       header: 'Estado',              columnType: 'text', sortable: true, filterable: false, visible: true },
       {
         key: 'actions',
-        header: 'Actions',
+        header: 'Acciones',
         columnType: 'action',
         visible: true,
         actions: [
@@ -66,7 +68,7 @@ export class TemplateListComponent implements OnInit {
           {
             label: '',
             icon: 'delete',
-            tooltip: 'Delete',
+            tooltip: 'Eliminar',
             handler: row => this.onDelete(row)
           }
         ]
@@ -75,7 +77,7 @@ export class TemplateListComponent implements OnInit {
     data: []
   };
 
-  constructor(private templateService: TemplateService, private router: Router) {}
+  constructor(private templateService: TemplateService, private router: Router, private authService: AuthService) {}
 
   ngOnInit(): void {
     this.loadTemplates();
@@ -90,9 +92,8 @@ export class TemplateListComponent implements OnInit {
           name:          t.name,
           description:   t.description,
           creationDate:  t.creationDate
-                            .toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
-                            .replace(/\//g, '/'),
-          createdBy:     t.createdBy,
+                            .toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+          createdBy:     this.resolveCreatedBy(t.createdBy),
           language:      t.language,
           status:        t.status
         }));
@@ -116,7 +117,7 @@ export class TemplateListComponent implements OnInit {
   }
 
   onDelete(row: TemplateRow) {
-    if (confirm(`Are you sure you want to delete "${row.name}"?`)) {
+    if (confirm(`¿Seguro que deseas eliminar "${row.name}"?`)) {
       this.templateService.deleteTemplate(row.id)
         .subscribe(() => this.loadTemplates());
     }
@@ -130,6 +131,18 @@ export class TemplateListComponent implements OnInit {
       return {};
     }
     return { queryParams: { returnTo: this.returnTo } };
+  }
+
+  private resolveCreatedBy(createdById: string): string {
+    const currentUser = this.authService.getSession()?.user;
+    const currentUserDisplayName = currentUser?.name?.trim() || currentUser?.email?.trim() || '';
+    if (!createdById) {
+      return currentUserDisplayName;
+    }
+    if (currentUser?.userId && createdById === currentUser.userId && currentUserDisplayName) {
+      return currentUserDisplayName;
+    }
+    return createdById;
   }
 
 }

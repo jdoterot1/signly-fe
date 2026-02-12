@@ -6,14 +6,15 @@ export const DOCUMENT_LANGUAGES = [
 ];
 
 export const DOCUMENT_ORDER_MODES = [
-  { name: 'Secuencial', code: 'SEQUENTIAL' },
   { name: 'Paralelo', code: 'PARALLEL' }
 ];
 
 export const DOCUMENT_SIGNATURE_MODES = [
   { name: 'Firma por Email', code: 'SIGNATURE_EMAIL' },
   { name: 'Firma por SMS', code: 'SIGNATURE_SMS' },
-  { name: 'Firma Biométrica', code: 'SIGNATURE_BIOMETRIC_PLUS' }
+  { name: 'Firma por WhatsApp', code: 'SIGNATURE_WHATSAPP' },
+  { name: 'Firma Biométrica', code: 'SIGNATURE_BIOMETRIC' },
+  { name: 'Firma Biométrica Avanzada', code: 'SIGNATURE_BIOMETRIC_PLUS' }
 ];
 
 export const DOCUMENT_CREATE_FORM_CONFIG: FormConfig = {
@@ -60,9 +61,9 @@ export const DOCUMENT_CREATE_FORM_CONFIG: FormConfig = {
     },
     {
       key: 'signatureMode',
-      type: 'select',
+      type: 'multiselect',
       label: 'Modo de Firma',
-      placeholder: 'Selecciona el modo',
+      placeholder: 'Selecciona uno o varios modos',
       required: true,
       options: DOCUMENT_SIGNATURE_MODES
     },
@@ -70,8 +71,7 @@ export const DOCUMENT_CREATE_FORM_CONFIG: FormConfig = {
       key: 'participantName',
       type: 'text',
       label: 'Nombre del participante',
-      placeholder: 'Nombre completo',
-      required: true
+      placeholder: 'Nombre completo'
     },
     {
       key: 'participantEmail',

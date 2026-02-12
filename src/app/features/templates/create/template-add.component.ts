@@ -249,10 +249,24 @@ export class TemplateCreateComponent {
       y: this.toPixelString(field.y, field.pageHeight),
       width: this.toPixelString(field.width, field.pageWidth),
       height: this.toPixelString(field.height, field.pageHeight),
-      fieldName: field.name,
+      fieldName: this.toApiFieldName(field.label, field.name),
       fieldType: this.mapFieldTypeForApi(field.type),
       fieldCode: String(index + 1)
     }));
+  }
+
+  private toApiFieldName(label: string, fallbackCode: string): string {
+    const source = (label || fallbackCode || '').trim();
+    if (!source) {
+      return 'CAMPO';
+    }
+    const normalized = source
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+    return normalized || 'CAMPO';
   }
 
   private async prepareFileForUpload(file: File, editedTextItems: DocumentPdfTextEdit[]): Promise<File> {

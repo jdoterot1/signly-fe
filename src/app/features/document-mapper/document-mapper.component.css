@@ -399,13 +399,18 @@
   white-space: nowrap;
   padding: 0.15rem 0.35rem;
   z-index: 6;
-  overflow: hidden;
+  overflow: visible;
   opacity: 1;
 }
 
 .placeholder-chip__label {
   display: inline-flex;
   align-items: center;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .mapper-chip--active {
@@ -421,4 +426,46 @@
 .mapper-chip[draggable='true']:active {
   cursor: grabbing;
   opacity: 0.6;
+}
+
+.mapper-chip__resize-handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1.5px solid var(--brand-primary);
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 120ms ease;
+  z-index: 2;
+}
+
+.mapper-chip:hover .mapper-chip__resize-handle,
+.mapper-chip--active .mapper-chip__resize-handle {
+  opacity: 1;
+}
+
+.mapper-chip__resize-handle--nw {
+  top: -5px;
+  left: -5px;
+  cursor: nwse-resize;
+}
+
+.mapper-chip__resize-handle--ne {
+  top: -5px;
+  right: -5px;
+  cursor: nesw-resize;
+}
+
+.mapper-chip__resize-handle--sw {
+  bottom: -5px;
+  left: -5px;
+  cursor: nesw-resize;
+}
+
+.mapper-chip__resize-handle--se {
+  bottom: -5px;
+  right: -5px;
+  cursor: nwse-resize;
 }

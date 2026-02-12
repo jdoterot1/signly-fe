@@ -128,16 +128,19 @@ export interface TemplateDownloadField {
   fieldCode: string;
   fieldName: string;
   fieldType: string;
-  height: string;
-  page: string;
-  width: string;
-  x: string;
-  y: string;
+  height: string | number;
+  page: string | number;
+  width: string | number;
+  x: string | number;
+  y: string | number;
 }
 
 export interface TemplateDownloadData {
   downloadUrl: string;
   fields: TemplateDownloadField[];
+  templateId?: string;
+  templateName?: string;
+  templateVersion?: string;
 }
 
 // Template Submit Request (for /template/submit)
@@ -145,11 +148,11 @@ export interface TemplateSubmitField {
   fieldCode: string;
   fieldName: string;
   fieldType: string;
-  height: string;
-  page: string;
-  width: string;
-  x: string;
-  y: string;
+  height: number;
+  page: number;
+  width: number;
+  x: number;
+  y: number;
   value: string;
 }
 

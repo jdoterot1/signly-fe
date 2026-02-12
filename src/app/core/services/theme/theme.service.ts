@@ -34,7 +34,8 @@ export class ThemeService {
     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
     if (stored === 'light' || stored === 'dark') return stored;
 
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    // Default mode is always light unless user explicitly changed it.
+    return 'light';
   }
 
   private applyTheme(theme: Theme): void {

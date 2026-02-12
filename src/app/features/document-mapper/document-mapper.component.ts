@@ -4,6 +4,7 @@ import {
   Component,
   EventEmitter,
   ElementRef,
+  HostListener,
   OnDestroy,
   Output,
   QueryList,
@@ -65,6 +66,16 @@ interface ApiTemplateFieldLike {
   fieldName: string;
   fieldType: string;
   fieldCode: number | string;
+}
+
+type ResizeHandle = 'nw' | 'ne' | 'sw' | 'se';
+
+interface FieldResizeState {
+  fieldId: string;
+  handle: ResizeHandle;
+  pageElement: HTMLElement;
+  anchorX: number;
+  anchorY: number;
 }
 
 export interface DocumentMappedField {
@@ -141,6 +152,9 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
   private readonly targetPageWidth = 820;
   private readonly defaultFieldWidth = 0.22;
   private readonly defaultFieldHeight = 0.065;
+  private readonly minFieldWidth = 0.01;
+  private readonly minFieldHeight = 0.01;
+  private activeResize: FieldResizeState | null = null;
 
   private undoStack: DocumentMappedField[][] = [];
   private redoStack: DocumentMappedField[][] = [];
@@ -385,6 +399,55 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
   onFieldChipClick(event: MouseEvent, fieldId: string): void {
     event.stopPropagation();
     this.selectField(fieldId);
+  }
+
+  onResizeHandleMouseDown(event: MouseEvent, field: DocumentMappedField, handle: ResizeHandle): void {
+    if (this.documentMode !== 'pdf') {
+      return;
+    }
+    const target = event.currentTarget as HTMLElement | null;
+    const pageElement = target?.closest('.pdf-page') as HTMLElement | null;
+    if (!pageElement) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    this.pushHistory();
+
+    const right = this.clamp(field.x + field.width, 0, 1);
+    const bottom = this.clamp(field.y + field.height, 0, 1);
+    const anchorX = handle === 'nw' || handle === 'sw' ? right : field.x;
+    const anchorY = handle === 'nw' || handle === 'ne' ? bottom : field.y;
+
+    this.activeResize = {
+      fieldId: field.id,
+      handle,
+      pageElement,
+      anchorX,
+      anchorY
+    };
+    this.selectedFieldId = field.id;
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  onDocumentMouseMove(event: MouseEvent): void {
+    const resizeState = this.activeResize;
+    if (!resizeState) {
+      return;
+    }
+
+    event.preventDefault();
+    const point = this.getNormalizedPoint(event.clientX, event.clientY, resizeState.pageElement);
+    this.applyResizeFromHandle(resizeState, point.x, point.y);
+  }
+
+  @HostListener('document:mouseup')
+  onDocumentMouseUp(): void {
+    if (!this.activeResize) {
+      return;
+    }
+    this.activeResize = null;
   }
 
   onPdfTextInput(itemId: string, event: Event): void {
@@ -771,6 +834,58 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
 
   private clamp(value: number, min: number, max: number): number {
     return Math.min(Math.max(value, min), max);
+  }
+
+  private applyResizeFromHandle(state: FieldResizeState, pointerX: number, pointerY: number): void {
+    const minW = this.minFieldWidth;
+    const minH = this.minFieldHeight;
+    const maxX = 1;
+    const maxY = 1;
+
+    let x = state.anchorX;
+    let y = state.anchorY;
+    let width = minW;
+    let height = minH;
+
+    switch (state.handle) {
+      case 'nw': {
+        x = this.clamp(pointerX, 0, state.anchorX - minW);
+        y = this.clamp(pointerY, 0, state.anchorY - minH);
+        width = this.clamp(state.anchorX - x, minW, maxX - x);
+        height = this.clamp(state.anchorY - y, minH, maxY - y);
+        break;
+      }
+      case 'ne': {
+        const right = this.clamp(pointerX, state.anchorX + minW, maxX);
+        y = this.clamp(pointerY, 0, state.anchorY - minH);
+        x = state.anchorX;
+        width = this.clamp(right - x, minW, maxX - x);
+        height = this.clamp(state.anchorY - y, minH, maxY - y);
+        break;
+      }
+      case 'sw': {
+        x = this.clamp(pointerX, 0, state.anchorX - minW);
+        const bottom = this.clamp(pointerY, state.anchorY + minH, maxY);
+        y = state.anchorY;
+        width = this.clamp(state.anchorX - x, minW, maxX - x);
+        height = this.clamp(bottom - y, minH, maxY - y);
+        break;
+      }
+      case 'se':
+      default: {
+        const right = this.clamp(pointerX, state.anchorX + minW, maxX);
+        const bottom = this.clamp(pointerY, state.anchorY + minH, maxY);
+        x = state.anchorX;
+        y = state.anchorY;
+        width = this.clamp(right - x, minW, maxX - x);
+        height = this.clamp(bottom - y, minH, maxY - y);
+        break;
+      }
+    }
+
+    this.mappedFields = this.mappedFields.map(field =>
+      field.id === state.fieldId ? { ...field, x, y, width, height } : field
+    );
   }
 
   private async loadDocx(file: File): Promise<void> {
