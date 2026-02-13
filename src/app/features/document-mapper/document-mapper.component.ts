@@ -975,8 +975,7 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
     const arrayBuffer = await file.arrayBuffer();
     this.renderSession += 1;
     const currentSession = this.renderSession;
-    const loadingTask = getDocument({ data: new Uint8Array(arrayBuffer) });
-    const pdf = await loadingTask.promise;
+    const pdf = await this.loadPdfDocument(new Uint8Array(arrayBuffer));
     if (currentSession !== this.renderSession) {
       return;
     }
@@ -1026,6 +1025,30 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
 
     await this.waitForCanvasElements(pages.length);
     await this.renderPdfPages(currentSession);
+  }
+
+  private async loadPdfDocument(data: Uint8Array): Promise<any> {
+    try {
+      const loadingTask = getDocument({ data });
+      return await loadingTask.promise;
+    } catch (error) {
+      const message = error instanceof Error ? error.message.toLowerCase() : '';
+      const isWorkerIssue =
+        message.includes('worker') ||
+        message.includes('setting up fake worker') ||
+        message.includes('api version') ||
+        message.includes('module script');
+
+      if (!isWorkerIssue) {
+        throw error;
+      }
+
+      const fallbackTask = getDocument({
+        data,
+        disableWorker: true
+      } as any);
+      return fallbackTask.promise;
+    }
   }
 
   private async waitForCanvasElements(expected: number): Promise<void> {
