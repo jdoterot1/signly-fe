@@ -48,7 +48,7 @@ export class TemplateCreateComponent {
   private pdfToUpload?: File;
   templateId: string | null = null;
   versions: Array<{ name: string; code: string }> = [];
-  readonly versionControl = this.fb.control<string | null>(null, [Validators.required]);
+  readonly versionControl = this.fb.control<string | null>({ value: null, disabled: true }, [Validators.required]);
   private versionLoadSession = 0;
 
   showGuideModal = false;
@@ -91,6 +91,14 @@ export class TemplateCreateComponent {
     });
   }
 
+  private syncVersionControlState(): void {
+    if (this.templateId && this.versions.length) {
+      this.versionControl.enable({ emitEvent: false });
+    } else {
+      this.versionControl.disable({ emitEvent: false });
+    }
+  }
+
   goToStepTwo(): void {
     if (this.stepForm.invalid) {
       this.stepForm.markAllAsTouched();
@@ -131,6 +139,7 @@ export class TemplateCreateComponent {
           this.templateId = tpl.templateId;
           const v = this.extractVersion(tpl.templateVersion) ?? this.normalizeVersion(String(tpl.version)) ?? '0001';
           this.versionControl.setValue(v, { emitEvent: false });
+          this.syncVersionControlState();
           this.loadHistory();
           this.finalizeTemplateSave();
         },
@@ -582,6 +591,7 @@ export class TemplateCreateComponent {
     this.templateService.getTemplateHistory(this.templateId).subscribe({
       next: history => {
         this.versions = this.buildVersionOptions(history);
+        this.syncVersionControlState();
         if (!this.versionControl.value && this.versions.length) {
           this.versionControl.setValue(this.versions[0].code, { emitEvent: true });
         }
@@ -788,11 +798,16 @@ export class TemplateCreateComponent {
       return;
     }
 
+    const fileBackup = this.uploadedFile;
     try {
       await mapper.processFile(this.uploadedFile);
     } catch (error) {
       console.error('No se pudo procesar el PDF en el mapeador', error);
       this.alertService.showError('No se pudo procesar el PDF seleccionado.', 'Error');
+    }
+    // Restore the file if the mapper cleared it on error (via fileSelected emit).
+    if (!this.uploadedFile && fileBackup) {
+      this.uploadedFile = fileBackup;
     }
   }
 }
