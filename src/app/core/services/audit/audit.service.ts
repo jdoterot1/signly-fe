@@ -5,7 +5,13 @@ import { catchError, map } from 'rxjs/operators';
 
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '../auth/auth.service';
-import { AuditEvent, AuditEventResponse, AuditListResponse } from '../../models/audit/audit-event.model';
+import {
+  AuditEvent,
+  AuditEventResponse,
+  AuditListResponse,
+  ProcessEvent,
+  ProcessEventsListResponse
+} from '../../models/audit/audit-event.model';
 
 @Injectable({
   providedIn: 'root'
@@ -39,6 +45,21 @@ export class AuditService {
           catchError(err => this.handleError(err))
         )
     );
+  }
+
+  getEventsByProcessId(processId: string, limit = 30): Observable<ProcessEvent[]> {
+    return this.executeWithHeaders(headers => {
+      let params = new HttpParams();
+      if (limit) {
+        params = params.set('limit', limit.toString());
+      }
+      return this.http
+        .get<ProcessEventsListResponse>(`${this.baseUrl}/events/${encodeURIComponent(processId)}`, { headers, params })
+        .pipe(
+          map(res => res.data ?? []),
+          catchError(err => this.handleError(err))
+        );
+    });
   }
 
   private executeWithHeaders<T>(fn: (headers: HttpHeaders) => Observable<T>): Observable<T> {
