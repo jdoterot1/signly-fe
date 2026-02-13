@@ -43,7 +43,7 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
   fields: FieldWithValue[] = [];
   currentPage = 1;
   totalPages = 1;
-  pdfScale = 1.5;
+  pdfScale = 1.2;
 
   // Signature pad state
   isDrawing = false;

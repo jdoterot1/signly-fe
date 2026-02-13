@@ -54,7 +54,7 @@ export class TableComponent<T = any> implements OnChanges {
     data: TableState<T>;
   } = {
     sortBy: undefined,
-    sortDir: 'asc',
+    sortDir: 'desc',
     data: { filteredData: [], currentPage: 1, totalPages: 0, totalItems: 0, pages: [] },
   };
 
@@ -76,6 +76,15 @@ export class TableComponent<T = any> implements OnChanges {
     Emitida: 'bg-[#3366FF]',
     Cancelada: 'bg-[#E35D5D]',
     Fallida: 'bg-[#E35D5D]',
+    Creado: 'bg-emerald-100 text-emerald-800',
+    'En proceso': 'bg-amber-100 text-amber-800',
+    Cancelado: 'bg-rose-100 text-rose-800',
+    Expirado: 'bg-slate-200 text-slate-700',
+    CREATED: 'bg-emerald-100 text-emerald-800',
+    IN_PROGRESS: 'bg-amber-100 text-amber-800',
+    COMPLETED: 'bg-sky-100 text-sky-800',
+    CANCELLED: 'bg-rose-100 text-rose-800',
+    EXPIRED: 'bg-slate-200 text-slate-700',
   };
 
 
@@ -100,11 +109,21 @@ export class TableComponent<T = any> implements OnChanges {
     return this.model.data;
   }
   get sortLabel(): string {
-    return this.state.sortDir === 'asc' ? 'Newest' : 'Oldest';
+    return this.state.sortDir === 'desc' ? 'Más recientes' : 'Más antiguos';
   }
 
   // alterna orden asc/desc
   onSortToggle(): void {
+    if (!this.state.sortBy) {
+      const preferredColumn = this.columns.find(
+        col => (col.visible ?? true) && col.sortable && col.key === 'creationDate'
+      );
+      const fallbackSortable = this.columns.find(col => (col.visible ?? true) && col.sortable);
+      this.state.sortBy = preferredColumn?.key ?? fallbackSortable?.key;
+      this.state.sortDir = 'desc';
+      this.applyFilters();
+      return;
+    }
     this.state.sortDir = this.state.sortDir === 'asc' ? 'desc' : 'asc';
     this.applyFilters();
   }
@@ -177,14 +196,7 @@ export class TableComponent<T = any> implements OnChanges {
       list.sort((a, b) => {
         const aRaw = (a as any)[key];
         const bRaw = (b as any)[key];
-        const aNum = parseFloat(aRaw);
-        const bNum = parseFloat(bRaw);
-        let cmp: number;
-        if (!isNaN(aNum) && !isNaN(bNum)) {
-          cmp = aNum - bNum;
-        } else {
-          cmp = String(aRaw ?? '').localeCompare(String(bRaw ?? ''));
-        }
+        const cmp = this.compareValues(aRaw, bRaw, key);
         return this.state.sortDir === 'asc' ? cmp : -cmp;
       });
     }
@@ -218,9 +230,58 @@ export class TableComponent<T = any> implements OnChanges {
       this.state.sortDir = this.state.sortDir === 'asc' ? 'desc' : 'asc';
     } else {
       this.state.sortBy = column.key;
-      this.state.sortDir = 'asc';
+      this.state.sortDir = 'desc';
     }
     this.applyFilters();
+  }
+
+  private compareValues(aRaw: unknown, bRaw: unknown, key: string): number {
+    const aDate = this.toTimestamp(aRaw, key);
+    const bDate = this.toTimestamp(bRaw, key);
+    if (Number.isFinite(aDate) && Number.isFinite(bDate)) {
+      return aDate - bDate;
+    }
+
+    const aNum = Number(aRaw);
+    const bNum = Number(bRaw);
+    if (Number.isFinite(aNum) && Number.isFinite(bNum)) {
+      return aNum - bNum;
+    }
+
+    return String(aRaw ?? '').localeCompare(String(bRaw ?? ''), 'es', { sensitivity: 'base' });
+  }
+
+  private toTimestamp(value: unknown, key: string): number {
+    if (value instanceof Date) {
+      return value.getTime();
+    }
+    if (typeof value !== 'string') {
+      return Number.NaN;
+    }
+
+    const raw = value.trim();
+    if (!raw) {
+      return Number.NaN;
+    }
+
+    const parsed = Date.parse(raw);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+
+    // Handles es-CO date strings: dd/mm/yyyy or dd/mm/yyyy, hh:mm
+    const esDateMatch = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:,\s*(\d{2}):(\d{2}))?$/);
+    if (esDateMatch) {
+      const [, dd, mm, yyyy, hh = '00', min = '00'] = esDateMatch;
+      const dt = new Date(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh), Number(min), 0, 0);
+      return dt.getTime();
+    }
+
+    if (key.toLowerCase().includes('date')) {
+      return Number.NaN;
+    }
+
+    return Number.NaN;
   }
 
   goToPage(page: number): void {

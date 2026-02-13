@@ -39,6 +39,8 @@ export class FlowCompleteComponent implements OnInit, OnDestroy {
 
     if (this.flowState?.participant?.identity?.email) {
       this.email = this.flowState.participant.identity.email;
+    } else {
+      this.sendCopy = false;
     }
   }
 
@@ -97,6 +99,10 @@ export class FlowCompleteComponent implements OnInit, OnDestroy {
     });
 
     this.subscriptions.push(sub);
+  }
+
+  hasRecipientEmail(): boolean {
+    return !!(this.email || '').trim();
   }
 
   closeWindow(): void {

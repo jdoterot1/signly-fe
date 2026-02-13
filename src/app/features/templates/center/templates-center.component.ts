@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 
 import { AdminSidebarComponent, AdminSidebarSection } from '../../../shared/components/admin-sidebar/admin-sidebar.component';
 import { TemplateListComponent } from '../list/template-list.component';
+import { AuthService } from '../../../core/services/auth/auth.service';
 
 @Component({
   selector: 'app-templates-center',
@@ -14,7 +15,7 @@ import { TemplateListComponent } from '../list/template-list.component';
 })
 export class TemplatesCenterComponent implements OnInit, OnDestroy {
   readonly ownerName = 'Catálogo de plantillas';
-  readonly accountId = 'TPL-5011';
+  accountId = '';
   readonly sidebarSections: AdminSidebarSection[] = [
     {
       label: 'PLANTILLAS DE SOBRES',
@@ -40,9 +41,14 @@ export class TemplatesCenterComponent implements OnInit, OnDestroy {
 
   selectedOption = this.defaultOption;
 
-  constructor(private router: Router, private route: ActivatedRoute) {}
+  constructor(
+    private router: Router,
+    private route: ActivatedRoute,
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
+    this.hydrateAccountId();
     this.querySub = this.route.queryParamMap.subscribe(params => {
       const section = params.get('section');
       if (section && this.validSections.has(section)) {
@@ -79,5 +85,10 @@ export class TemplatesCenterComponent implements OnInit, OnDestroy {
     }
     const encoded = encodeURIComponent(this.selectedOption);
     return `/templates?section=${encoded}`;
+  }
+
+  private hydrateAccountId(): void {
+    const session = this.authService.getSession();
+    this.accountId = session?.user?.tenantId || session?.user?.userId || 'N/A';
   }
 }
