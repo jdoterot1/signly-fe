@@ -5,6 +5,7 @@ import {
   EventEmitter,
   ElementRef,
   HostListener,
+  Input,
   OnDestroy,
   Output,
   QueryList,
@@ -104,6 +105,9 @@ export interface DocumentMappedField {
   encapsulation: ViewEncapsulation.None
 })
 export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
+  @Input() allowDocx = true;
+  @Input() allowFileReplace = true;
+
   @ViewChild('fileInput')
   private fileInputRef?: ElementRef<HTMLInputElement>;
 
@@ -128,6 +132,7 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
   });
 
   loading = false;
+  fileDropActive = false;
   dropTargetPage: number | null = null;
   activePageNumber = 1;
   documentMode: 'pdf' | 'docx' | null = null;
@@ -517,11 +522,11 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
       if (this.isPdf(file)) {
         this.documentMode = 'pdf';
         await this.loadPdf(file);
-      } else if (this.isDocx(file)) {
+      } else if (this.allowDocx && this.isDocx(file)) {
         this.documentMode = 'docx';
         await this.loadDocx(file);
       } else {
-        throw new Error('Solo se permiten archivos PDF o Word (.docx).');
+        throw new Error(this.allowDocx ? 'Solo se permiten archivos PDF o Word (.docx).' : 'Solo se permiten archivos PDF.');
       }
     } catch (error) {
       this.errorMessage =
@@ -564,7 +569,65 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
   }
 
   openFilePicker(): void {
+    if (!this.allowFileReplace) {
+      return;
+    }
     this.fileInputRef?.nativeElement.click();
+  }
+
+  get fileInputAccept(): string {
+    return this.allowDocx
+      ? '.pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      : '.pdf,application/pdf';
+  }
+
+  get fileUploadHint(): string {
+    return this.allowDocx
+      ? 'Carga un PDF o Word para iniciar el mapeo y edición.'
+      : 'Carga un PDF para iniciar el mapeo y edición.';
+  }
+
+  get loadButtonLabel(): string {
+    return this.allowDocx ? 'Cargar archivo' : 'Cargar PDF';
+  }
+
+  onFileDragOver(event: DragEvent): void {
+    if (!this.allowFileReplace) {
+      return;
+    }
+    if (!this.hasDraggedFiles(event)) {
+      return;
+    }
+    event.preventDefault();
+    this.fileDropActive = true;
+  }
+
+  onFileDragLeave(event: DragEvent): void {
+    if (!this.allowFileReplace) {
+      return;
+    }
+    if (!this.hasDraggedFiles(event)) {
+      return;
+    }
+    const currentTarget = event.currentTarget as HTMLElement | null;
+    const relatedTarget = event.relatedTarget as Node | null;
+    if (currentTarget && relatedTarget && currentTarget.contains(relatedTarget)) {
+      return;
+    }
+    this.fileDropActive = false;
+  }
+
+  async onFileDrop(event: DragEvent): Promise<void> {
+    if (!this.allowFileReplace) {
+      return;
+    }
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) {
+      return;
+    }
+    event.preventDefault();
+    this.fileDropActive = false;
+    await this.processFile(file);
   }
 
   getFieldsForPage(pageNumber: number): DocumentMappedField[] {
@@ -1099,6 +1162,13 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
       file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
       file.name.toLowerCase().endsWith('.docx')
     );
+  }
+
+  private hasDraggedFiles(event: DragEvent): boolean {
+    if (!event.dataTransfer) {
+      return false;
+    }
+    return Array.from(event.dataTransfer.types).includes('Files');
   }
 
   private toNumber(value: number | string | null | undefined, fallback: number): number {

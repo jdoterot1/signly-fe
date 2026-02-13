@@ -127,4 +127,8 @@ export class FlowLandingComponent implements OnInit, OnDestroy {
   isFlowExpired(): boolean {
     return this.errorCode === 'not_found' || this.errorCode === 'token_expired';
   }
+
+  requiresIdentityDocument(): boolean {
+    return !!this.flowState?.pipeline?.includes('biometric');
+  }
 }

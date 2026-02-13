@@ -16,6 +16,7 @@ import {
   DOCUMENT_CREATE_FORM_CONFIG,
   DOCUMENT_LANGUAGES,
   DOCUMENT_ORDER_MODES,
+  DOCUMENT_PHONE_COUNTRY_CODES,
   DOCUMENT_SIGNATURE_MODES
 } from '../../../core/constants/documents/create/documents-create.constant';
 
@@ -35,6 +36,9 @@ interface DraftParticipant {
   identity: DocumentParticipantIdentity;
 }
 
+const NO_DIGITS_PATTERN = /^[^\d]*$/;
+const SIMPLE_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 @Component({
   selector: 'app-document-create',
   standalone: true,
@@ -51,6 +55,7 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     orderMode: DOCUMENT_ORDER_MODES[0],
     language: DOCUMENT_LANGUAGES[0],
     signatureMode: [DOCUMENT_SIGNATURE_MODES[0]],
+    participantPhoneCountry: DOCUMENT_PHONE_COUNTRY_CODES[0],
     attemptsMax: '3',
     cooldownSeconds: '60'
   };
@@ -80,6 +85,7 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
   private readonly step2Keys = [
     'participantName',
     'participantEmail',
+    'participantPhoneCountry',
     'participantPhone',
     'participantDocumentNumber',
     'attemptsMax',
@@ -96,16 +102,17 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     private fb: FormBuilder
   ) {
     this.form = this.fb.group({
-      name: ['', [Validators.required, Validators.maxLength(120)]],
+      name: ['', [Validators.required, Validators.maxLength(120), Validators.pattern(NO_DIGITS_PATTERN)]],
       description: ['', [Validators.maxLength(500)]],
       templateId: [null, [Validators.required]],
       templateVersion: [null, [Validators.required]],
       orderMode: [DOCUMENT_ORDER_MODES[0], [Validators.required]],
-      deadlineAt: [null],
+      deadlineAt: [null, [Validators.required]],
       language: [DOCUMENT_LANGUAGES[0]],
       signatureMode: [[DOCUMENT_SIGNATURE_MODES[0]], [Validators.required]],
       participantName: ['', [Validators.maxLength(120)]],
-      participantEmail: [''],
+      participantEmail: ['', [Validators.email]],
+      participantPhoneCountry: [DOCUMENT_PHONE_COUNTRY_CODES[0]],
       participantPhone: [''],
       participantDocumentNumber: [''],
       attemptsMax: ['3'],
@@ -158,6 +165,11 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     this.applySignatureModeRules(initialModes);
 
     this.setMinDateForDeadline();
+    this.setFieldRequiredIndicator('participantName', true);
+    this.setFieldRequiredIndicator('participantPhoneCountry', true);
+    this.setFieldRequiredIndicator('participantPhone', true);
+    this.setFieldRequiredIndicator('attemptsMax', true);
+    this.setFieldRequiredIndicator('cooldownSeconds', true);
     this.applyStepState();
   }
 
@@ -177,7 +189,7 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     }
     const orderMode = this.readSelectValue(formValue.orderMode);
     const signatureModes = this.readMultiSelectValues(formValue.signatureMode) as DocumentSignatureMode[];
-    const language = this.readSelectValue(formValue.language);
+    const language = this.readSelectValue(formValue.language) || 'Español';
     const templateId = this.readSelectValue(formValue.templateId);
     const templateVersion = this.readSelectValue(formValue.templateVersion);
 
@@ -187,11 +199,15 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     }
     const inlineParticipant = this.buildParticipantFromForm(formValue, signatureModes);
     const participants: DraftParticipant[] = [...this.participantsDraft];
-    if (inlineParticipant) {
+    const hasInlineParticipantData = this.hasInlineParticipantData(formValue);
+    if (hasInlineParticipantData) {
+      if (!inlineParticipant) {
+        return;
+      }
       participants.push(inlineParticipant);
     }
     if (!participants.length) {
-      this.alertService.showError('Debes agregar al menos un participante.', 'Error');
+      this.alertService.showError('Debes registrar al menos un participante.', 'Error');
       return;
     }
 
@@ -202,9 +218,7 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     if (formValue.description) {
       metadata['description'] = formValue.description;
     }
-    if (language) {
-      metadata['language'] = language;
-    }
+    metadata['language'] = language;
 
     const payload: CreateDocumentRequest = {
       templateId,
@@ -221,8 +235,17 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
         this.alertService.showSuccess('El documento fue creado exitosamente', '¡Documento creado!');
         setTimeout(() => this.navigateBack(), 2600);
       },
-      error: err => {
-        this.alertService.showError('No se pudo crear el documento', 'Error');
+      error: (err: any) => {
+        const isInsufficientCredits = err?.status === 402 || err?.code === 'insufficient_credits';
+        if (isInsufficientCredits) {
+          this.alertService.showError(
+            'Te quedaste sin créditos. Te llevaremos a la sección de recarga para continuar.',
+            'Créditos insuficientes'
+          );
+          setTimeout(() => this.navigateToCreditsPurchase(), 1800);
+          return;
+        }
+        this.alertService.showError(err?.message || 'No se pudo crear el documento', 'Error');
         console.error('Error al crear el documento', err);
       }
     });
@@ -242,6 +265,10 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     this.router.navigateByUrl(target);
   }
 
+  private navigateToCreditsPurchase(): void {
+    this.router.navigate(['/administration/pricing']);
+  }
+
   closeGuideModal(): void {
     this.showGuideModal = false;
   }
@@ -255,13 +282,18 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     const signatureModes = this.readMultiSelectValues(raw.signatureMode) as DocumentSignatureMode[];
     const participant = this.buildParticipantFromForm(raw, signatureModes);
     if (!participant) {
+      if (!this.hasInlineParticipantData(raw)) {
+        this.alertService.showError('Completa los datos del participante antes de agregar.', 'Error');
+      }
       return;
     }
     this.participantsDraft = [...this.participantsDraft, participant];
+    this.alertService.showSuccess('Participante agregado correctamente.', 'Participante agregado');
     this.form.patchValue(
       {
         participantName: '',
         participantEmail: '',
+        participantPhoneCountry: DOCUMENT_PHONE_COUNTRY_CODES[0],
         participantPhone: '',
         participantDocumentNumber: ''
       },
@@ -274,6 +306,11 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
       return;
     }
     this.participantsDraft = this.participantsDraft.filter((_, i) => i !== index);
+    this.alertService.showSuccess('Participante eliminado.', 'Actualizado');
+  }
+
+  hasParticipantDraftInForm(): boolean {
+    return this.hasInlineParticipantData(this.form.getRawValue());
   }
 
   private readSelectValue(value: any): string | undefined {
@@ -483,6 +520,12 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
   }
 
   private goToStepTwo(): void {
+    const documentName = (this.form.get('name')?.value ?? '').toString().trim();
+    if (/\d/.test(documentName)) {
+      this.alertService.showError('El nombre del documento no puede contener números.', 'Error');
+      this.form.get('name')?.markAsTouched();
+      return;
+    }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -508,7 +551,8 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     if (!control) {
       return;
     }
-    const validators = required ? [Validators.required, ...extraValidators] : [...extraValidators];
+    this.setFieldRequiredIndicator(fieldKey, required);
+    const validators = [...extraValidators];
     control.setValidators(validators);
     control.updateValueAndValidity({ emitEvent: false });
   }
@@ -516,6 +560,7 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
   private applySignatureModeRules(modes: DocumentSignatureMode[] = []): void {
     if (this.currentStep === 1) {
       this.setFormHidden('participantEmail', true);
+      this.setFormHidden('participantPhoneCountry', true);
       this.setFormHidden('participantPhone', true);
       this.setFormHidden('participantDocumentNumber', true);
       return;
@@ -527,11 +572,13 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     const isBio = selected.some(mode => this.isBiometricMode(mode));
 
     this.setFormHidden('participantEmail', !isEmail && !isBio);
-    this.setFormHidden('participantPhone', !isSms && !isWhatsapp && !isBio);
+    this.setFormHidden('participantPhoneCountry', false);
+    this.setFormHidden('participantPhone', false);
     this.setFormHidden('participantDocumentNumber', !isBio);
 
     this.setFieldRequired('participantEmail', isEmail, [Validators.email] as any);
-    this.setFieldRequired('participantPhone', isSms || isWhatsapp);
+    this.setFieldRequired('participantPhoneCountry', true);
+    this.setFieldRequired('participantPhone', true);
     this.setFieldRequired('participantDocumentNumber', isBio);
   }
 
@@ -542,7 +589,10 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
   private buildParticipantFromForm(formValue: any, signatureModes: DocumentSignatureMode[]): DraftParticipant | null {
     const name = (formValue.participantName ?? '').trim();
     const email = (formValue.participantEmail ?? '').trim();
-    const phone = (formValue.participantPhone ?? '').trim();
+    const phoneCountry = this.readSelectValue(formValue.participantPhoneCountry) || '+57';
+    const phoneRaw = (formValue.participantPhone ?? '').trim();
+    const phoneDigits = phoneRaw.replace(/\D+/g, '');
+    const phone = phoneDigits ? `${phoneCountry}${phoneDigits}` : '';
     const documentNumber = (formValue.participantDocumentNumber ?? '').trim();
     const selectedModes = signatureModes.length ? signatureModes : (['SIGNATURE_EMAIL'] as DocumentSignatureMode[]);
 
@@ -553,13 +603,21 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
       this.alertService.showError('El nombre del participante es obligatorio.', 'Error');
       return null;
     }
+    if (/\d/.test(name)) {
+      this.alertService.showError('El nombre del participante no puede contener números.', 'Error');
+      return null;
+    }
     if (!selectedModes.length) {
       this.alertService.showError('Debes seleccionar al menos un modo de firma.', 'Error');
       return null;
     }
+    if (email && !SIMPLE_EMAIL_PATTERN.test(email)) {
+      this.alertService.showError('Ingresa un correo válido para el participante.', 'Error');
+      return null;
+    }
 
     const requiresEmail = selectedModes.includes('SIGNATURE_EMAIL');
-    const requiresPhone = selectedModes.includes('SIGNATURE_SMS') || selectedModes.includes('SIGNATURE_WHATSAPP');
+    const requiresPhone = true;
     const requiresDocument = selectedModes.some(mode => this.isBiometricMode(mode));
 
     if (requiresEmail && !email) {
@@ -601,6 +659,23 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
       },
       identity
     };
+  }
+
+  private hasInlineParticipantData(formValue: any): boolean {
+    return !!(
+      (formValue.participantName ?? '').toString().trim() ||
+      (formValue.participantEmail ?? '').toString().trim() ||
+      (formValue.participantPhone ?? '').toString().trim() ||
+      (formValue.participantDocumentNumber ?? '').toString().trim()
+    );
+  }
+
+  private setFieldRequiredIndicator(fieldKey: string, required: boolean): void {
+    this.formConfig = this.cloneFormConfig(this.formConfig);
+    const target = this.formConfig.fields.find((f: any) => f.key === fieldKey);
+    if (target) {
+      target.required = required;
+    }
   }
 
   private cloneFormConfig(config: any): any {

@@ -23,6 +23,7 @@ import {
 })
 export class DocumentService {
   private readonly baseUrl = `${environment.apiBaseUrl}/documents`;
+  private readonly processSnapshotStorageKey = 'signly.documents.process.snapshot';
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 
@@ -59,11 +60,23 @@ export class DocumentService {
     return this.withHeaders(
       headers =>
         this.http.post<ApiResponse<DocumentApi>>(this.baseUrl, payload, { headers }).pipe(
-          map(res => res.data),
+          map(res => {
+            const data = res.data;
+            this.rememberProcessSnapshot(data);
+            return data;
+          }),
           catchError(err => this.handleError(err))
         ),
       true
     );
+  }
+
+  getProcessIdFromSnapshot(documentId: string, participantId: string): string | null {
+    if (!documentId || !participantId) {
+      return null;
+    }
+    const snapshot = this.readProcessSnapshot();
+    return snapshot?.[documentId]?.[participantId] ?? null;
   }
 
   /** Cancelar un documento */
@@ -137,7 +150,11 @@ export class DocumentService {
 
   private handleError(error: any) {
     const message = error?.error?.message || error?.message || 'Ocurrió un error al procesar la solicitud.';
-    return throwError(() => new Error(message));
+    const wrapped: any = new Error(message);
+    wrapped.status = error?.status ?? error?.error?.status;
+    wrapped.code = error?.error?.code;
+    wrapped.details = error?.error?.error?.details ?? error?.error?.details;
+    return throwError(() => wrapped);
   }
 
   private mapToUi(doc: DocumentApi): Document {
@@ -156,6 +173,57 @@ export class DocumentService {
       updatedBy: doc.updatedBy ?? doc.createdBy,
       updateDate
     };
+  }
+
+  private rememberProcessSnapshot(doc: DocumentApi | null | undefined): void {
+    if (!doc?.documentId || !doc.participants?.length || typeof window === 'undefined') {
+      return;
+    }
+
+    const current = this.readProcessSnapshot();
+    const byParticipant: Record<string, string> = { ...(current[doc.documentId] ?? {}) };
+    for (const participant of doc.participants) {
+      if (participant.participantId && participant.processId) {
+        byParticipant[participant.participantId] = participant.processId;
+      }
+    }
+
+    if (!Object.keys(byParticipant).length) {
+      return;
+    }
+
+    const nextSnapshot = {
+      ...current,
+      [doc.documentId]: byParticipant
+    };
+    this.writeProcessSnapshot(nextSnapshot);
+  }
+
+  private readProcessSnapshot(): Record<string, Record<string, string>> {
+    if (typeof window === 'undefined') {
+      return {};
+    }
+    try {
+      const raw = window.localStorage.getItem(this.processSnapshotStorageKey);
+      if (!raw) {
+        return {};
+      }
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private writeProcessSnapshot(snapshot: Record<string, Record<string, string>>): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    try {
+      window.localStorage.setItem(this.processSnapshotStorageKey, JSON.stringify(snapshot));
+    } catch {
+      // no-op (private mode / quota / storage blocked)
+    }
   }
 
   private resolveDocumentName(doc: DocumentApi): string {
@@ -189,29 +257,29 @@ export class DocumentService {
 
   private mapStatus(status?: string): DocumentStatus {
     if (!status) {
-      return 'Pendiente';
+      return 'N/A';
     }
     const normalized = status.toUpperCase();
     switch (normalized) {
       case 'CREATED':
       case 'PENDING':
       case 'DRAFT':
-        return 'Pendiente';
+        return 'Creado';
       case 'IN_PROGRESS':
       case 'IN_PROGRESS_SIGNING':
       case 'STARTED':
-        return 'En Proceso';
+        return 'En proceso';
       case 'COMPLETED':
       case 'SIGNED':
       case 'FINISHED':
         return 'Completado';
       case 'CANCELLED':
       case 'CANCELED':
-        return 'Cancelada';
+        return 'Cancelado';
       case 'EXPIRED':
-        return 'Fallida';
+        return 'Expirado';
       default:
-        return status;
+        return normalized;
     }
   }
 }

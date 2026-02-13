@@ -142,6 +142,10 @@
             <i class="pi pi-info-circle mr-2"></i>
             <strong>Importante:</strong> Asegurate de tener acceso a tu correo electronico y telefono para recibir los codigos de verificacion.
           </p>
+          <p class="text-xs text-blue-700 mt-2" *ngIf="requiresIdentityDocument()">
+            <i class="pi pi-id-card mr-2"></i>
+            Para la verificación biométrica, ten listo tu documento de identidad (frente y respaldo).
+          </p>
         </div>
       </div>
     </section>

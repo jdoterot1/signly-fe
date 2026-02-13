@@ -27,39 +27,20 @@
     </div>
 
     <div class="mt-4 md:mt-5 relative z-10">
-      <div class="hidden md:block">
-        <ol class="grid grid-cols-6 gap-2.5">
-          <li *ngFor="let step of steps; let i = index">
-            <article class="rounded-2xl border p-2.5 transition-all duration-300"
-                     [ngClass]="cardClasses(step)">
-              <div class="flex items-start gap-3">
-                <span class="text-lg font-bold leading-none opacity-80 pt-0.5">0{{ i + 1 }}</span>
-                <div>
-                  <p class="text-[11px] font-semibold leading-tight">{{ step.label }}</p>
-                  <p class="text-[10px] leading-tight opacity-80">{{ step.caption }}</p>
-                </div>
+      <ol class="flex flex-wrap justify-center gap-2.5">
+        <li *ngFor="let step of steps; let i = index" [ngClass]="cardSizeClasses(step)">
+          <article class="h-full rounded-2xl border p-2.5 transition-all duration-300"
+                   [ngClass]="cardClasses(step)">
+            <div class="flex items-start gap-3">
+              <span class="text-lg font-bold leading-none opacity-80 pt-0.5">0{{ i + 1 }}</span>
+              <div class="min-w-0">
+                <p class="text-[11px] font-semibold leading-tight truncate">{{ step.label }}</p>
+                <p class="text-[10px] leading-tight opacity-80 truncate">{{ step.caption }}</p>
               </div>
-            </article>
-          </li>
-        </ol>
-      </div>
-
-      <div class="md:hidden">
-        <ol class="flex gap-2 overflow-x-auto pb-1">
-          <li *ngFor="let step of steps; let i = index" class="min-w-[122px]">
-            <article class="rounded-2xl border p-2 transition-all duration-300"
-                     [ngClass]="cardClasses(step)">
-              <div class="flex items-center gap-2">
-                <span class="text-base font-bold leading-none opacity-80">0{{ i + 1 }}</span>
-                <div class="min-w-0">
-                  <p class="text-[10px] font-semibold leading-tight truncate">{{ step.label }}</p>
-                  <p class="text-[9px] opacity-80 truncate">{{ step.caption }}</p>
-                </div>
-              </div>
-            </article>
-          </li>
-        </ol>
-      </div>
+            </div>
+          </article>
+        </li>
+      </ol>
     </div>
   </div>
 </header>

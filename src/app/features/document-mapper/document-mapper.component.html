@@ -54,11 +54,12 @@
         </button>
       </div>
       <button
+        *ngIf="allowFileReplace"
         type="button"
         class="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50"
         (click)="openFilePicker()"
       >
-        Cargar archivo
+        {{ loadButtonLabel }}
       </button>
       <ng-content select="[mapper-actions]"></ng-content>
     </div>
@@ -138,11 +139,20 @@
         #fileInput
         type="file"
         class="sr-only"
-        accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        [attr.accept]="fileInputAccept"
         (change)="onFileSelected($event)"
       />
 
-      <div class="relative flex-1 overflow-hidden">
+      <div
+        class="relative flex-1 overflow-hidden mapper-file-dropzone"
+        [class.mapper-file-dropzone--active]="fileDropActive"
+        (dragover)="onFileDragOver($event)"
+        (dragleave)="onFileDragLeave($event)"
+        (drop)="onFileDrop($event)"
+      >
+        <div *ngIf="fileDropActive" class="mapper-file-dropzone__hint">
+          Suelta tu {{ allowDocx ? 'archivo' : 'PDF' }} aquí
+        </div>
         <div
           *ngIf="loading"
           class="absolute inset-0 bg-white/70 backdrop-blur-sm z-20 flex items-center justify-center text-gray-600 text-sm"
@@ -270,16 +280,17 @@
                 Crea tu plantilla
               </p>
               <p class="text-sm mt-1 text-gray-500">
-                Carga un PDF o Word para iniciar el mapeo y edición.
+                {{ fileUploadHint }}
               </p>
             </div>
             <div class="flex gap-3">
               <button
+                *ngIf="allowFileReplace"
                 type="button"
                 class="px-5 py-2 rounded-2xl border border-brand-primary text-sm font-semibold text-brand-primary hover:bg-brand-surface-raised"
                 (click)="openFilePicker()"
               >
-                Cargar archivo
+                {{ loadButtonLabel }}
               </button>
             </div>
             <p *ngIf="errorMessage" class="text-sm text-red-500">
