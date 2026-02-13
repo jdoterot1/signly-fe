@@ -69,7 +69,7 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
   private faceMesh?: FaceMesh;
   private faceDetecting = false;
   private stableFrames = 0;
-  private readonly requiredStableFrames = 12;
+  private readonly requiredStableFrames = 8;
   private autoCaptureLocked = false;
   private documentCaptureActive = false;
   documentHint = 'Mantén el documento dentro del recuadro';
@@ -161,6 +161,18 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Check permission state first so we can show a helpful message
+    try {
+      const permissionStatus = await navigator.permissions.query({ name: 'camera' as PermissionName });
+      if (permissionStatus.state === 'denied') {
+        this.cameraError =
+          'El acceso a la camara esta bloqueado. Habilita el permiso de camara en la configuracion de tu navegador y recarga la pagina.';
+        return;
+      }
+    } catch {
+      // permissions.query may not be available in all browsers; continue anyway
+    }
+
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -170,24 +182,49 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
         },
       });
 
-      // Esperar un tick para que Angular renderice el elemento video
-      setTimeout(async () => {
-        const video = this.videoRef?.nativeElement;
-        if (video && this.stream) {
-          video.srcObject = this.stream;
-          await video.play();
-          this.cameraActive = true;
-           this.cdr.detectChanges(); 
-          if (this.currentStep === 'selfie') {
-            this.startFaceDetection();
-          } else {
-            this.startDocumentAutoCapture();
-          }
+      // Wait for Angular to render the video element, then attach the stream
+      await this.waitForVideoElement();
+      const video = this.videoRef?.nativeElement;
+      if (video && this.stream) {
+        video.srcObject = this.stream;
+        await video.play();
+        this.cameraActive = true;
+        this.cdr.detectChanges();
+        if (this.currentStep === 'selfie') {
+          this.startFaceDetection();
+        } else {
+          this.startDocumentAutoCapture();
         }
-      }, 100);
-    } catch {
-      this.cameraError = 'No pudimos acceder a tu camara. Revisa los permisos.';
+      }
+    } catch (err) {
+      const errorName = (err as DOMException)?.name ?? '';
+      if (errorName === 'NotAllowedError') {
+        this.cameraError =
+          'El permiso de camara fue denegado. Habilita la camara en la configuracion de tu navegador y recarga la pagina.';
+      } else if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
+        this.cameraError = 'No se encontro ninguna camara conectada a tu dispositivo.';
+      } else if (errorName === 'NotReadableError' || errorName === 'TrackStartError') {
+        this.cameraError = 'La camara esta siendo usada por otra aplicacion. Cierra las demas apps y vuelve a intentar.';
+      } else {
+        this.cameraError = 'No pudimos acceder a tu camara. Revisa los permisos.';
+      }
+      console.error('Error al acceder a la camara:', err);
     }
+  }
+
+  private waitForVideoElement(maxAttempts = 20): Promise<void> {
+    return new Promise((resolve) => {
+      let attempts = 0;
+      const check = () => {
+        if (this.videoRef?.nativeElement || attempts >= maxAttempts) {
+          resolve();
+          return;
+        }
+        attempts++;
+        requestAnimationFrame(check);
+      };
+      check();
+    });
   }
 
   beginCamera(): void {
@@ -239,6 +276,7 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
           preview: URL.createObjectURL(blob),
         };
 
+        this.stopFaceDetection();
         this.stopCamera();
         this.cdr.detectChanges();
       },
@@ -477,9 +515,9 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
       });
       this.faceMesh.setOptions({
         maxNumFaces: 1,
-        refineLandmarks: true,
-        minDetectionConfidence: 0.6,
-        minTrackingConfidence: 0.6,
+        refineLandmarks: false,
+        minDetectionConfidence: 0.45,
+        minTrackingConfidence: 0.45,
       });
       this.faceMesh.onResults((results) => this.handleFaceResults(results));
     }
@@ -490,23 +528,23 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
     this.faceHint = 'Alinea tu rostro dentro del óvalo';
 
     const loop = async () => {
-      if (!this.faceDetecting || !video || video.readyState < 2) {
-        if (this.faceDetecting) {
-          requestAnimationFrame(loop);
+      while (this.faceDetecting) {
+        if (!video || video.readyState < 2) {
+          // Video not ready yet; wait a frame and try again
+          await new Promise<void>(r => requestAnimationFrame(() => r()));
+          continue;
         }
-        return;
-      }
-      try {
-        await this.faceMesh!.send({ image: video });
-      } catch {
-        // ignore send errors during teardown
-      }
-      if (this.faceDetecting) {
-        requestAnimationFrame(loop);
+        try {
+          await this.faceMesh!.send({ image: video });
+        } catch {
+          // ignore send errors during teardown
+        }
+        // Yield to the browser before the next frame
+        await new Promise<void>(r => requestAnimationFrame(() => r()));
       }
     };
 
-    requestAnimationFrame(loop);
+    loop();
   }
 
   private stopFaceDetection(): void {
@@ -527,8 +565,10 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
     const face = results.multiFaceLandmarks?.[0];
     if (!face) {
       this.faceAligned = false;
-      this.stableFrames = 0;
+      // Degrade gradually instead of hard reset so brief detection gaps don't restart progress
+      this.stableFrames = Math.max(this.stableFrames - 2, 0);
       this.faceHint = 'Alinea tu rostro dentro del óvalo';
+      this.cdr.detectChanges();
       return;
     }
 
@@ -539,55 +579,72 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
     const minY = Math.min(...ys);
     const maxY = Math.max(...ys);
 
-    const boxWidth = maxX - minX;
     const boxHeight = maxY - minY;
 
+    // The video is mirrored (scale-x-[-1]) for selfie mode so MediaPipe
+    // coordinates are horizontally flipped relative to what the user sees.
+    // Mirror the face bounding box X coords so they match the visual oval.
+    const mirroredMinX = 1 - maxX;
+    const mirroredMaxX = 1 - minX;
+
+    // Oval centre & radii — generous enough to match the visual guide.
+    // The UI container is aspect-square with a large oval inside, so we
+    // use a roomy ellipse centred at the middle of the frame.
     const cx = 0.5;
-    const cy = 0.5;
-    const rx = 0.26;
-    const ry = 0.36;
+    const cy = 0.48; // slightly above centre because faces sit a bit high
+    const rx = 0.35;
+    const ry = 0.42;
 
-    const isInside = (x: number, y: number) =>
-      (x - cx) ** 2 / rx ** 2 + (y - cy) ** 2 / ry ** 2 <= 1;
+    // Check that the face centre is inside the oval (much more forgiving
+    // than requiring all 4 corners inside).
+    const faceCx = (mirroredMinX + mirroredMaxX) / 2;
+    const faceCy = (minY + maxY) / 2;
+    const centreInsideOval =
+      (faceCx - cx) ** 2 / rx ** 2 + (faceCy - cy) ** 2 / ry ** 2 <= 1;
 
-    const insideOval =
-      isInside(minX, minY) &&
-      isInside(maxX, minY) &&
-      isInside(minX, maxY) &&
-      isInside(maxX, maxY);
-
-    if (!insideOval) {
+    if (!centreInsideOval) {
       this.faceAligned = false;
-      this.stableFrames = 0;
-      this.faceHint = 'Mantén el rostro dentro del óvalo';
+      this.stableFrames = Math.max(this.stableFrames - 2, 0);
+      this.faceHint = 'Centra tu rostro dentro del óvalo';
+      this.cdr.detectChanges();
       return;
     }
 
-    if (boxHeight < 0.35) {
+    if (boxHeight < 0.22) {
       this.faceAligned = false;
-      this.stableFrames = 0;
-      this.faceHint = 'Acerca un poco tu rostro';
+      this.stableFrames = Math.max(this.stableFrames - 1, 0);
+      this.faceHint = 'Acércate un poco';
+      this.cdr.detectChanges();
       return;
     }
 
-    if (boxHeight > 0.75) {
+    if (boxHeight > 0.85) {
       this.faceAligned = false;
-      this.stableFrames = 0;
+      this.stableFrames = Math.max(this.stableFrames - 1, 0);
       this.faceHint = 'Aléjate un poco';
+      this.cdr.detectChanges();
       return;
     }
 
     this.faceAligned = true;
-    this.faceHint = 'Perfecto, no te muevas';
     this.stableFrames += 1;
 
     if (
       this.stableFrames >= this.requiredStableFrames &&
       !this.autoCaptureLocked
     ) {
+      this.faceHint = 'Capturando...';
+      this.cdr.detectChanges();
       this.autoCaptureLocked = true;
       this.capturePhoto();
+      return;
     }
+
+    this.faceHint =
+      this.stableFrames >= 3
+        ? 'Perfecto, no te muevas...'
+        : 'Bien, mantén la posición';
+    this.cdr.detectChanges();
   }
 
   private startDocumentAutoCapture(): void {
