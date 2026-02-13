@@ -14,7 +14,7 @@ import { DocumentListComponent } from '../list/document-list.component';
 })
 export class DocumentsCenterComponent implements OnInit, OnDestroy {
   readonly ownerName = 'Centro de documentos';
-  readonly accountId = 'ACD-2048';
+  readonly accountId = '';
   readonly sidebarSections: AdminSidebarSection[] = [
     {
       label: 'Acuerdos',

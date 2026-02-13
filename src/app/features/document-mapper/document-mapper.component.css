@@ -407,7 +407,7 @@
   align-items: center;
   padding: 0.15rem 0.45rem;
   border-radius: 999px;
-  background-color: #ffffff;
+  background-color: transparent;
   border: 1px solid rgba(87, 73, 173, 0.5);
   font-size: 0.85em;
   font-weight: 600;
@@ -440,7 +440,7 @@
 .mapper-chip--active {
   box-shadow: 0 0 0 2px rgba(43, 15, 96, 0.25);
   border-color: rgba(43, 15, 96, 0.55);
-  background-color: #eef0ff;
+  background-color: transparent;
 }
 
 .mapper-chip[draggable='true'] {
