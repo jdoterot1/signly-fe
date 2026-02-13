@@ -211,7 +211,8 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
   }
 
   isSignField(field: TemplateDownloadField): boolean {
-    return field.fieldType === 'sign' || field.fieldType === 'signature';
+    const type = (field.fieldType || '').trim().toLowerCase();
+    return type === 'sign' || type === 'signature';
   }
 
   getPendingFieldsCount(): number {
@@ -380,7 +381,7 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
     this.error = null;
 
     const submitFields: TemplateSubmitField[] = this.fields.map(f => ({
-      fieldCode: f.fieldCode,
+      fieldCode: this.resolveSubmitFieldCode(f),
       fieldName: f.fieldName,
       fieldType: f.fieldType,
       height: this.toPositiveNumber(f.height, 1),
@@ -443,6 +444,29 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
   private toPositiveInteger(value: string | number, fallback = 1): number {
     const integer = this.toInteger(value, fallback);
     return Math.max(integer, fallback);
+  }
+
+  private resolveSubmitFieldCode(field: TemplateDownloadField): string {
+    const type = (field.fieldType || '').trim().toLowerCase();
+    switch (type) {
+      case 'text':
+        return '1';
+      case 'number':
+        return '2';
+      case 'sign':
+      case 'signature':
+        return '3';
+      case 'img':
+      case 'image':
+      case 'file':
+      case 'stamp':
+        return '4';
+      default: {
+        // Preserve future backend extensions when a numeric code is provided.
+        const provided = this.toInteger(field.fieldCode, 0);
+        return provided > 0 ? String(provided) : '1';
+      }
+    }
   }
 
   private resolveFieldOverlayScale(): number {
