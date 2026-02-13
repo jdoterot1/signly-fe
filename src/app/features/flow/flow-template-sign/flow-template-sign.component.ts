@@ -47,6 +47,7 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
   pdfScale = 1;
   renderedPageWidth = 0;
   renderedPageHeight = 0;
+  activeFieldCode: string | null = null;
 
   // Signature pad state
   isDrawing = false;
@@ -64,6 +65,7 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
   private signatureResizeTimeout: ReturnType<typeof setTimeout> | null = null;
   private readonly minPdfScale = 0.55;
   private readonly maxPdfScale = 1.35;
+  private readonly mapperReferencePageWidth = 820;
 
   constructor(
     private route: ActivatedRoute,
@@ -121,6 +123,7 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
       next: (data) => {
         this.templateData = data;
         this.fields = (data.fields || []).map(f => ({ ...f, value: '' }));
+        this.activeFieldCode = this.fields[0] ? this.getFieldCode(this.fields[0]) : null;
         this.currentStep = 'signing';
         void this.loadPdf(data.downloadUrl);
       },
@@ -185,7 +188,7 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
   }
 
   getFieldStyle(field: TemplateDownloadField): Record<string, string> {
-    const scale = this.pdfScale || 1;
+    const scale = this.resolveFieldOverlayScale();
     return {
       left: `${this.toNumber(field.x) * scale}px`,
       top: `${this.toNumber(field.y) * scale}px`,
@@ -211,7 +214,48 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
     return field.fieldType === 'sign' || field.fieldType === 'signature';
   }
 
+  getPendingFieldsCount(): number {
+    return this.fields.length - this.filledFieldsCount();
+  }
+
+  getFieldCode(field: TemplateDownloadField): string {
+    const code = String(field.fieldCode ?? '').trim();
+    if (code) {
+      return code;
+    }
+    return `${field.page}-${field.fieldType}-${field.fieldName}`;
+  }
+
+  isActiveField(field: TemplateDownloadField): boolean {
+    return this.activeFieldCode === this.getFieldCode(field);
+  }
+
+  markFieldAsActive(field: TemplateDownloadField): void {
+    this.activeFieldCode = this.getFieldCode(field);
+  }
+
+  goToField(field: FieldWithValue, openSignature = false): void {
+    this.markFieldAsActive(field);
+    const targetPage = this.toPositiveInteger(field.page, 1);
+    if (targetPage !== this.currentPage) {
+      this.currentPage = targetPage;
+      void this.renderPage(targetPage);
+    }
+    if (openSignature && this.isSignField(field)) {
+      this.openSignaturePad(field);
+    }
+  }
+
+  goToNextPendingField(): void {
+    const pending = this.fields.find(field => !this.hasFieldValue(field));
+    if (!pending) {
+      return;
+    }
+    this.goToField(pending, this.isSignField(pending));
+  }
+
   openSignaturePad(field: FieldWithValue): void {
+    this.markFieldAsActive(field);
     this.activeSignField = field;
     this.showSignaturePad = true;
     this.signatureDataUrl = null;
@@ -299,6 +343,7 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
     const base64 = dataUrl.split(',')[1];
 
     this.activeSignField.value = base64;
+    this.markFieldAsActive(this.activeSignField);
     this.signatureDataUrl = dataUrl;
     this.showSignaturePad = false;
     this.activeSignField = null;
@@ -317,6 +362,7 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
   onFieldInput(field: FieldWithValue, event: Event): void {
     const target = event.target as HTMLInputElement;
     field.value = target.value;
+    this.markFieldAsActive(field);
   }
 
   allFieldsFilled(): boolean {
@@ -337,11 +383,11 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
       fieldCode: f.fieldCode,
       fieldName: f.fieldName,
       fieldType: f.fieldType,
-      height: this.toPositiveInteger(f.height, 1),
+      height: this.toPositiveNumber(f.height, 1),
       page: this.toPositiveInteger(f.page, 1),
-      width: this.toPositiveInteger(f.width, 1),
-      x: this.toPositiveInteger(f.x, 0),
-      y: this.toPositiveInteger(f.y, 0),
+      width: this.toPositiveNumber(f.width, 1),
+      x: this.toNonNegativeNumber(f.x, 0),
+      y: this.toNonNegativeNumber(f.y, 0),
       value: f.value
     }));
 
@@ -389,9 +435,23 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
     return Math.max(numeric, fallback);
   }
 
+  private toNonNegativeNumber(value: string | number, fallback = 0): number {
+    const numeric = this.toNumber(value, fallback);
+    return Math.max(numeric, 0);
+  }
+
   private toPositiveInteger(value: string | number, fallback = 1): number {
     const integer = this.toInteger(value, fallback);
     return Math.max(integer, fallback);
+  }
+
+  private resolveFieldOverlayScale(): number {
+    if (!this.renderedPageWidth) {
+      return this.pdfScale || 1;
+    }
+    // Keep field positions aligned with the coordinate system used when
+    // fields were created in the mapper (reference width 820px).
+    return this.renderedPageWidth / this.mapperReferencePageWidth;
   }
 
   private resolvePdfScale(pageWidthAtScaleOne: number): number {

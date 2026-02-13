@@ -356,6 +356,34 @@ export class TableComponent<T = any> implements OnChanges {
     return (row as any)?.[key];
   }
 
+  columnMinWidth(col: TableColumn): string {
+    if (col.width?.trim()) {
+      return col.width;
+    }
+
+    if (col.columnType === 'action') {
+      return '120px';
+    }
+
+    switch (col.key) {
+      case 'status':
+        return '120px';
+      case 'creationDate':
+      case 'updatedAt':
+      case 'date':
+        return '150px';
+      case 'description':
+        return '220px';
+      case 'createdBy':
+      case 'actor':
+      case 'resource':
+      case 'path':
+        return '180px';
+      default:
+        return '150px';
+    }
+  }
+
   truncateLimitForKey(key: string): number | null {
     switch (key) {
       case 'description':

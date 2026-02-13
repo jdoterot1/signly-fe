@@ -59,12 +59,27 @@
           <div class="min-w-0">
             <p class="text-xs font-semibold uppercase tracking-[0.35em] text-indigo-600">Firma de documento</p>
             <h1 class="mt-1 text-xl md:text-2xl font-semibold text-slate-900">Revisa y firma el documento</h1>
-            <p class="mt-1 text-sm text-slate-500">Completa los campos requeridos y firma donde se indica.</p>
-            <p class="mt-2 text-xs text-slate-400">Completados: {{ filledFieldsCount() }} / {{ fields.length }}</p>
+            <p class="mt-1 text-sm text-slate-500">Sigue este orden: 1) ubica el campo, 2) completa el dato, 3) envía la firma.</p>
+            <p class="mt-2 text-xs text-slate-400">
+              Completados: {{ filledFieldsCount() }} / {{ fields.length }} |
+              Pendientes: {{ getPendingFieldsCount() }}
+            </p>
           </div>
           <button (click)="goBack()"
                   class="w-full sm:w-auto rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
             <i class="pi pi-arrow-left text-xs mr-1"></i> Volver
+          </button>
+        </div>
+
+        <div class="mb-4 flex flex-col sm:flex-row sm:items-center gap-2.5 rounded-2xl border border-indigo-100 bg-indigo-50/50 px-4 py-3">
+          <p class="text-xs text-indigo-700">
+            <i class="pi pi-info-circle mr-1"></i>
+            Usa "Siguiente pendiente" para ir directo al próximo campo requerido.
+          </p>
+          <button (click)="goToNextPendingField()"
+                  [disabled]="allFieldsFilled()"
+                  class="sm:ml-auto rounded-full border border-indigo-200 bg-white px-4 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            Siguiente pendiente
           </button>
         </div>
 
@@ -86,7 +101,8 @@
                        class="absolute cursor-pointer border-2 border-dashed rounded-lg transition-all duration-150 hover:scale-[1.01] hover:bg-indigo-50/80"
                        [ngClass]="{
                          'border-indigo-400 bg-indigo-50/50': !hasFieldValue(field),
-                         'border-green-400 bg-green-50/50': hasFieldValue(field)
+                         'border-green-400 bg-green-50/50': hasFieldValue(field),
+                         'ring-2 ring-amber-300': isActiveField(field)
                        }"
                        (click)="openSignaturePad(field)">
                     <div *ngIf="!hasFieldValue(field)" class="flex flex-col items-center justify-center h-full gap-1">
@@ -102,10 +118,14 @@
                   <!-- Text field -->
                   <div *ngIf="!isSignField(field)"
                        [ngStyle]="getFieldStyle(field)"
-                       class="absolute">
+                       class="absolute"
+                       [ngClass]="{
+                         'ring-2 ring-amber-300 rounded-md': isActiveField(field)
+                       }">
                     <input type="text"
                            [value]="field.value"
                            (input)="onFieldInput(field, $event)"
+                           (focus)="markFieldAsActive(field)"
                            [placeholder]="getFieldDisplayName(field)"
                            class="w-full h-full border border-slate-300 rounded-md bg-white/95 px-2 text-[11px] md:text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400" />
                   </div>
@@ -134,13 +154,15 @@
           <!-- Fields summary -->
           <aside class="rounded-2xl border border-slate-200 bg-white/70 p-4 md:p-5 h-fit">
             <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Campos del documento</h3>
-            <p class="mt-2 text-xs text-slate-500">Toca un campo para completar o corregir.</p>
+            <p class="mt-2 text-xs text-slate-500">Selecciona un campo para ir a su página y completarlo.</p>
             <div class="mt-4 space-y-2.5 max-h-[48vh] overflow-auto pr-1">
               <div *ngFor="let field of fields"
+                   (click)="goToField(field)"
                    class="flex items-center gap-3 p-3 rounded-xl border"
                    [ngClass]="{
                      'border-green-200 bg-green-50/50': hasFieldValue(field),
-                     'border-slate-200 bg-slate-50/50': !hasFieldValue(field)
+                     'border-slate-200 bg-slate-50/50': !hasFieldValue(field),
+                     '!border-amber-300 !bg-amber-50/60': isActiveField(field)
                    }">
                 <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
                      [ngClass]="{
@@ -160,7 +182,7 @@
                   </p>
                 </div>
                 <button *ngIf="isSignField(field) && !hasFieldValue(field)"
-                        (click)="openSignaturePad(field)"
+                        (click)="goToField(field, true); $event.stopPropagation()"
                         class="text-[10px] font-semibold text-indigo-600 hover:text-indigo-700">
                   Firmar
                 </button>
