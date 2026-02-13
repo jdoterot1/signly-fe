@@ -91,9 +91,9 @@ export class FlowProgressComponent implements OnInit, OnChanges, OnDestroy {
 
   cardSizeClasses(step: FlowProgressItem): string {
     if (step.key === 'firma') {
-      return 'w-full md:w-[260px]';
+      return 'w-[190px] shrink-0 md:w-[260px]';
     }
-    return 'w-full md:w-[210px]';
+    return 'w-[170px] shrink-0 md:w-[210px]';
   }
 
   private stepOrder(step: FlowProgressStep): number {
