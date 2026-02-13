@@ -166,19 +166,20 @@
               <thead class="bg-gray-50">
                 <tr>
                   <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Acción</th>
-                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Recurso</th>
-                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Path</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Evento</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actor / Estado</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Detalle</th>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
                 <tr *ngFor="let e of auditEvents">
-                  <td class="px-4 py-3 text-sm text-gray-700">{{ formatDate(e.occurredAt) }}</td>
-                  <td class="px-4 py-3 text-sm font-semibold text-gray-800">{{ e.action }}</td>
-                  <td class="px-4 py-3 text-sm text-gray-700 break-all">
-                    {{ e.resource.type || 'N/A' }}: {{ e.resource.id || 'N/A' }}
+                  <td class="px-4 py-3 text-sm text-gray-700">{{ formatDate(e.timestamp) }}</td>
+                  <td class="px-4 py-3 text-sm font-semibold text-gray-800">{{ e.eventType || 'N/A' }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">
+                    <div>{{ e.actor || 'N/A' }}</div>
+                    <div class="text-xs text-gray-500">{{ e.status || 'N/A' }}</div>
                   </td>
-                  <td class="px-4 py-3 text-sm text-gray-700 break-all">{{ e.http.path || 'N/A' }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700 break-all">{{ getEventDetail(e) }}</td>
                 </tr>
               </tbody>
             </table>

@@ -1,12 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 
 import { DocumentService } from '../../../core/services/documents/document.service';
 import type { DocumentApi } from '../../../core/models/documents/document.model';
 import { AuditService } from '../../../core/services/audit/audit.service';
-import type { AuditEvent } from '../../../core/models/audit/audit-event.model';
+import type { ProcessEvent } from '../../../core/models/audit/audit-event.model';
 import { UserService } from '../../../core/services/user/user.service';
 import type { UserSummary } from '../../../core/models/auth/user.model';
 import { CompanyService } from '../../../core/services/company/company.service';
@@ -24,7 +24,7 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
   loading = true;
   errorMessage = '';
   document?: DocumentApi;
-  auditEvents: AuditEvent[] = [];
+  auditEvents: ProcessEvent[] = [];
   eventsLoading = false;
   eventsError = '';
   createdByDisplay = 'N/A';
@@ -116,6 +116,23 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+  getEventDetail(event: ProcessEvent): string {
+    const details: string[] = [];
+    if (event.processId) {
+      details.push(`process: ${event.processId}`);
+    }
+    if (event.documentId) {
+      details.push(`doc: ${event.documentId}`);
+    }
+    if (event.participantId) {
+      details.push(`participant: ${event.participantId}`);
+    }
+    if (event.fieldId) {
+      details.push(`field: ${event.fieldId}`);
+    }
+    return details.join(' | ') || 'N/A';
+  }
+
   buildFlowUrl(processId?: string | null): string {
     if (!processId) {
       return '';
@@ -168,25 +185,46 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
   }
 
   private loadEvents(doc: DocumentApi): void {
-    const processIds = (doc.participants ?? [])
-      .map(p => p.processId)
-      .filter((id): id is string => !!id);
+    const processIds = Array.from(
+      new Set(
+        (doc.participants ?? [])
+          .map(p => this.getProcessIdForParticipant(p.participantId, p.processId))
+          .filter((id): id is string => !!id)
+      )
+    );
+
+    if (!processIds.length) {
+      this.auditEvents = [];
+      this.eventsLoading = false;
+      this.eventsError = '';
+      return;
+    }
 
     this.eventsLoading = true;
     this.eventsError = '';
 
-    this.auditService.getAuditEvents(200).subscribe({
-      next: events => {
-        const filtered = events
-          .filter(event => this.matchesDocumentOrFlow(event, this.documentId, processIds))
+    const requests = processIds.map(processId => this.auditService.getEventsByProcessId(processId, 50));
+    forkJoin(requests).subscribe({
+      next: groupedEvents => {
+        const merged = groupedEvents
+          .flat()
+          .filter(event => !!event?.eventId)
           .sort((a, b) => {
-            const aTs = Date.parse(a.occurredAt);
-            const bTs = Date.parse(b.occurredAt);
+            const aTs = Date.parse(a.timestamp);
+            const bTs = Date.parse(b.timestamp);
             return (Number.isFinite(bTs) ? bTs : 0) - (Number.isFinite(aTs) ? aTs : 0);
           });
 
-        this.auditEvents = filtered.slice(0, 30);
-        this.hydrateMissingProcessIdsFromEvents(doc, filtered);
+        const uniqueByEventId = new Map<string, ProcessEvent>();
+        for (const event of merged) {
+          if (!uniqueByEventId.has(event.eventId)) {
+            uniqueByEventId.set(event.eventId, event);
+          }
+        }
+
+        const ordered = Array.from(uniqueByEventId.values());
+        this.auditEvents = ordered.slice(0, 30);
+        this.hydrateMissingProcessIdsFromEvents(doc, ordered);
         this.eventsLoading = false;
       },
       error: err => {
@@ -194,22 +232,6 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
         this.eventsLoading = false;
       }
     });
-  }
-
-  private matchesDocumentOrFlow(event: AuditEvent, documentId: string, processIds: string[]): boolean {
-    const resourceId = (event.resource?.id ?? '').toString();
-    const path = event.http?.path ?? '';
-
-    if (resourceId === documentId) {
-      return true;
-    }
-    if (resourceId && processIds.includes(resourceId)) {
-      return true;
-    }
-    if (path.includes(`/v1/documents/${documentId}`)) {
-      return true;
-    }
-    return processIds.some(processId => path.includes(`/v1/flows/${processId}`));
   }
 
   private resolveUserDisplays(doc: DocumentApi): void {
@@ -317,7 +339,7 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
     return (sessionUser.name || sessionUser.email || '').trim();
   }
 
-  private hydrateMissingProcessIdsFromEvents(doc: DocumentApi, events: AuditEvent[]): void {
+  private hydrateMissingProcessIdsFromEvents(doc: DocumentApi, events: ProcessEvent[]): void {
     const participants = doc.participants ?? [];
     if (!participants.length) {
       return;
@@ -326,7 +348,7 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
     const flowIds = Array.from(
       new Set(
         events
-          .map(event => this.extractFlowId(event))
+          .map(event => event.processId)
           .filter((id): id is string => !!id)
       )
     );
@@ -354,21 +376,5 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
         this.participantFlowMap[participantId] = flowIds[i];
       }
     }
-  }
-
-  private extractFlowId(event: AuditEvent): string | null {
-    const path = event.http?.path ?? '';
-    const pathMatch = path.match(/\/v1\/flows\/([^/?]+)/i);
-    if (pathMatch?.[1]) {
-      return decodeURIComponent(pathMatch[1]);
-    }
-
-    const resourceType = (event.resource?.type ?? '').toLowerCase();
-    const resourceId = (event.resource?.id ?? '').toString();
-    if (resourceType.includes('flow') && !!resourceId) {
-      return resourceId;
-    }
-
-    return null;
   }
 }

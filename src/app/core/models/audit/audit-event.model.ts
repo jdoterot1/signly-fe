@@ -46,3 +46,29 @@ export interface AuditEventResponse {
   status: number;
   success: boolean;
 }
+
+export interface ProcessEvent {
+  actor?: string;
+  auth?: Record<string, unknown>;
+  documentId?: string;
+  eventId: string;
+  eventType: string;
+  fieldId?: string;
+  participantId?: string;
+  payload?: Record<string, unknown>;
+  processId: string;
+  status?: string;
+  tenantId?: string;
+  tenantProcessId?: string;
+  timestamp: string;
+  timestampUlid?: string;
+}
+
+export interface ProcessEventsListResponse {
+  code: string;
+  data: ProcessEvent[];
+  message: string;
+  meta: Record<string, unknown>;
+  status: number;
+  success: boolean;
+}
