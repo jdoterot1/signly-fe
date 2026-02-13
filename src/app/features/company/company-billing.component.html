@@ -24,7 +24,7 @@
             <input
               type="email"
               formControlName="billing_email"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
               placeholder="billing@apolosystems.co"
             />
             <p class="mt-1 text-xs text-red-500" *ngIf="billingForm.get('billing_email')?.invalid && billingForm.get('billing_email')?.touched">
@@ -35,7 +35,7 @@
             <label class="block text-sm font-medium text-gray-700">Modelo de cobro</label>
             <select
               formControlName="billing_model"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent"
             >
               <option value="" disabled>Selecciona un modelo</option>
               <option *ngIf="showBillingModelFallback" [value]="billingModelValue">
@@ -54,7 +54,7 @@
             <label class="block text-sm font-medium text-gray-700">Moneda</label>
             <select
               formControlName="currency"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent"
             >
               <option value="" disabled>Selecciona la moneda</option>
               <option *ngIf="showCurrencyFallback" [value]="currencyValue">
@@ -73,7 +73,7 @@
               min="1"
               max="31"
               formControlName="invoice_day"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
               placeholder="10"
             />
           </div>
@@ -84,7 +84,7 @@
           <textarea
             rows="2"
             formControlName="legal_address"
-            class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+            class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
             placeholder="Cra 1 # 23-45, Bogotá D.C., Colombia"
           ></textarea>
         </div>
@@ -96,7 +96,7 @@
               type="number"
               min="0"
               formControlName="net_terms_days"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
               placeholder="30"
             />
           </div>
@@ -104,7 +104,7 @@
             <label class="block text-sm font-medium text-gray-700">Proveedor de pago</label>
             <select
               formControlName="payment_provider"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent"
             >
               <option value="" disabled>Selecciona una opción</option>
               <option *ngIf="showPaymentProviderFallback" [value]="paymentProviderValue">
@@ -121,7 +121,7 @@
             <input
               type="text"
               formControlName="payment_method_ref"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
               placeholder="ID de oferta o referencia externa"
             />
           </div>
@@ -130,7 +130,7 @@
             <textarea
               rows="2"
               formControlName="notes"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
               placeholder="Preferencias especiales del cliente"
             ></textarea>
           </div>
@@ -147,7 +147,7 @@
           </button>
           <button
             type="submit"
-            class="px-5 py-2 rounded-xl bg-[#3366FF] text-white font-semibold hover:bg-[#274FCC] disabled:opacity-60"
+            class="px-5 py-2 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-hover disabled:opacity-60"
             [disabled]="isSavingBilling"
           >
             {{ isSavingBilling ? 'Guardando...' : 'Actualizar facturación' }}

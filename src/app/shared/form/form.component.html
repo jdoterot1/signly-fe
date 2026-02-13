@@ -2,7 +2,7 @@
 <form
   [formGroup]="form"
   (ngSubmit)="onSubmit()"
-  class="bg-white shadow-xl rounded-3xl max-w-5xl w-full mx-auto mt-8 px-6 py-8 sm:px-10 sm:py-10"
+  class="bg-brand-surface-card shadow-xl rounded-3xl max-w-5xl w-full mx-auto mt-8 px-6 py-8 sm:px-10 sm:py-10"
 >
   <div class="flex flex-col lg:flex-row gap-10">
     <!-- Campos principales -->
@@ -88,6 +88,29 @@
               </div>
             </ng-container>
 
+            <!-- MultiSelect -->
+            <ng-container *ngSwitchCase="'multiselect'">
+              <div class="sm:col-span-1">
+                <label [for]="field.key" class="block mb-2 text-sm font-semibold text-gray-700">
+                  {{ field.label }}
+                  <span *ngIf="field.required" class="text-red-500">*</span>
+                </label>
+                <p-multiselect
+                  [inputId]="field.key"
+                  [options]="field.options"
+                  optionLabel="name"
+                  [placeholder]="field.placeholder"
+                  [formControlName]="field.key"
+                  [disabled]="field.disabled ?? false"
+                  [filter]="true"
+                  filterBy="name,code"
+                  display="chip"
+                  class="w-full"
+                  appendTo="body"
+                />
+              </div>
+            </ng-container>
+
             <!-- Toggle -->
             <ng-container *ngSwitchCase="'toggle'">
               <div class="sm:col-span-1 flex items-center gap-4">
@@ -106,6 +129,7 @@
               <div class="sm:col-span-1">
                 <label [for]="field.key" class="block mb-2 text-sm font-semibold text-gray-700">
                   {{ field.label }}
+                  <span *ngIf="field.required" class="text-red-500">*</span>
                 </label>
                 <p-datepicker
                   [inputId]="field.key"
@@ -182,7 +206,7 @@
       <div class="flex flex-col sm:flex-row items-center gap-3 w-full">
         <button
           type="button"
-          class="w-full sm:w-auto bg-[#2b0f60] hover:bg-[#1b1034] text-white font-semibold px-4 py-2 rounded-xl shadow"
+          class="w-full sm:w-auto bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold px-4 py-2 rounded-xl shadow"
           (click)="openFileDialog()"
         >
           Subir foto
@@ -216,7 +240,7 @@
     </button>
     <button
       type="submit"
-      class="w-full sm:w-auto px-6 py-3 text-sm font-semibold text-white bg-[#2b0f60] hover:bg-[#1b1034] rounded-xl shadow transition"
+      class="w-full sm:w-auto px-6 py-3 text-sm font-semibold text-white bg-brand-primary hover:bg-brand-primary-hover rounded-xl shadow transition"
     >
       {{ submitLabel }}
     </button>

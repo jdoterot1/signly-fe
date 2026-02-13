@@ -8,6 +8,7 @@ import { ApiResponse } from '../../models/auth/auth-session.model';
 import {
   FlowInitiateData,
   FlowState,
+  FlowChallengeType,
   OtpSendData,
   OtpVerifyData,
   OtpChannel,
@@ -16,13 +17,24 @@ import {
   BiometricStartRequest,
   BiometricVerifyData,
   LivenessStartData,
-  FlowErrorDetails
+  FlowErrorDetails,
+  TemplateDownloadData,
+  TemplateSubmitRequest,
+  FlowCompleteRequest,
+  FlowCompleteData
 } from '../../models/flow/flow.model';
 
 export interface FlowError extends Error {
   code?: string;
   status?: number;
   details?: FlowErrorDetails;
+}
+
+export interface FlowTemplateSnapshot {
+  downloadUrl: string;
+  templateId?: string;
+  templateName?: string;
+  templateVersion?: string;
 }
 
 @Injectable({
@@ -34,6 +46,7 @@ export class FlowService {
 
   private flowStateSubject = new BehaviorSubject<FlowState | null>(null);
   flowState$ = this.flowStateSubject.asObservable();
+  private templateSnapshot: FlowTemplateSnapshot | null = null;
 
   constructor(private http: HttpClient) {
     this.loadFlowState();
@@ -170,6 +183,56 @@ export class FlowService {
     );
   }
 
+  // ============ Template Operations ============
+
+  downloadTemplate(processId: string): Observable<TemplateDownloadData> {
+    return this.executeWithFlowToken<ApiResponse<TemplateDownloadData>>(
+      headers => this.http.get<ApiResponse<TemplateDownloadData>>(
+        `${this.baseUrl}/flows/${processId}/template/download`,
+        { headers }
+      )
+    ).pipe(
+      map(res => res.data),
+      tap(data => {
+        this.templateSnapshot = {
+          downloadUrl: data.downloadUrl,
+          templateId: data.templateId,
+          templateName: data.templateName,
+          templateVersion: data.templateVersion
+        };
+      }),
+      catchError(err => this.handleError(err))
+    );
+  }
+
+  submitTemplate(processId: string, request: TemplateSubmitRequest): Observable<void> {
+    return this.executeWithFlowToken<ApiResponse<void>>(
+      headers => this.http.post<ApiResponse<void>>(
+        `${this.baseUrl}/flows/${processId}/template/submit`,
+        request,
+        { headers }
+      )
+    ).pipe(
+      map(() => void 0),
+      catchError(err => this.handleError(err))
+    );
+  }
+
+  // ============ Flow Complete ============
+
+  completeFlow(processId: string, request: FlowCompleteRequest): Observable<FlowCompleteData> {
+    return this.executeWithFlowToken<ApiResponse<FlowCompleteData>>(
+      headers => this.http.post<ApiResponse<FlowCompleteData>>(
+        `${this.baseUrl}/flows/${processId}/complete`,
+        request,
+        { headers }
+      )
+    ).pipe(
+      map(res => res.data ?? { code: 'flow_completed', message: 'Flujo completado' }),
+      catchError(err => this.handleError(err))
+    );
+  }
+
   // ============ Flow State Management ============
 
   getFlowState(): FlowState | null {
@@ -193,7 +256,22 @@ export class FlowService {
 
   clearFlowState(): void {
     this.flowStateSubject.next(null);
+    this.templateSnapshot = null;
     this.clearStoredState();
+  }
+
+  getTemplateSnapshot(): FlowTemplateSnapshot | null {
+    return this.templateSnapshot;
+  }
+
+  getNextPipelineStep(currentStep: FlowChallengeType): FlowChallengeType | null {
+    const state = this.flowStateSubject.getValue();
+    if (!state) return null;
+
+    const currentIndex = state.pipeline.indexOf(currentStep);
+    if (currentIndex < 0) return null;
+
+    return state.pipeline[currentIndex + 1] ?? null;
   }
 
   isTokenExpired(): boolean {

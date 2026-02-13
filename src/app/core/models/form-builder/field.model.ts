@@ -2,6 +2,7 @@ export type FormFieldType =
   | 'string'
   | 'textarea'
   | 'number'
+  | 'sign'
   | 'email'
   | 'date'
   | 'datetime'
@@ -18,4 +19,3 @@ export interface FormFieldPaletteItem {
   label: string;
   description?: string;
 }
-

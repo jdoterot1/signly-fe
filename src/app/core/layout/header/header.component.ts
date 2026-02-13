@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { finalize, take } from 'rxjs/operators';
 
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { UserProfileDropdownComponent } from '../../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
+import { ThemeToggleComponent } from '../../../shared/components/theme-toggle/theme-toggle.component';
 import { AuthService } from '../../services/auth/auth.service';
 import { CompanyService } from '../../services/company/company.service';
 
@@ -33,7 +35,7 @@ interface HeaderUserProfile {
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterModule, UserProfileDropdownComponent],
+  imports: [CommonModule, RouterModule, UserProfileDropdownComponent, ThemeToggleComponent, TranslateModule],
   templateUrl: './header.component.html'
 })
 export class HeaderComponent implements OnInit {
@@ -57,11 +59,11 @@ export class HeaderComponent implements OnInit {
   readonly planStatus = "30 días restantes"
 
   readonly navLinks: NavLink[] = [
-    { label: "Inicio", path: "/dashboard" },
-    { label: "Documentos", path: "/documents" },
-    { label: "Plantillas", path: "/templates" },
-    { label: "Reportes", path: "/reports/usage" },
-    { label: "Administración", path: "/administration" },
+    { label: "HEADER.NAV.HOME", path: "/dashboard" },
+    { label: "HEADER.NAV.DOCUMENTS", path: "/documents" },
+    { label: "HEADER.NAV.TEMPLATES", path: "/templates" },
+    { label: "HEADER.NAV.REPORTS", path: "/reports/usage" },
+    { label: "HEADER.NAV.ADMINISTRATION", path: "/administration" },
   ]
 
   readonly notifications: NotificationItem[] = [
@@ -83,9 +85,9 @@ export class HeaderComponent implements OnInit {
   ]
 
   readonly userMenuItems: UserMenuItem[] = [
-    { label: "Mi perfil", path: "/users" },
-    { label: "Preferencias", path: "/settings" },
-    { label: "Notificaciones", path: "/notifications" },
+    { label: "USER_PROFILE.MY_PROFILE", path: "/users" },
+    { label: "USER_PROFILE.PREFERENCES", path: "/settings" },
+    { label: "USER_PROFILE.NOTIFICATIONS", path: "/notifications" },
   ]
 
   constructor(
@@ -212,13 +214,16 @@ export class HeaderComponent implements OnInit {
       .pipe(take(1))
       .subscribe({
         next: payload => {
-          const resolvedName = payload.username || this.userProfile.name
+          const meAttributes = (payload.attributes ?? {}) as Record<string, string | undefined>
+          const attributeName = meAttributes['name'] || meAttributes['given_name']
+          const resolvedName = attributeName || this.userProfile.name || this.userProfile.displayName
           const resolvedEmail = payload.attributes?.email || this.userProfile.email
+          const fallbackDisplay = resolvedName || resolvedEmail || this.userProfile.displayName
 
           this.userProfile = {
             ...this.userProfile,
             name: resolvedName,
-            displayName: resolvedName || this.userProfile.displayName,
+            displayName: fallbackDisplay,
             email: resolvedEmail
           }
         },

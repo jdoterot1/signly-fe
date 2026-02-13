@@ -7,6 +7,8 @@ import Aura from '@primeng/themes/aura';
 
 import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { LoadingInterceptor } from './core/interceptors/loading.interceptor';
+import { AuthRefreshInterceptor } from './core/interceptors/auth-refresh.interceptor';
+import { provideTranslation } from './core/providers/translate.provider';
 
 export const appConfig: ApplicationConfig = {
   providers: [provideZoneChangeDetection({ eventCoalescing: true }),
@@ -25,6 +27,12 @@ export const appConfig: ApplicationConfig = {
     }
   }),
   importProvidersFrom(HttpClientModule),
+  ...provideTranslation(),
+  {
+    provide: HTTP_INTERCEPTORS,
+    useClass: AuthRefreshInterceptor,
+    multi: true
+  },
   {
     provide: HTTP_INTERCEPTORS,
     useClass: LoadingInterceptor,

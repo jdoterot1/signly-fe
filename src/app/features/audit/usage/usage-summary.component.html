@@ -1,50 +1,102 @@
 <div class="space-y-6">
-  <div class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-6">
-    <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+  <div
+    class="bg-brand-surface-card rounded-3xl border border-brand-subtle shadow-lg p-6"
+  >
+    <div
+      class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between"
+    >
       <div>
-        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-[#9b93b8]">Resumen de uso</p>
-        <h2 class="text-3xl font-semibold heading-brand mt-2">Consumo mensual</h2>
-        <p class="text-sm text-gray-600 mt-2">Consulta la facturación consolidada por canal de firma.</p>
+        <p
+          class="text-xs font-semibold uppercase tracking-[0.3em] text-brand-muted-light"
+        >
+          Resumen de uso
+        </p>
+        <h2 class="text-3xl font-semibold heading-brand mt-2">
+          Consumo mensual
+        </h2>
+        <p class="text-sm text-gray-600 mt-2">
+          Consulta la facturación consolidada por canal de firma.
+        </p>
       </div>
       <div class="flex flex-col gap-3 w-full max-w-sm">
-        <label class="text-xs font-semibold text-gray-500 uppercase tracking-[0.3em]">Periodo</label>
+        <label
+          class="text-xs font-semibold text-gray-500 uppercase tracking-[0.3em]"
+          >Periodo</label
+        >
         <input
           type="month"
           [(ngModel)]="selectedPeriod"
           (change)="onPeriodChange()"
-          class="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#d0b3ff]"
+          class="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
           max="2099-12"
         />
-        <span class="text-xs text-gray-400">Última actualización: {{ lastRatedAt || 'Sin datos recientes' }}</span>
+        <span class="text-xs text-gray-400"
+          >Última actualización:
+          {{ lastRatedAt || "Sin datos recientes" }}</span
+        >
       </div>
     </div>
 
     <div class="mt-6 grid gap-4 md:grid-cols-2">
-      <div class="p-4 rounded-2xl border border-gray-100 bg-[#f8f7ff]">
-        <p class="text-xs uppercase tracking-[0.3em] text-[#9b93b8] font-semibold">Total facturado</p>
-        <p class="text-3xl font-semibold text-[#2b0f60] mt-2">{{ formatCurrency(totalAmount) }}</p>
-        <p class="text-sm text-gray-500 mt-1">Incluye todos los canales reportados en {{ selectedPeriod }}.</p>
+      <div class="p-4 rounded-2xl border border-gray-100 bg-brand-surface">
+        <p
+          class="text-xs uppercase tracking-[0.3em] text-brand-muted-light font-semibold"
+        >
+          Total facturado
+        </p>
+        <p class="text-3xl font-semibold text-brand-primary mt-2">
+          {{ formatCurrency(totalAmount) }}
+        </p>
+        <p class="text-sm text-gray-500 mt-1">
+          Incluye todos los canales reportados en {{ selectedPeriod }}.
+        </p>
       </div>
-      <div class="p-4 rounded-2xl border border-gray-100 bg-[#f4fbf8]">
-        <p class="text-xs uppercase tracking-[0.3em] text-emerald-500 font-semibold">Total de operaciones</p>
-        <p class="text-3xl font-semibold text-emerald-600 mt-2">{{ totalQty | number }}</p>
-        <p class="text-sm text-gray-500 mt-1">Registros contabilizados para el periodo seleccionado.</p>
+      <div class="p-4 rounded-2xl border border-gray-100 bg-brand-surface">
+        <p
+          class="text-xs uppercase tracking-[0.3em] text-brand-success font-semibold"
+        >
+          Total de operaciones
+        </p>
+        <p class="text-3xl font-semibold text-brand-success mt-2">
+          {{ totalQty | number }}
+        </p>
+        <p class="text-sm text-gray-500 mt-1">
+          Registros contabilizados para el periodo seleccionado.
+        </p>
       </div>
     </div>
   </div>
 
-  <div class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-2">
+  <div
+    class="bg-brand-surface-card rounded-3xl border border-brand-subtle shadow-lg p-2"
+  >
     <ng-container *ngIf="!loading && !errorMessage; else stateBlock">
       <app-table [model]="tableModel"></app-table>
     </ng-container>
   </div>
 
   <ng-template #stateBlock>
-    <div class="flex flex-col items-center justify-center rounded-3xl border border-dashed border-gray-200 bg-white py-16 text-center">
+    <div
+      class="flex flex-col items-center justify-center rounded-3xl border border-dashed border-gray-200 bg-white py-16 text-center"
+    >
       <ng-container *ngIf="loading; else errorState">
-        <svg class="w-10 h-10 text-[#2b0f60] animate-spin" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+        <svg
+          class="w-10 h-10 text-brand-primary animate-spin"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          ></circle>
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8v8z"
+          ></path>
         </svg>
         <p class="text-sm text-gray-500 mt-4">Obteniendo resumen de uso...</p>
       </ng-container>
@@ -52,12 +104,22 @@
         <p class="text-sm text-red-500 font-semibold">{{ errorMessage }}</p>
         <button
           type="button"
-          class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#2b0f60]"
+          class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-brand-primary"
           (click)="fetchUsage()"
         >
           Reintentar
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M5 19L19 5" />
+          <svg
+            class="w-4 h-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v6h6M20 20v-6h-6M5 19L19 5"
+            />
           </svg>
         </button>
       </ng-template>

@@ -1,15 +1,15 @@
 <div class="space-y-8">
-  <div class="flex items-center justify-between bg-white rounded-3xl border border-gray-100 shadow p-4">
+  <div class="flex items-center justify-between bg-brand-surface-card rounded-3xl border border-brand-subtle shadow p-4">
     <div class="flex items-center gap-4">
       <ng-container *ngFor="let step of [1,2]">
         <div class="flex items-center gap-2">
           <div
             class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
-            [ngClass]="currentStep >= step ? 'bg-[#2b0f60] text-white' : 'bg-gray-200 text-gray-500'"
+            [ngClass]="currentStep >= step ? 'bg-brand-primary text-white' : 'bg-gray-200 text-gray-500'"
           >
             {{ step }}
           </div>
-          <span class="text-sm" [ngClass]="currentStep >= step ? 'text-[#2b0f60] font-semibold' : 'text-gray-500'">
+          <span class="text-sm" [ngClass]="currentStep >= step ? 'text-brand-primary font-semibold' : 'text-gray-500'">
             Paso {{ step }}
           </span>
         </div>
@@ -20,11 +20,11 @@
   </div>
 
   <div
-    class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-6"
+    class="bg-brand-surface-card rounded-3xl border border-brand-subtle shadow-lg p-6"
     *ngIf="currentStep === 1"
   >
-    <p class="text-xs uppercase tracking-[0.3em] text-[#9b93b8] font-semibold">Paso 1</p>
-    <h2 class="text-2xl font-semibold text-[#2b0f60] mt-1">Información del rol</h2>
+    <p class="text-xs uppercase tracking-[0.3em] text-brand-muted-light font-semibold">Paso 1</p>
+    <h2 class="text-2xl font-semibold text-brand-primary mt-1">Información del rol</h2>
     <p class="text-sm text-gray-500 mt-1">Define el nombre y la descripción del rol.</p>
 
     <form class="mt-6 space-y-4" [formGroup]="form">
@@ -34,7 +34,7 @@
           type="text"
           formControlName="roleName"
           placeholder="Ej: Administrador de operaciones"
-          class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+          class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
         />
         <p class="mt-1 text-xs text-gray-500">Se usará como referencia visible y para generar el ID interno.</p>
       </div>
@@ -44,7 +44,7 @@
         <textarea
           rows="3"
           formControlName="description"
-          class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+          class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
           placeholder="Describe brevemente a qué acceso apunta este rol."
         ></textarea>
       </div>
@@ -59,7 +59,7 @@
       </button>
       <button
         type="button"
-        class="px-5 py-2 rounded-xl bg-[#2b0f60] text-white font-semibold hover:bg-[#1a0a40]"
+        class="px-5 py-2 rounded-xl bg-brand-primary text-white font-semibold hover:bg-brand-primary-hover"
         (click)="goNext()"
       >
         Siguiente
@@ -68,11 +68,11 @@
   </div>
 
   <div
-    class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-6 space-y-6"
+    class="bg-brand-surface-card rounded-3xl border border-brand-subtle shadow-lg p-6 space-y-6"
     *ngIf="currentStep === 2"
   >
-    <p class="text-xs uppercase tracking-[0.3em] text-[#9b93b8] font-semibold">Paso 2</p>
-    <h2 class="text-2xl font-semibold text-[#2b0f60]">Permisos del rol</h2>
+    <p class="text-xs uppercase tracking-[0.3em] text-brand-muted-light font-semibold">Paso 2</p>
+    <h2 class="text-2xl font-semibold text-brand-primary">Permisos del rol</h2>
     <p class="text-sm text-gray-500">
       Selecciona los permisos que definirán el alcance de este rol dentro de la plataforma.
     </p>
@@ -99,7 +99,7 @@
       </button>
       <button
         type="button"
-        class="px-5 py-2 rounded-xl bg-[#2b0f60] text-white font-semibold hover:bg-[#1a0a40]"
+        class="px-5 py-2 rounded-xl bg-brand-primary text-white font-semibold hover:bg-brand-primary-hover"
         (click)="onSubmit(form.value)"
       >
         Crear rol

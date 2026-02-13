@@ -16,6 +16,7 @@ import {
   DOCUMENT_CREATE_FORM_CONFIG,
   DOCUMENT_LANGUAGES,
   DOCUMENT_ORDER_MODES,
+  DOCUMENT_PHONE_COUNTRY_CODES,
   DOCUMENT_SIGNATURE_MODES
 } from '../../../core/constants/documents/create/documents-create.constant';
 
@@ -24,6 +25,19 @@ import { GuideModalComponent } from '../../../shared/components/guide-modal/guid
 import { GuideFlowService, GuideStep } from '../../../shared/services/guide-flow/guide-flow.service';
 import { TemplateService } from '../../../core/services/templates/template.service';
 import type { TemplateApi } from '../../../core/models/templates/template.model';
+
+interface DraftParticipant {
+  displayName: string;
+  signatureMode: DocumentSignatureMode[];
+  policy: {
+    attemptsMax: number;
+    cooldownSeconds: number;
+  };
+  identity: DocumentParticipantIdentity;
+}
+
+const NO_DIGITS_PATTERN = /^[^\d]*$/;
+const SIMPLE_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 @Component({
   selector: 'app-document-create',
@@ -40,10 +54,12 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
   formInitialValues = {
     orderMode: DOCUMENT_ORDER_MODES[0],
     language: DOCUMENT_LANGUAGES[0],
-    signatureMode: DOCUMENT_SIGNATURE_MODES[0],
+    signatureMode: [DOCUMENT_SIGNATURE_MODES[0]],
+    participantPhoneCountry: DOCUMENT_PHONE_COUNTRY_CODES[0],
     attemptsMax: '3',
     cooldownSeconds: '60'
   };
+  participantsDraft: DraftParticipant[] = [];
   selectedFile?: File;
   private readonly returnTo: string | null;
   showGuideModal = false;
@@ -69,6 +85,7 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
   private readonly step2Keys = [
     'participantName',
     'participantEmail',
+    'participantPhoneCountry',
     'participantPhone',
     'participantDocumentNumber',
     'attemptsMax',
@@ -85,16 +102,17 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     private fb: FormBuilder
   ) {
     this.form = this.fb.group({
-      name: ['', [Validators.required, Validators.maxLength(120)]],
+      name: ['', [Validators.required, Validators.maxLength(120), Validators.pattern(NO_DIGITS_PATTERN)]],
       description: ['', [Validators.maxLength(500)]],
       templateId: [null, [Validators.required]],
       templateVersion: [null, [Validators.required]],
       orderMode: [DOCUMENT_ORDER_MODES[0], [Validators.required]],
-      deadlineAt: [null],
+      deadlineAt: [null, [Validators.required]],
       language: [DOCUMENT_LANGUAGES[0]],
-      signatureMode: [DOCUMENT_SIGNATURE_MODES[0], [Validators.required]],
-      participantName: ['', [Validators.required, Validators.maxLength(120)]],
-      participantEmail: [''],
+      signatureMode: [[DOCUMENT_SIGNATURE_MODES[0]], [Validators.required]],
+      participantName: ['', [Validators.maxLength(120)]],
+      participantEmail: ['', [Validators.email]],
+      participantPhoneCountry: [DOCUMENT_PHONE_COUNTRY_CODES[0]],
       participantPhone: [''],
       participantDocumentNumber: [''],
       attemptsMax: ['3'],
@@ -138,15 +156,20 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
 
     this.subs.add(
       this.form.get('signatureMode')!.valueChanges.subscribe(value => {
-        const mode = this.readSelectValue(value) as DocumentSignatureMode | undefined;
-        this.applySignatureModeRules(mode);
+        const modes = this.readMultiSelectValues(value) as DocumentSignatureMode[];
+        this.applySignatureModeRules(modes);
       })
     );
 
-    const initialMode = this.readSelectValue(this.form.get('signatureMode')!.value) as DocumentSignatureMode | undefined;
-    this.applySignatureModeRules(initialMode);
+    const initialModes = this.readMultiSelectValues(this.form.get('signatureMode')!.value) as DocumentSignatureMode[];
+    this.applySignatureModeRules(initialModes);
 
     this.setMinDateForDeadline();
+    this.setFieldRequiredIndicator('participantName', true);
+    this.setFieldRequiredIndicator('participantPhoneCountry', true);
+    this.setFieldRequiredIndicator('participantPhone', true);
+    this.setFieldRequiredIndicator('attemptsMax', true);
+    this.setFieldRequiredIndicator('cooldownSeconds', true);
     this.applyStepState();
   }
 
@@ -165,8 +188,8 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
       return;
     }
     const orderMode = this.readSelectValue(formValue.orderMode);
-    const signatureMode = this.readSelectValue(formValue.signatureMode) as DocumentSignatureMode | undefined;
-    const language = this.readSelectValue(formValue.language);
+    const signatureModes = this.readMultiSelectValues(formValue.signatureMode) as DocumentSignatureMode[];
+    const language = this.readSelectValue(formValue.language) || 'Español';
     const templateId = this.readSelectValue(formValue.templateId);
     const templateVersion = this.readSelectValue(formValue.templateVersion);
 
@@ -174,8 +197,19 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
       this.alertService.showError('Selecciona template y versión', 'Error');
       return;
     }
-    const attemptsMax = this.parseNumber(formValue.attemptsMax, 3);
-    const cooldownSeconds = this.parseNumber(formValue.cooldownSeconds, 60);
+    const inlineParticipant = this.buildParticipantFromForm(formValue, signatureModes);
+    const participants: DraftParticipant[] = [...this.participantsDraft];
+    const hasInlineParticipantData = this.hasInlineParticipantData(formValue);
+    if (hasInlineParticipantData) {
+      if (!inlineParticipant) {
+        return;
+      }
+      participants.push(inlineParticipant);
+    }
+    if (!participants.length) {
+      this.alertService.showError('Debes registrar al menos un participante.', 'Error');
+      return;
+    }
 
     const metadata: Record<string, unknown> = {};
     if (formValue.name) {
@@ -184,37 +218,14 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     if (formValue.description) {
       metadata['description'] = formValue.description;
     }
-    if (language) {
-      metadata['language'] = language;
-    }
-
-    const identity: DocumentParticipantIdentity = {};
-    if (formValue.participantEmail) {
-      identity['email'] = formValue.participantEmail;
-    }
-    if (formValue.participantPhone) {
-      identity['phone'] = formValue.participantPhone;
-    }
-    if (formValue.participantDocumentNumber) {
-      identity['documentNumber'] = formValue.participantDocumentNumber;
-    }
+    metadata['language'] = language;
 
     const payload: CreateDocumentRequest = {
       templateId,
       templateVersion,
       orderMode: orderMode || 'PARALLEL',
       deadlineAt: this.normalizeDate(formValue.deadlineAt),
-      participants: [
-        {
-          displayName: formValue.participantName,
-          signatureMode: signatureMode ? [signatureMode] : ['SIGNATURE_EMAIL'],
-          policy: {
-            attemptsMax,
-            cooldownSeconds
-          },
-          identity
-        }
-      ],
+      participants,
       flowPolicy: { onParticipantFail: 'CANCEL_FLOW' },
       metadata: Object.keys(metadata).length ? metadata : undefined
     };
@@ -224,8 +235,17 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
         this.alertService.showSuccess('El documento fue creado exitosamente', '¡Documento creado!');
         setTimeout(() => this.navigateBack(), 2600);
       },
-      error: err => {
-        this.alertService.showError('No se pudo crear el documento', 'Error');
+      error: (err: any) => {
+        const isInsufficientCredits = err?.status === 402 || err?.code === 'insufficient_credits';
+        if (isInsufficientCredits) {
+          this.alertService.showError(
+            'Te quedaste sin créditos. Te llevaremos a la sección de recarga para continuar.',
+            'Créditos insuficientes'
+          );
+          setTimeout(() => this.navigateToCreditsPurchase(), 1800);
+          return;
+        }
+        this.alertService.showError(err?.message || 'No se pudo crear el documento', 'Error');
         console.error('Error al crear el documento', err);
       }
     });
@@ -245,12 +265,52 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     this.router.navigateByUrl(target);
   }
 
+  private navigateToCreditsPurchase(): void {
+    this.router.navigate(['/administration/pricing']);
+  }
+
   closeGuideModal(): void {
     this.showGuideModal = false;
   }
 
   startDocumentStep(): void {
     this.showGuideModal = false;
+  }
+
+  addParticipant(): void {
+    const raw = this.form.getRawValue();
+    const signatureModes = this.readMultiSelectValues(raw.signatureMode) as DocumentSignatureMode[];
+    const participant = this.buildParticipantFromForm(raw, signatureModes);
+    if (!participant) {
+      if (!this.hasInlineParticipantData(raw)) {
+        this.alertService.showError('Completa los datos del participante antes de agregar.', 'Error');
+      }
+      return;
+    }
+    this.participantsDraft = [...this.participantsDraft, participant];
+    this.alertService.showSuccess('Participante agregado correctamente.', 'Participante agregado');
+    this.form.patchValue(
+      {
+        participantName: '',
+        participantEmail: '',
+        participantPhoneCountry: DOCUMENT_PHONE_COUNTRY_CODES[0],
+        participantPhone: '',
+        participantDocumentNumber: ''
+      },
+      { emitEvent: false }
+    );
+  }
+
+  removeParticipant(index: number): void {
+    if (index < 0 || index >= this.participantsDraft.length) {
+      return;
+    }
+    this.participantsDraft = this.participantsDraft.filter((_, i) => i !== index);
+    this.alertService.showSuccess('Participante eliminado.', 'Actualizado');
+  }
+
+  hasParticipantDraftInForm(): boolean {
+    return this.hasInlineParticipantData(this.form.getRawValue());
   }
 
   private readSelectValue(value: any): string | undefined {
@@ -261,6 +321,16 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
       return value;
     }
     return value.code ?? undefined;
+  }
+
+  private readMultiSelectValues(value: any): string[] {
+    if (!value) {
+      return [];
+    }
+    const values = Array.isArray(value) ? value : [value];
+    return values
+      .map(item => this.readSelectValue(item))
+      .filter((item): item is string => !!item);
   }
 
   private normalizeDate(value: any): string | undefined {
@@ -285,7 +355,14 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
   private loadTemplates(): void {
     this.templateService.listTemplates().subscribe({
       next: templates => {
-        this.templatesOptions = templates.map(t => ({
+        const sorted = [...templates].sort((a, b) => {
+          const aTs = Date.parse(a.updatedAt || a.createdAt || '');
+          const bTs = Date.parse(b.updatedAt || b.createdAt || '');
+          const aSafe = Number.isFinite(aTs) ? aTs : 0;
+          const bSafe = Number.isFinite(bTs) ? bTs : 0;
+          return bSafe - aSafe;
+        });
+        this.templatesOptions = sorted.map(t => ({
           name: t.templateName,
           code: t.templateId
         }));
@@ -438,11 +515,17 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
       this.setControlEnabled(key, !step1);
     });
 
-    const mode = this.readSelectValue(this.form.get('signatureMode')!.value) as DocumentSignatureMode | undefined;
-    this.applySignatureModeRules(mode);
+    const modes = this.readMultiSelectValues(this.form.get('signatureMode')!.value) as DocumentSignatureMode[];
+    this.applySignatureModeRules(modes);
   }
 
   private goToStepTwo(): void {
+    const documentName = (this.form.get('name')?.value ?? '').toString().trim();
+    if (/\d/.test(documentName)) {
+      this.alertService.showError('El nombre del documento no puede contener números.', 'Error');
+      this.form.get('name')?.markAsTouched();
+      return;
+    }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -468,34 +551,131 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     if (!control) {
       return;
     }
-    const validators = required ? [Validators.required, ...extraValidators] : [...extraValidators];
+    this.setFieldRequiredIndicator(fieldKey, required);
+    const validators = [...extraValidators];
     control.setValidators(validators);
-    if (!required) {
-      control.setValue('', { emitEvent: false });
-    }
     control.updateValueAndValidity({ emitEvent: false });
   }
 
-  private applySignatureModeRules(mode?: DocumentSignatureMode): void {
+  private applySignatureModeRules(modes: DocumentSignatureMode[] = []): void {
     if (this.currentStep === 1) {
       this.setFormHidden('participantEmail', true);
+      this.setFormHidden('participantPhoneCountry', true);
       this.setFormHidden('participantPhone', true);
       this.setFormHidden('participantDocumentNumber', true);
       return;
     }
-    const signatureMode = mode ?? 'SIGNATURE_EMAIL';
-
-    const isEmail = signatureMode === 'SIGNATURE_EMAIL';
-    const isSms = signatureMode === 'SIGNATURE_SMS';
-    const isBio = signatureMode === 'SIGNATURE_BIOMETRIC_PLUS';
+    const selected = modes.length ? modes : (['SIGNATURE_EMAIL'] as DocumentSignatureMode[]);
+    const isEmail = selected.includes('SIGNATURE_EMAIL');
+    const isSms = selected.includes('SIGNATURE_SMS');
+    const isWhatsapp = selected.includes('SIGNATURE_WHATSAPP');
+    const isBio = selected.some(mode => this.isBiometricMode(mode));
 
     this.setFormHidden('participantEmail', !isEmail && !isBio);
-    this.setFormHidden('participantPhone', !isSms);
+    this.setFormHidden('participantPhoneCountry', false);
+    this.setFormHidden('participantPhone', false);
     this.setFormHidden('participantDocumentNumber', !isBio);
 
-    this.setFieldRequired('participantEmail', isEmail || isBio, [Validators.email] as any);
-    this.setFieldRequired('participantPhone', isSms);
+    this.setFieldRequired('participantEmail', isEmail, [Validators.email] as any);
+    this.setFieldRequired('participantPhoneCountry', true);
+    this.setFieldRequired('participantPhone', true);
     this.setFieldRequired('participantDocumentNumber', isBio);
+  }
+
+  private isBiometricMode(mode?: DocumentSignatureMode): boolean {
+    return mode === 'SIGNATURE_BIOMETRIC' || mode === 'SIGNATURE_BIOMETRIC_PLUS';
+  }
+
+  private buildParticipantFromForm(formValue: any, signatureModes: DocumentSignatureMode[]): DraftParticipant | null {
+    const name = (formValue.participantName ?? '').trim();
+    const email = (formValue.participantEmail ?? '').trim();
+    const phoneCountry = this.readSelectValue(formValue.participantPhoneCountry) || '+57';
+    const phoneRaw = (formValue.participantPhone ?? '').trim();
+    const phoneDigits = phoneRaw.replace(/\D+/g, '');
+    const phone = phoneDigits ? `${phoneCountry}${phoneDigits}` : '';
+    const documentNumber = (formValue.participantDocumentNumber ?? '').trim();
+    const selectedModes = signatureModes.length ? signatureModes : (['SIGNATURE_EMAIL'] as DocumentSignatureMode[]);
+
+    if (!name && !email && !phone && !documentNumber) {
+      return null;
+    }
+    if (!name) {
+      this.alertService.showError('El nombre del participante es obligatorio.', 'Error');
+      return null;
+    }
+    if (/\d/.test(name)) {
+      this.alertService.showError('El nombre del participante no puede contener números.', 'Error');
+      return null;
+    }
+    if (!selectedModes.length) {
+      this.alertService.showError('Debes seleccionar al menos un modo de firma.', 'Error');
+      return null;
+    }
+    if (email && !SIMPLE_EMAIL_PATTERN.test(email)) {
+      this.alertService.showError('Ingresa un correo válido para el participante.', 'Error');
+      return null;
+    }
+
+    const requiresEmail = selectedModes.includes('SIGNATURE_EMAIL');
+    const requiresPhone = true;
+    const requiresDocument = selectedModes.some(mode => this.isBiometricMode(mode));
+
+    if (requiresEmail && !email) {
+      this.alertService.showError('El correo es obligatorio por los modos seleccionados.', 'Error');
+      return null;
+    }
+    if (requiresPhone && !phone) {
+      this.alertService.showError('El teléfono es obligatorio por los modos seleccionados.', 'Error');
+      return null;
+    }
+    if (requiresDocument && !documentNumber) {
+      this.alertService.showError('El documento es obligatorio para firma biométrica.', 'Error');
+      return null;
+    }
+    if (requiresDocument && !email && !phone) {
+      this.alertService.showError('Para biometría debes tener al menos email o teléfono.', 'Error');
+      return null;
+    }
+
+    const attemptsMax = this.parseNumber(formValue.attemptsMax, 3);
+    const cooldownSeconds = this.parseNumber(formValue.cooldownSeconds, 60);
+    const identity: DocumentParticipantIdentity = {};
+    if (email) {
+      identity.email = email;
+    }
+    if (phone) {
+      identity.phone = phone;
+    }
+    if (documentNumber) {
+      identity.documentNumber = documentNumber;
+    }
+
+    return {
+      displayName: name,
+      signatureMode: selectedModes,
+      policy: {
+        attemptsMax,
+        cooldownSeconds
+      },
+      identity
+    };
+  }
+
+  private hasInlineParticipantData(formValue: any): boolean {
+    return !!(
+      (formValue.participantName ?? '').toString().trim() ||
+      (formValue.participantEmail ?? '').toString().trim() ||
+      (formValue.participantPhone ?? '').toString().trim() ||
+      (formValue.participantDocumentNumber ?? '').toString().trim()
+    );
+  }
+
+  private setFieldRequiredIndicator(fieldKey: string, required: boolean): void {
+    this.formConfig = this.cloneFormConfig(this.formConfig);
+    const target = this.formConfig.fields.find((f: any) => f.key === fieldKey);
+    if (target) {
+      target.required = required;
+    }
   }
 
   private cloneFormConfig(config: any): any {

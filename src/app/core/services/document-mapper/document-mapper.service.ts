@@ -60,14 +60,29 @@ export class DocumentMapperService {
       includeEmbeddedStyleMap: true,
       ignoreEmptyParagraphs: false,
       styleMap: [
-        "p[style-name='Heading 1'] => h1:fresh",
-        "p[style-name='Heading 2'] => h2:fresh",
-        "p[style-name='Heading 3'] => h3:fresh",
-        "p[style-name='Title'] => h1:fresh",
-        "p[style-name='Subtitle'] => h2:fresh",
+        "p[style-name='Heading 1'] => h1.doc-h1:fresh",
+        "p[style-name='Heading 2'] => h2.doc-h2:fresh",
+        "p[style-name='Heading 3'] => h3.doc-h3:fresh",
+        "p[style-name='Heading 4'] => h4.doc-h4:fresh",
+        "p[style-name='Title'] => h1.doc-title:fresh",
+        "p[style-name='Subtitle'] => h2.doc-subtitle:fresh",
         "p[style-name='Normal'] => p:fresh",
         "p[style-name='Normal (Web)'] => p:fresh",
         "p[style-name='Body Text'] => p:fresh",
+        "p[style-name='Body Text 2'] => p:fresh",
+        "p[style-name='Body Text 3'] => p:fresh",
+        "p[style-name='List Paragraph'] => p.doc-list-paragraph:fresh",
+        "p[style-name='Quote'] => blockquote.doc-quote:fresh",
+        "p[style-name='Intense Quote'] => blockquote.doc-quote-intense:fresh",
+        "p[style-name='No Spacing'] => p.doc-no-spacing:fresh",
+        "p[style-name='Header'] => p.doc-header:fresh",
+        "p[style-name='Footer'] => p.doc-footer:fresh",
+        "p[style-name='TOC Heading'] => p.doc-toc-heading:fresh",
+        "r[style-name='Strong'] => strong",
+        "r[style-name='Emphasis'] => em",
+        "r[style-name='Intense Emphasis'] => em.doc-intense-emphasis",
+        "r[style-name='Subtle Reference'] => span.doc-subtle-ref",
+        "r[style-name='Book Title'] => span.doc-book-title",
         'table => table.doc-table',
         'table row => tr',
         'table cell => td'
@@ -97,7 +112,7 @@ export class DocumentMapperService {
 
   private async convertPdf(file: File): Promise<DocumentConversionResult> {
     const arrayBuffer = await file.arrayBuffer();
-    const pdf = await getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+    const pdf = await this.loadPdfDocument(new Uint8Array(arrayBuffer));
 
     const paragraphs: string[] = [];
 
@@ -123,6 +138,25 @@ export class DocumentMapperService {
         paragraphs: paragraphs.length
       }
     };
+  }
+
+  private async loadPdfDocument(data: Uint8Array): Promise<any> {
+    try {
+      return await getDocument({ data }).promise;
+    } catch (error) {
+      const message = error instanceof Error ? error.message.toLowerCase() : '';
+      const isWorkerIssue =
+        message.includes('worker') ||
+        message.includes('setting up fake worker') ||
+        message.includes('api version') ||
+        message.includes('module script');
+
+      if (!isWorkerIssue) {
+        throw error;
+      }
+
+      return getDocument({ data, disableWorker: true } as any).promise;
+    }
   }
 
   private isTextItem(item: unknown): item is TextItem {

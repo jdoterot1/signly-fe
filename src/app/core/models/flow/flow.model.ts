@@ -1,5 +1,5 @@
 // Flow Challenge Types
-export type FlowChallengeType = 'biometric' | 'otp_email' | 'otp_sms' | 'otp_whatsapp' | 'liveness';
+export type FlowChallengeType = 'biometric' | 'otp_email' | 'otp_sms' | 'otp_whatsapp' | 'liveness' | 'template_sign';
 export type FlowChallengeStatus = 'ACTIVE' | 'PENDING' | 'COMPLETED';
 export type FlowStatus = 'ACTIVE' | 'COMPLETED' | 'EXPIRED' | 'FAILED';
 export type OtpChannel = 'email' | 'sms' | 'whatsapp';
@@ -121,6 +121,55 @@ export interface BiometricStartRequest {
 export interface OtpVerifyRequest {
   channel: OtpChannel;
   code: string;
+}
+
+// Template Download Response (from /template/download)
+export interface TemplateDownloadField {
+  fieldCode: string;
+  fieldName: string;
+  fieldType: string;
+  height: string | number;
+  page: string | number;
+  width: string | number;
+  x: string | number;
+  y: string | number;
+}
+
+export interface TemplateDownloadData {
+  downloadUrl: string;
+  fields: TemplateDownloadField[];
+  templateId?: string;
+  templateName?: string;
+  templateVersion?: string;
+}
+
+// Template Submit Request (for /template/submit)
+export interface TemplateSubmitField {
+  fieldCode: string;
+  fieldName: string;
+  fieldType: string;
+  height: number;
+  page: number;
+  width: number;
+  x: number;
+  y: number;
+  value: string;
+}
+
+export interface TemplateSubmitRequest {
+  fields: TemplateSubmitField[];
+}
+
+// Flow Complete Request (for /complete)
+export interface FlowCompleteRequest {
+  sendCopy: boolean;
+  email: string;
+}
+
+// Flow Complete Response
+export interface FlowCompleteData {
+  code: string;
+  message: string;
 }
 
 // Flow State for component use

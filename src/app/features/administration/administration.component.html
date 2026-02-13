@@ -10,10 +10,10 @@
     ></app-admin-sidebar>
 
     <section class="flex-1 space-y-6 w-full">
-      <div class="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-indigo-50/60 p-8">
+      <div class="bg-brand-surface-card rounded-3xl border border-brand-subtle shadow-xl p-8">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-[#2b0f60]">Centro de administración</p>
+            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-brand-primary">Centro de administración</p>
             <h1 class="text-3xl font-semibold heading-brand mt-3">{{ selectedOption }}</h1>
             <p class="text-gray-600 mt-3 leading-relaxed max-w-2xl">
               {{ currentDescription }}
@@ -25,12 +25,12 @@
       </div>
 
       <ng-container *ngIf="selectedOption === 'Información general'; else configurationPanel">
-        <div class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-6 space-y-6">
+        <div class="bg-brand-surface-card rounded-3xl border border-brand-subtle shadow-lg p-6 space-y-6">
           <div class="flex items-center justify-between">
-            <span class="text-xl font-semibold text-[#2b0f60]">Notificaciones</span>
+            <span class="text-xl font-semibold text-brand-primary">Notificaciones</span>
             <button
               type="button"
-              class="p-2 rounded-full border border-gray-200 text-[#2b0f60] hover:bg-[#f3ecff]"
+              class="p-2 rounded-full border border-gray-200 text-brand-primary hover:bg-brand-surface-alt"
               (click)="openPreferencesModal()"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,9 +51,9 @@
               class="p-4 rounded-2xl border border-gray-100 bg-indigo-50/40 hover:border-indigo-200 transition cursor-pointer"
               (click)="onOptionSelected(shortcut.target)"
             >
-              <p class="text-xs uppercase tracking-[0.25em] text-[#2b0f60] font-semibold">{{ shortcut.label }}</p>
+              <p class="text-xs uppercase tracking-[0.25em] text-brand-primary font-semibold">{{ shortcut.label }}</p>
               <p class="text-sm text-gray-600 mt-2">{{ shortcut.description }}</p>
-              <span class="inline-flex items-center gap-1 text-sm font-semibold text-[#2b0f60] mt-3">
+              <span class="inline-flex items-center gap-1 text-sm font-semibold text-brand-primary mt-3">
                 Abrir
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7 7 7-7 7" />
@@ -105,7 +105,7 @@
               <app-audit-list></app-audit-list>
             </ng-template>
           </ng-container>
-          <div *ngSwitchDefault class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-indigo-50/60 p-6">
+          <div *ngSwitchDefault class="bg-brand-surface-card rounded-3xl border border-brand-subtle shadow-lg p-6">
             <p class="text-sm font-semibold heading-brand">Acciones rápidas</p>
             <p class="text-sm text-gray-500">Decide qué actualizar según la sección seleccionada.</p>
             <div class="mt-4 grid gap-4 md:grid-cols-2">
@@ -143,10 +143,10 @@
   *ngIf="showPreferencesModal"
   class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4"
 >
-  <div class="bg-white rounded-3xl max-w-xl w-full shadow-2xl p-8">
+  <div class="bg-brand-surface-card rounded-3xl max-w-xl w-full shadow-2xl p-8">
     <div class="flex items-start justify-between">
       <div>
-        <h2 class="text-2xl font-semibold text-[#2b0f60]">Preferencias de notificación</h2>
+        <h2 class="text-2xl font-semibold text-brand-primary">Preferencias de notificación</h2>
         <p class="text-sm text-gray-600 mt-2">
           Las notificaciones siempre aparecen en la página Información general de la configuración de eSignature.
           Además, puede optar por recibir notificaciones por correo electrónico sobre:
@@ -161,24 +161,24 @@
 
     <div class="mt-6 space-y-4 text-sm text-gray-700">
       <label class="flex items-start gap-3 cursor-pointer">
-        <input type="checkbox" class="mt-1 h-4 w-4 rounded border-gray-300 text-[#2b0f60] focus:ring-[#2b0f60]" />
+        <input type="checkbox" class="mt-1 h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary" />
         <span><strong>Estado de la cuenta:</strong> manténgase al tanto de las actividades importantes en su cuenta.</span>
       </label>
       <label class="flex items-start gap-3 cursor-pointer">
-        <input type="checkbox" class="mt-1 h-4 w-4 rounded border-gray-300 text-[#2b0f60] focus:ring-[#2b0f60]" />
+        <input type="checkbox" class="mt-1 h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary" />
         <span><strong>Actualización de productos:</strong> conozca los nuevos productos o mejoras.</span>
       </label>
       <label class="flex items-start gap-3 cursor-pointer">
-        <input type="checkbox" class="mt-1 h-4 w-4 rounded border-gray-300 text-[#2b0f60] focus:ring-[#2b0f60]" />
+        <input type="checkbox" class="mt-1 h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary" />
         <span><strong>Formación y aprendizaje:</strong> descubra los próximos entrenamientos, seminarios web y conferencias.</span>
       </label>
     </div>
 
     <div class="mt-8 flex justify-end gap-3">
-      <button type="button" class="px-5 py-2 rounded-xl border border-gray-200 text-[#2b0f60] font-semibold" (click)="closePreferencesModal()">
+      <button type="button" class="px-5 py-2 rounded-xl border border-gray-200 text-brand-primary font-semibold" (click)="closePreferencesModal()">
         Cancelar
       </button>
-      <button type="button" class="px-5 py-2 rounded-xl bg-[#ded6f6] text-white font-semibold opacity-60 cursor-not-allowed">
+      <button type="button" class="px-5 py-2 rounded-xl bg-brand-disabled text-white font-semibold opacity-60 cursor-not-allowed">
         Guardar
       </button>
     </div>

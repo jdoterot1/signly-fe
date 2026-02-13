@@ -1,20 +1,70 @@
-<div class="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-emerald-50/30 relative overflow-hidden">
-  <div class="absolute -top-32 -right-24 h-72 w-72 rounded-full bg-green-200/40 blur-3xl"></div>
-  <div class="absolute -bottom-24 -left-16 h-64 w-64 rounded-full bg-emerald-200/40 blur-3xl"></div>
-
-  <!-- Confetti animation (CSS-only) -->
-  <div class="absolute inset-0 overflow-hidden pointer-events-none">
-    <div class="confetti confetti-1"></div>
-    <div class="confetti confetti-2"></div>
-    <div class="confetti confetti-3"></div>
-    <div class="confetti confetti-4"></div>
-    <div class="confetti confetti-5"></div>
-  </div>
+<div class="min-h-screen bg-[radial-gradient(circle_at_10%_20%,#dbeafe_0%,#f8fafc_35%,#dcfce7_100%)] relative overflow-hidden">
+  <div class="absolute -top-28 -left-20 h-80 w-80 rounded-[30%] bg-gradient-to-br from-cyan-200/40 to-blue-200/20 blur-3xl animate-aurora"></div>
+  <div class="absolute -bottom-28 -right-20 h-80 w-80 rounded-[38%] bg-gradient-to-br from-emerald-200/50 to-lime-100/20 blur-3xl animate-aurora-delayed"></div>
 
   <app-flow-progress [currentStep]="'completado'" [processId]="processId" [companyName]="'Apolo'"></app-flow-progress>
 
   <main class="relative z-10 flex items-center justify-center px-4 py-10">
-    <section class="w-full max-w-lg rounded-3xl bg-white/80 backdrop-blur-xl border border-white shadow-2xl shadow-green-100/60 p-8 md:p-12">
+    <!-- Pre-complete: Send copy form -->
+    <section *ngIf="!completed" class="w-full max-w-lg rounded-3xl bg-white/80 backdrop-blur-xl border border-white shadow-2xl shadow-green-100/60 p-8 md:p-12">
+      <div class="flex flex-col items-center text-center gap-6">
+
+        <div class="w-20 h-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg">
+          <i class="pi pi-send text-3xl text-white"></i>
+        </div>
+
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.35em] text-green-600">Ultimo paso</p>
+          <h1 class="mt-3 text-2xl md:text-3xl font-semibold text-slate-900">Finalizar proceso</h1>
+          <p class="mt-3 text-sm text-slate-500 max-w-sm">
+            Todo ya fue validado. Puedes elegir si deseas recibir una copia del documento firmado en tu correo.
+          </p>
+        </div>
+
+        <!-- Email destination and send copy toggle -->
+        <div class="w-full text-left space-y-4">
+          <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <p class="text-xs font-semibold text-slate-600 mb-1">Correo de destino</p>
+            <p class="text-sm text-slate-800 break-all" *ngIf="hasRecipientEmail(); else noEmailRecipient">
+              Se enviara una copia a <span class="font-semibold">{{ email }}</span>.
+            </p>
+            <ng-template #noEmailRecipient>
+              <p class="text-sm text-slate-600">
+                No hay un correo asociado a este firmante, por lo tanto no se puede enviar copia por email.
+              </p>
+            </ng-template>
+          </div>
+
+          <label class="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox"
+                   [(ngModel)]="sendCopy"
+                   [disabled]="!hasRecipientEmail()"
+                   class="h-4 w-4 rounded border-slate-300 text-green-600 focus:ring-green-500" />
+            <span class="text-sm text-slate-600">Enviar copia del documento firmado a mi correo</span>
+          </label>
+        </div>
+
+        <!-- Error -->
+        <div *ngIf="completeError" class="bg-red-50 border border-red-200 rounded-2xl p-4 text-left w-full">
+          <p class="text-xs text-red-700"><i class="pi pi-exclamation-triangle mr-2"></i>{{ completeError }}</p>
+        </div>
+        <div *ngIf="completeNotice" class="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-left w-full">
+          <p class="text-xs text-blue-700"><i class="pi pi-info-circle mr-2"></i>{{ completeNotice }}</p>
+        </div>
+
+        <!-- Complete button -->
+        <button (click)="completeFlow()"
+                [disabled]="completing || (sendCopy && !hasRecipientEmail())"
+                class="rounded-full bg-green-600 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-green-200/60 hover:bg-green-700 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+          <i *ngIf="completing" class="pi pi-spin pi-spinner text-xs"></i>
+          {{ completing ? 'Completando...' : 'Completar firma' }}
+          <i *ngIf="!completing" class="pi pi-check text-xs"></i>
+        </button>
+      </div>
+    </section>
+
+    <!-- Post-complete: Success view -->
+    <section *ngIf="completed" class="w-full max-w-lg rounded-3xl bg-white/80 backdrop-blur-xl border border-white shadow-2xl shadow-green-100/60 p-8 md:p-12">
       <div class="flex flex-col items-center text-center gap-6">
 
         <!-- Success Icon -->
@@ -70,24 +120,26 @@
         </div>
 
         <!-- Info Note -->
-        <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-left w-full">
+        <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-left w-full" *ngIf="completeNotice">
           <div class="flex items-start gap-3">
             <i class="pi pi-info-circle text-blue-500 mt-0.5"></i>
             <div>
-              <p class="text-xs font-medium text-blue-700">Siguiente paso</p>
+              <p class="text-xs font-medium text-blue-700">Correo de respaldo</p>
               <p class="text-xs text-blue-600 mt-1">
-                Recibiras una notificacion cuando el documento este completamente firmado por todas las partes involucradas.
+                {{ completeNotice }}
               </p>
             </div>
           </div>
         </div>
 
         <!-- Action Button -->
-        <button (click)="closeWindow()"
+        <div class="flex flex-col sm:flex-row gap-3 w-full justify-center">
+          <button (click)="closeWindow()"
                 class="rounded-full bg-slate-800 px-8 py-3 text-sm font-semibold text-white shadow-lg hover:bg-slate-900 transition-all flex items-center gap-2">
-          Cerrar ventana
-          <i class="pi pi-times text-xs"></i>
-        </button>
+            Continuar
+            <i class="pi pi-arrow-right text-xs"></i>
+          </button>
+        </div>
 
         <!-- Signly Branding -->
         <p class="text-xs text-slate-400">
@@ -113,52 +165,23 @@
     }
   }
 
-  .confetti {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    animation: confetti-fall 3s ease-in-out infinite;
+  .animate-aurora {
+    animation: aurora 9s ease-in-out infinite;
   }
 
-  .confetti-1 {
-    left: 10%;
-    background: #22c55e;
-    animation-delay: 0s;
+  .animate-aurora-delayed {
+    animation: aurora 10s ease-in-out infinite reverse;
   }
 
-  .confetti-2 {
-    left: 30%;
-    background: #3b82f6;
-    animation-delay: 0.5s;
-  }
-
-  .confetti-3 {
-    left: 50%;
-    background: #f59e0b;
-    animation-delay: 1s;
-  }
-
-  .confetti-4 {
-    left: 70%;
-    background: #ec4899;
-    animation-delay: 1.5s;
-  }
-
-  .confetti-5 {
-    left: 90%;
-    background: #8b5cf6;
-    animation-delay: 2s;
-  }
-
-  @keyframes confetti-fall {
+  @keyframes aurora {
     0% {
-      transform: translateY(-100vh) rotate(0deg);
-      opacity: 1;
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(16px, -14px) scale(1.08);
     }
     100% {
-      transform: translateY(100vh) rotate(720deg);
-      opacity: 0;
+      transform: translate(0, 0) scale(1);
     }
   }
 </style>

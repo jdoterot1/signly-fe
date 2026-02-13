@@ -1,5 +1,5 @@
 <div class="min-h-[calc(100vh-8rem)] py-10 px-4 lg:px-10">
-  <div class="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-indigo-50/60 p-8">
+  <div class="bg-brand-surface-card rounded-3xl border border-brand-subtle shadow-xl p-8">
     <div class="flex items-start justify-between gap-6">
       <div>
         <p class="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">Documento</p>
@@ -8,7 +8,7 @@
       </div>
       <button
         type="button"
-        class="bg-[#2b0f60] text-white px-4 py-2 rounded hover:bg-[#1b1034]"
+        class="bg-brand-primary text-white px-4 py-2 rounded hover:bg-brand-primary-hover"
         (click)="goBack()"
       >
         Volver
@@ -16,7 +16,7 @@
     </div>
 
     <div class="mt-8">
-      <div *ngIf="loading" class="text-gray-500">Cargando...</div>
+      <div *ngIf="loading" class="text-brand-muted-light">Cargando...</div>
       <div *ngIf="!loading && errorMessage" class="text-red-600 font-semibold">{{ errorMessage }}</div>
 
       <div *ngIf="!loading && document" class="mt-4">
@@ -24,10 +24,11 @@
           <div class="rounded-2xl border border-gray-100 p-5">
             <div class="text-xs text-gray-500">Estado</div>
             <div class="mt-2 inline-flex items-center gap-2">
-              <span class="h-2.5 w-2.5 rounded-full bg-emerald-500" *ngIf="document.status === 'COMPLETED'"></span>
-              <span class="h-2.5 w-2.5 rounded-full bg-amber-500" *ngIf="document.status === 'CREATED' || document.status === 'IN_PROGRESS'"></span>
-              <span class="h-2.5 w-2.5 rounded-full bg-red-500" *ngIf="document.status === 'CANCELLED' || document.status === 'EXPIRED'"></span>
-              <span class="font-semibold">{{ document.status }}</span>
+              <span class="h-2.5 w-2.5 rounded-full bg-emerald-500" *ngIf="getStatusLabel(document.status) === 'Creado'"></span>
+              <span class="h-2.5 w-2.5 rounded-full bg-sky-500" *ngIf="getStatusLabel(document.status) === 'Completado'"></span>
+              <span class="h-2.5 w-2.5 rounded-full bg-amber-500" *ngIf="getStatusLabel(document.status) === 'En proceso'"></span>
+              <span class="h-2.5 w-2.5 rounded-full bg-red-500" *ngIf="getStatusLabel(document.status) === 'Cancelado' || getStatusLabel(document.status) === 'Expirado'"></span>
+              <span class="font-semibold">{{ getStatusLabel(document.status) }}</span>
             </div>
             <div class="mt-3 text-sm text-gray-600">
               Orden: <span class="font-semibold text-gray-800">{{ document.orderMode || 'N/A' }}</span>
@@ -36,7 +37,7 @@
 
           <div class="rounded-2xl border border-gray-100 p-5">
             <div class="text-xs text-gray-500">Plantilla</div>
-            <div class="mt-2 font-semibold break-all">{{ document.templateId }}</div>
+            <div class="mt-2 font-semibold break-all">{{ templateNameDisplay }}</div>
             <div class="mt-2 text-sm text-gray-600">
               Versión:
               <span class="font-semibold text-gray-800">{{ document.templateVersion || 'N/A' }}</span>
@@ -76,16 +77,31 @@
             <div class="mt-4 space-y-2 text-sm text-gray-700">
               <div class="flex items-center justify-between gap-4">
                 <span class="text-gray-500">Creado por</span>
-                <span class="font-semibold break-all text-right">{{ document.createdBy }}</span>
+                <span class="font-semibold break-all text-right">{{ createdByDisplay }}</span>
               </div>
               <div class="flex items-center justify-between gap-4">
                 <span class="text-gray-500">Actualizado por</span>
-                <span class="font-semibold break-all text-right">{{ document.updatedBy || 'N/A' }}</span>
+                <span class="font-semibold break-all text-right">{{ updatedByDisplay }}</span>
               </div>
               <div class="flex items-center justify-between gap-4">
-                <span class="text-gray-500">Tenant</span>
-                <span class="font-semibold break-all text-right">{{ document.tenantId || 'N/A' }}</span>
+                <span class="text-gray-500">Compañía</span>
+                <span class="font-semibold break-all text-right">{{ companyDisplay }}</span>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 rounded-2xl border border-gray-100 p-5" *ngIf="document.participants?.length">
+          <div class="text-sm font-semibold text-gray-700">ID del proceso</div>
+          <div class="mt-4 space-y-3">
+            <div *ngFor="let p of document.participants" class="rounded-xl border border-gray-100 bg-gray-50 p-3">
+              <div class="text-xs text-gray-500 mb-1">{{ p.displayName }}</div>
+              <span *ngIf="getProcessIdForParticipant(p.participantId, p.processId)" class="text-sm text-gray-800 break-all">
+                {{ getProcessIdForParticipant(p.participantId, p.processId) }}
+              </span>
+              <span *ngIf="!getProcessIdForParticipant(p.participantId, p.processId)" class="text-sm text-gray-500">
+                Proceso no disponible aún
+              </span>
             </div>
           </div>
         </div>
@@ -104,6 +120,7 @@
                   <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Firma</th>
                   <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Orden</th>
                   <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Flow</th>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
@@ -120,6 +137,48 @@
                   </td>
                   <td class="px-4 py-3 text-sm text-gray-700">{{ p.order || 'N/A' }}</td>
                   <td class="px-4 py-3 text-sm text-gray-700">{{ p.status || p.currentStep || 'N/A' }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">
+                    <span *ngIf="getProcessIdForParticipant(p.participantId, p.processId)" class="break-all">
+                      {{ getProcessIdForParticipant(p.participantId, p.processId) }}
+                    </span>
+                    <span *ngIf="!getProcessIdForParticipant(p.participantId, p.processId)" class="text-gray-500">N/A</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mt-6 rounded-2xl border border-gray-100 p-5">
+          <div class="flex items-center justify-between gap-4">
+            <div class="text-sm font-semibold text-gray-700">Eventos del documento / flow</div>
+            <div class="text-xs text-gray-500">Máximo 30</div>
+          </div>
+
+          <div *ngIf="eventsLoading" class="mt-4 text-sm text-gray-500">Cargando eventos...</div>
+          <div *ngIf="!eventsLoading && eventsError" class="mt-4 text-sm text-red-600 font-semibold">{{ eventsError }}</div>
+          <div *ngIf="!eventsLoading && !eventsError && !auditEvents.length" class="mt-4 text-sm text-gray-500">
+            No encontramos eventos relacionados para este documento.
+          </div>
+
+          <div class="mt-4 overflow-x-auto" *ngIf="!eventsLoading && !eventsError && auditEvents.length">
+            <table class="min-w-full w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Acción</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Recurso</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Path</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr *ngFor="let e of auditEvents">
+                  <td class="px-4 py-3 text-sm text-gray-700">{{ formatDate(e.occurredAt) }}</td>
+                  <td class="px-4 py-3 text-sm font-semibold text-gray-800">{{ e.action }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700 break-all">
+                    {{ e.resource.type || 'N/A' }}: {{ e.resource.id || 'N/A' }}
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-700 break-all">{{ e.http.path || 'N/A' }}</td>
                 </tr>
               </tbody>
             </table>

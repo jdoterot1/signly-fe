@@ -108,6 +108,18 @@ export class FlowLivenessComponent implements OnInit, OnDestroy {
     }
 
     try {
+      const permissionStatus = await navigator.permissions.query({ name: 'camera' as PermissionName });
+      if (permissionStatus.state === 'denied') {
+        this.cameraError =
+          'El acceso a la camara esta bloqueado. Habilita el permiso en la configuracion del navegador y recarga la pagina.';
+        this.currentStep = 'error';
+        return;
+      }
+    } catch {
+      // permissions.query may not be supported; continue
+    }
+
+    try {
       this.stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
       });
@@ -116,17 +128,27 @@ export class FlowLivenessComponent implements OnInit, OnDestroy {
       this.currentStep = 'active';
       this.cameraActive = true;
 
-      // Esperar un tick para que Angular renderice el elemento video
-      setTimeout(async () => {
-        const video = this.videoRef?.nativeElement;
-        if (video && this.stream) {
-          video.srcObject = this.stream;
-          await video.play();
-          this.startInstructionSequence();
-        }
-      }, 100);
-    } catch {
-      this.cameraError = 'No pudimos acceder a tu camara. Revisa los permisos.';
+      // Esperar a que Angular renderice el elemento video
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+      const video = this.videoRef?.nativeElement;
+      if (video && this.stream) {
+        video.srcObject = this.stream;
+        await video.play();
+        this.startInstructionSequence();
+      }
+    } catch (err) {
+      const errorName = (err as DOMException)?.name ?? '';
+      if (errorName === 'NotAllowedError') {
+        this.cameraError =
+          'El permiso de camara fue denegado. Habilita la camara en la configuracion del navegador y recarga la pagina.';
+      } else if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
+        this.cameraError = 'No se encontro ninguna camara conectada a tu dispositivo.';
+      } else if (errorName === 'NotReadableError' || errorName === 'TrackStartError') {
+        this.cameraError = 'La camara esta siendo usada por otra aplicacion. Cierra las demas apps y vuelve a intentar.';
+      } else {
+        this.cameraError = 'No pudimos acceder a tu camara. Revisa los permisos.';
+      }
+      console.error('Error al acceder a la camara:', err);
       this.currentStep = 'error';
     }
   }
@@ -174,35 +196,28 @@ export class FlowLivenessComponent implements OnInit, OnDestroy {
   private navigateToNextStep(): void {
     const state = this.flowService.getFlowState();
     if (!state) {
-      this.router.navigate(['/flow', this.processId, 'complete']);
+      this.router.navigate(['/flow', this.processId, 'template-sign']);
       return;
     }
 
-    // Find next pending step
-    const currentIndex = state.pipeline.indexOf('liveness');
-    const nextSteps = state.pipeline.slice(currentIndex + 1);
-    const nextPendingStep = nextSteps.find(step => {
-      const challenge = state.challenges.find(c => c.type === step);
-      return challenge && challenge.status !== 'COMPLETED';
-    });
-
-    if (!nextPendingStep) {
-      this.router.navigate(['/flow', this.processId, 'complete']);
-      return;
-    }
+    const nextStep = this.flowService.getNextPipelineStep('liveness');
 
     const routes: Record<string, string> = {
       otp_email: 'otp-email',
       otp_sms: 'otp-sms',
       otp_whatsapp: 'otp-whatsapp',
       biometric: 'biometric',
-      liveness: 'liveness'
+      liveness: 'liveness',
+      template_sign: 'template-sign'
     };
 
-    const route = routes[nextPendingStep];
+    const route = nextStep ? routes[nextStep] : null;
     if (route) {
       this.router.navigate(['/flow', this.processId, route]);
+      return;
     }
+
+    this.router.navigate(['/flow', this.processId, 'template-sign']);
   }
 
   retry(): void {

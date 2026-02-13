@@ -55,7 +55,7 @@
             <input
               type="url"
               formControlName="logo_url"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-accent"
               (input)="updateLogoPreview()"
               placeholder="https://cdn.signly.app/logo.svg"
             />
@@ -79,7 +79,7 @@
             <input
               type="url"
               formControlName="favicon_url"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-accent"
               (input)="updateFaviconPreview()"
               placeholder="https://cdn.signly.app/favicon.ico"
             />
@@ -106,7 +106,7 @@
             <input
               type="text"
               formControlName="email_sender_name"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-accent"
               placeholder="Apolo Systems"
             />
           </div>
@@ -116,7 +116,7 @@
               <input
                 type="text"
                 formControlName="email_sender_alias"
-                class="flex-1 px-4 py-2 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3366FF] border-r border-gray-200"
+                class="flex-1 px-4 py-2 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-accent border-r border-gray-200"
                 placeholder="notificaciones"
               />
               <span class="px-4 py-2 bg-gray-50 text-sm text-gray-600 font-mono">{{ '@' + senderDomain }}</span>
@@ -184,7 +184,7 @@
           </button>
           <button
             type="submit"
-            class="px-5 py-2 rounded-xl bg-[#3366FF] text-white font-semibold hover:bg-[#274FCC] disabled:opacity-60"
+            class="px-5 py-2 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-hover disabled:opacity-60"
             [disabled]="isSavingBranding"
           >
             {{ isSavingBranding ? 'Guardando...' : 'Actualizar branding' }}
