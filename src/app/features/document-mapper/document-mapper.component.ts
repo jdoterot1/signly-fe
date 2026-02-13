@@ -28,6 +28,8 @@ interface PdfPageView {
   pageNumber: number;
   width: number;
   height: number;
+  pdfWidth: number;
+  pdfHeight: number;
   scale: number;
 }
 
@@ -94,6 +96,8 @@ export interface DocumentMappedField {
   height: number;
   pageWidth: number;
   pageHeight: number;
+  pdfPageWidth: number;
+  pdfPageHeight: number;
 }
 
 @Component({
@@ -269,16 +273,18 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
       const pageMeta = this.pdfPages.find(page => page.pageNumber === pageNumber);
       const pageWidth = pageMeta?.width ?? 1000;
       const pageHeight = pageMeta?.height ?? 1400;
+      const pdfPageWidth = pageMeta?.pdfWidth ?? pageWidth;
+      const pdfPageHeight = pageMeta?.pdfHeight ?? pageHeight;
 
       const widthPx = this.toNumber(field.width, 180);
       const heightPx = this.toNumber(field.height, 70);
       const xPx = this.toNumber(field.x, 0);
       const yPx = this.toNumber(field.y, 0);
 
-      const normalizedWidth = this.clamp(widthPx / pageWidth, 0.01, 1);
-      const normalizedHeight = this.clamp(heightPx / pageHeight, 0.01, 1);
-      const normalizedX = this.clamp(xPx / pageWidth, 0, Math.max(1 - normalizedWidth, 0));
-      const normalizedY = this.clamp(yPx / pageHeight, 0, Math.max(1 - normalizedHeight, 0));
+      const normalizedWidth = this.clamp(widthPx / pdfPageWidth, 0.01, 1);
+      const normalizedHeight = this.clamp(heightPx / pdfPageHeight, 0.01, 1);
+      const normalizedX = this.clamp(xPx / pdfPageWidth, 0, Math.max(1 - normalizedWidth, 0));
+      const normalizedY = this.clamp(yPx / pdfPageHeight, 0, Math.max(1 - normalizedHeight, 0));
 
       const name = this.normalizeFieldName(field.fieldName || `CAMPO_${index + 1}`) || `CAMPO_${index + 1}`;
       const type = this.mapApiFieldTypeToUi(field.fieldType);
@@ -298,7 +304,9 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
         width: normalizedWidth,
         height: normalizedHeight,
         pageWidth,
-        pageHeight
+        pageHeight,
+        pdfPageWidth,
+        pdfPageHeight
       };
     });
 
@@ -779,7 +787,9 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
     width: number,
     height: number,
     pageWidth: number,
-    pageHeight: number
+    pageHeight: number,
+    pdfPageWidth: number,
+    pdfPageHeight: number
   ): DocumentMappedField {
     const palette = this.fieldPalette.find(item => item.type === type);
     const base = palette?.label || type;
@@ -799,7 +809,9 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
       width,
       height,
       pageWidth,
-      pageHeight
+      pageHeight,
+      pdfPageWidth,
+      pdfPageHeight
     };
   }
 
@@ -819,7 +831,9 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
       size.width,
       size.height,
       page.width,
-      page.height
+      page.height,
+      page.pdfWidth,
+      page.pdfHeight
     );
     this.pushHistory();
     this.mappedFields = [...this.mappedFields, field];
@@ -841,7 +855,16 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
     this.pushHistory();
     this.mappedFields = this.mappedFields.map(f =>
       f.id === fieldId
-        ? { ...f, page: pageNumber, x: normalizedX, y: normalizedY, pageWidth: page.width, pageHeight: page.height }
+        ? {
+            ...f,
+            page: pageNumber,
+            x: normalizedX,
+            y: normalizedY,
+            pageWidth: page.width,
+            pageHeight: page.height,
+            pdfPageWidth: page.pdfWidth,
+            pdfPageHeight: page.pdfHeight
+          }
         : f
     );
     this.selectedFieldId = fieldId;
@@ -852,7 +875,7 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
     const size = this.getDefaultFieldSize(type);
     const fieldsOnDocx = this.mappedFields.length;
     const y = this.clamp(0.12 + fieldsOnDocx * 0.06, 0, 0.92);
-    const field = this.createMappedField(type, 1, 0.08, y, size.width, size.height, 1000, 1400);
+    const field = this.createMappedField(type, 1, 0.08, y, size.width, size.height, 1000, 1400, 1000, 1400);
     this.pushHistory();
     this.mappedFields = [...this.mappedFields, field];
     this.selectedFieldId = field.id;
@@ -992,6 +1015,8 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
         pageNumber,
         width: Math.round(viewport.width),
         height: Math.round(viewport.height),
+        pdfWidth: baseViewport.width,
+        pdfHeight: baseViewport.height,
         scale
       });
       textItems.push(

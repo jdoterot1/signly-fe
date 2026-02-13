@@ -98,10 +98,10 @@
                   <!-- Signature field -->
                   <div *ngIf="isSignField(field)"
                        [ngStyle]="getFieldStyle(field)"
-                       class="absolute cursor-pointer border-2 border-dashed rounded-lg transition-all duration-150 hover:scale-[1.01] hover:bg-indigo-50/80"
+                       class="absolute cursor-pointer border-2 border-dashed rounded-lg transition-all duration-150 hover:scale-[1.01]"
                        [ngClass]="{
-                         'border-indigo-400 bg-indigo-50/50': !hasFieldValue(field),
-                         'border-green-400 bg-green-50/50': hasFieldValue(field),
+                         'border-indigo-400 bg-transparent': !hasFieldValue(field),
+                         'border-green-400 bg-transparent': hasFieldValue(field),
                          'ring-2 ring-amber-300': isActiveField(field)
                        }"
                        (click)="openSignaturePad(field)">
@@ -127,7 +127,7 @@
                            (input)="onFieldInput(field, $event)"
                            (focus)="markFieldAsActive(field)"
                            [placeholder]="getFieldDisplayName(field)"
-                           class="w-full h-full border border-slate-300 rounded-md bg-white/95 px-2 text-[11px] md:text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400" />
+                           class="w-full h-full border border-slate-300 rounded-md bg-transparent px-2 text-[11px] md:text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400" />
                   </div>
                 </ng-container>
               </div>

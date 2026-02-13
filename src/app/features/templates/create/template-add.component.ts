@@ -268,10 +268,10 @@ export class TemplateCreateComponent {
       const apiFieldType = this.mapFieldTypeForApi(field.type);
       return {
         page: String(field.page),
-        x: this.toPixelString(field.x, field.pageWidth),
-        y: this.toPixelString(field.y, field.pageHeight),
-        width: this.toPixelString(field.width, field.pageWidth),
-        height: this.toPixelString(field.height, field.pageHeight),
+        x: this.toPixelString(field.x, field.pdfPageWidth),
+        y: this.toPixelString(field.y, field.pdfPageHeight),
+        width: this.toPixelString(field.width, field.pdfPageWidth),
+        height: this.toPixelString(field.height, field.pdfPageHeight),
         fieldName: this.toApiFieldName(field.label, field.name),
         fieldType: apiFieldType,
         fieldCode: this.mapFieldCodeForApiType(apiFieldType)

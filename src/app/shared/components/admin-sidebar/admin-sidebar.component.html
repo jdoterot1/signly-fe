@@ -2,7 +2,7 @@
   <div class="px-6 py-6 border-b border-brand-subtle">
     <p class="text-xs font-semibold uppercase tracking-[0.25em] text-brand-muted-light">Cuenta</p>
     <p class="text-2xl font-semibold text-brand-ink mt-2">{{ ownerName }}</p>
-    <p class="text-sm text-brand-muted-light mt-1">
+    <p class="text-sm text-brand-muted-light mt-1" *ngIf="accountId">
       Id. de la cuenta: <span class="font-semibold text-brand-ink">{{ accountId }}</span>
     </p>
   </div>

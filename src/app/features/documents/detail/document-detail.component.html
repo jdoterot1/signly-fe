@@ -152,29 +152,43 @@
         <div class="mt-6 rounded-2xl border border-gray-100 p-5">
           <div class="flex items-center justify-between gap-4">
             <div class="text-sm font-semibold text-gray-700">Eventos del documento / flow</div>
-            <div class="text-xs text-gray-500">Máximo 30</div>
+            <div class="flex items-center gap-3">
+              <label class="text-xs font-semibold text-gray-600">Participante</label>
+              <select
+                class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                [value]="selectedParticipantKey"
+                (change)="onParticipantFilterChange($any($event.target).value)"
+              >
+                <option *ngFor="let option of participantFilterOptions" [value]="option.key">
+                  {{ option.label }}
+                </option>
+              </select>
+              <div class="text-xs text-gray-500">Máximo 30</div>
+            </div>
           </div>
 
           <div *ngIf="eventsLoading" class="mt-4 text-sm text-gray-500">Cargando eventos...</div>
           <div *ngIf="!eventsLoading && eventsError" class="mt-4 text-sm text-red-600 font-semibold">{{ eventsError }}</div>
-          <div *ngIf="!eventsLoading && !eventsError && !auditEvents.length" class="mt-4 text-sm text-gray-500">
-            No encontramos eventos relacionados para este documento.
+          <div *ngIf="!eventsLoading && !eventsError && !visibleAuditEvents.length" class="mt-4 text-sm text-gray-500">
+            No encontramos eventos para el participante seleccionado.
           </div>
 
-          <div class="mt-4 overflow-x-auto" *ngIf="!eventsLoading && !eventsError && auditEvents.length">
+          <div class="mt-4 overflow-x-auto" *ngIf="!eventsLoading && !eventsError && visibleAuditEvents.length">
             <table class="min-w-full w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
                 <tr>
                   <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
                   <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Evento</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Participante</th>
                   <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actor / Estado</th>
                   <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Detalle</th>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
-                <tr *ngFor="let e of auditEvents">
+                <tr *ngFor="let e of visibleAuditEvents">
                   <td class="px-4 py-3 text-sm text-gray-700">{{ formatDate(e.timestamp) }}</td>
                   <td class="px-4 py-3 text-sm font-semibold text-gray-800">{{ e.eventType || 'N/A' }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700 break-all">{{ e.participantLabel }}</td>
                   <td class="px-4 py-3 text-sm text-gray-700">
                     <div>{{ e.actor || 'N/A' }}</div>
                     <div class="text-xs text-gray-500">{{ e.status || 'N/A' }}</div>
