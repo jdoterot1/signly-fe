@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -31,8 +31,9 @@ interface FieldWithValue extends TemplateDownloadField {
   templateUrl: './flow-template-sign.component.html'
 })
 export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewInit {
-  @ViewChild('pdfCanvas') pdfCanvas!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('signatureCanvas') signatureCanvas!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('pdfCanvas') pdfCanvas?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('pdfViewport') pdfViewport?: ElementRef<HTMLDivElement>;
+  @ViewChild('signatureCanvas') signatureCanvas?: ElementRef<HTMLCanvasElement>;
 
   processId = '';
   flowState: FlowState | null = null;
@@ -43,17 +44,26 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
   fields: FieldWithValue[] = [];
   currentPage = 1;
   totalPages = 1;
-  pdfScale = 1.2;
+  pdfScale = 1;
+  renderedPageWidth = 0;
+  renderedPageHeight = 0;
 
   // Signature pad state
   isDrawing = false;
   signatureDataUrl: string | null = null;
   activeSignField: FieldWithValue | null = null;
   showSignaturePad = false;
+  isSignatureEmpty = true;
 
   private pdfDoc: PDFDocumentProxy | null = null;
   private signCtx: CanvasRenderingContext2D | null = null;
   private subscriptions: Subscription[] = [];
+  private signatureCanvasWidth = 0;
+  private signatureCanvasHeight = 0;
+  private resizeRenderTimeout: ReturnType<typeof setTimeout> | null = null;
+  private signatureResizeTimeout: ReturnType<typeof setTimeout> | null = null;
+  private readonly minPdfScale = 0.55;
+  private readonly maxPdfScale = 1.35;
 
   constructor(
     private route: ActivatedRoute,
@@ -78,8 +88,28 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
     // Signature canvas setup happens when pad is opened
   }
 
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if ((this.currentStep === 'signing' || this.currentStep === 'submitting') && this.pdfDoc) {
+      this.schedulePdfRerender();
+    }
+
+    if (this.showSignaturePad) {
+      if (this.signatureResizeTimeout) {
+        clearTimeout(this.signatureResizeTimeout);
+      }
+      this.signatureResizeTimeout = setTimeout(() => this.initSignatureCanvas(), 120);
+    }
+  }
+
   ngOnDestroy(): void {
     this.subscriptions.forEach(sub => sub.unsubscribe());
+    if (this.resizeRenderTimeout) {
+      clearTimeout(this.resizeRenderTimeout);
+    }
+    if (this.signatureResizeTimeout) {
+      clearTimeout(this.signatureResizeTimeout);
+    }
     this.pdfDoc?.destroy();
   }
 
@@ -92,7 +122,7 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
         this.templateData = data;
         this.fields = (data.fields || []).map(f => ({ ...f, value: '' }));
         this.currentStep = 'signing';
-        this.loadPdf(data.downloadUrl);
+        void this.loadPdf(data.downloadUrl);
       },
       error: (err: FlowError) => {
         this.error = err.message || 'Error al cargar la plantilla del documento.';
@@ -108,7 +138,8 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
       const loadingTask = getDocument(url);
       this.pdfDoc = await loadingTask.promise;
       this.totalPages = this.pdfDoc.numPages;
-      this.renderPage(this.currentPage);
+      await this.renderPage(this.currentPage);
+      this.schedulePdfRerender();
     } catch {
       this.error = 'Error al cargar el documento PDF.';
       this.currentStep = 'error';
@@ -116,25 +147,37 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
   }
 
   private async renderPage(pageNum: number): Promise<void> {
-    if (!this.pdfDoc || !this.pdfCanvas) return;
+    if (!this.pdfDoc || !this.pdfCanvas?.nativeElement) return;
 
     const page = await this.pdfDoc.getPage(pageNum);
-    const viewport = page.getViewport({ scale: this.pdfScale });
+    const viewportAtScaleOne = page.getViewport({ scale: 1 });
+    const nextScale = this.resolvePdfScale(viewportAtScaleOne.width);
+    const viewport = page.getViewport({ scale: nextScale });
 
     const canvas = this.pdfCanvas.nativeElement;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    canvas.height = viewport.height;
-    canvas.width = viewport.width;
+    const pixelRatio = window.devicePixelRatio || 1;
+    canvas.width = Math.floor(viewport.width * pixelRatio);
+    canvas.height = Math.floor(viewport.height * pixelRatio);
+    canvas.style.width = `${viewport.width}px`;
+    canvas.style.height = `${viewport.height}px`;
+
+    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    ctx.clearRect(0, 0, viewport.width, viewport.height);
 
     await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+
+    this.pdfScale = nextScale;
+    this.renderedPageWidth = viewport.width;
+    this.renderedPageHeight = viewport.height;
   }
 
   goToPage(page: number): void {
     if (page < 1 || page > this.totalPages) return;
     this.currentPage = page;
-    this.renderPage(page);
+    void this.renderPage(page);
   }
 
   getFieldsForPage(page: number): FieldWithValue[] {
@@ -142,11 +185,12 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
   }
 
   getFieldStyle(field: TemplateDownloadField): Record<string, string> {
+    const scale = this.pdfScale || 1;
     return {
-      left: `${this.toInteger(field.x)}px`,
-      top: `${this.toInteger(field.y)}px`,
-      width: `${this.toPositiveInteger(field.width, 1)}px`,
-      height: `${this.toPositiveInteger(field.height, 1)}px`
+      left: `${this.toNumber(field.x) * scale}px`,
+      top: `${this.toNumber(field.y) * scale}px`,
+      width: `${this.toPositiveNumber(field.width, 1) * scale}px`,
+      height: `${this.toPositiveNumber(field.height, 1) * scale}px`
     };
   }
 
@@ -171,6 +215,7 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
     this.activeSignField = field;
     this.showSignaturePad = true;
     this.signatureDataUrl = null;
+    this.isSignatureEmpty = true;
 
     setTimeout(() => {
       this.initSignatureCanvas();
@@ -178,73 +223,75 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
   }
 
   private initSignatureCanvas(): void {
-    if (!this.signatureCanvas) return;
+    if (!this.signatureCanvas?.nativeElement) return;
 
     const canvas = this.signatureCanvas.nativeElement;
-    canvas.width = 500;
-    canvas.height = 200;
+    const cssWidth = Math.max(280, Math.floor(canvas.parentElement?.clientWidth || 500));
+    const cssHeight = window.innerWidth < 640 ? 180 : 220;
+    const pixelRatio = window.devicePixelRatio || 1;
+
+    this.signatureCanvasWidth = cssWidth;
+    this.signatureCanvasHeight = cssHeight;
+
+    canvas.width = Math.floor(cssWidth * pixelRatio);
+    canvas.height = Math.floor(cssHeight * pixelRatio);
+    canvas.style.width = `${cssWidth}px`;
+    canvas.style.height = `${cssHeight}px`;
+
     this.signCtx = canvas.getContext('2d');
 
     if (this.signCtx) {
+      this.signCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      this.signCtx.clearRect(0, 0, cssWidth, cssHeight);
       this.signCtx.fillStyle = '#ffffff';
-      this.signCtx.fillRect(0, 0, canvas.width, canvas.height);
-      this.signCtx.strokeStyle = '#1e293b';
-      this.signCtx.lineWidth = 2.5;
-      this.signCtx.lineCap = 'round';
-      this.signCtx.lineJoin = 'round';
+      this.signCtx.fillRect(0, 0, cssWidth, cssHeight);
+      this.drawSignatureGuide();
+      this.prepareSignatureBrush();
+      this.isDrawing = false;
     }
   }
 
-  onSignMouseDown(event: MouseEvent): void {
-    if (!this.signCtx) return;
+  onSignPointerDown(event: PointerEvent): void {
+    if (!this.signCtx || !this.signatureCanvas?.nativeElement) return;
     this.isDrawing = true;
-    const rect = this.signatureCanvas.nativeElement.getBoundingClientRect();
+    this.isSignatureEmpty = false;
+    const { x, y } = this.getSignaturePoint(event);
+    const canvas = this.signatureCanvas.nativeElement;
+    canvas.setPointerCapture(event.pointerId);
+
+    this.signCtx.fillStyle = '#0f172a';
     this.signCtx.beginPath();
-    this.signCtx.moveTo(event.clientX - rect.left, event.clientY - rect.top);
+    this.signCtx.arc(x, y, 1.2, 0, Math.PI * 2);
+    this.signCtx.fill();
+
+    this.signCtx.beginPath();
+    this.signCtx.moveTo(x, y);
   }
 
-  onSignMouseMove(event: MouseEvent): void {
+  onSignPointerMove(event: PointerEvent): void {
     if (!this.isDrawing || !this.signCtx) return;
-    const rect = this.signatureCanvas.nativeElement.getBoundingClientRect();
-    this.signCtx.lineTo(event.clientX - rect.left, event.clientY - rect.top);
+    const { x, y } = this.getSignaturePoint(event);
+    this.signCtx.lineTo(x, y);
     this.signCtx.stroke();
   }
 
-  onSignMouseUp(): void {
+  onSignPointerUp(event?: PointerEvent): void {
     this.isDrawing = false;
-  }
-
-  onSignTouchStart(event: TouchEvent): void {
-    event.preventDefault();
-    if (!this.signCtx) return;
-    this.isDrawing = true;
-    const rect = this.signatureCanvas.nativeElement.getBoundingClientRect();
-    const touch = event.touches[0];
-    this.signCtx.beginPath();
-    this.signCtx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
-  }
-
-  onSignTouchMove(event: TouchEvent): void {
-    event.preventDefault();
-    if (!this.isDrawing || !this.signCtx) return;
-    const rect = this.signatureCanvas.nativeElement.getBoundingClientRect();
-    const touch = event.touches[0];
-    this.signCtx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
-    this.signCtx.stroke();
-  }
-
-  onSignTouchEnd(event: TouchEvent): void {
-    event.preventDefault();
-    this.isDrawing = false;
+    if (!event || !this.signatureCanvas?.nativeElement) return;
+    const canvas = this.signatureCanvas.nativeElement;
+    if (canvas.hasPointerCapture(event.pointerId)) {
+      canvas.releasePointerCapture(event.pointerId);
+    }
   }
 
   clearSignature(): void {
     this.signatureDataUrl = null;
+    this.isSignatureEmpty = true;
     this.initSignatureCanvas();
   }
 
   confirmSignature(): void {
-    if (!this.signatureCanvas || !this.activeSignField) return;
+    if (!this.signatureCanvas || !this.activeSignField || this.isSignatureEmpty) return;
 
     const canvas = this.signatureCanvas.nativeElement;
     const dataUrl = canvas.toDataURL('image/png');
@@ -273,7 +320,11 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
   }
 
   allFieldsFilled(): boolean {
-    return this.fields.every(f => !!f.value);
+    return this.fields.every(f => this.isSignField(f) ? !!f.value : !!f.value.trim());
+  }
+
+  filledFieldsCount(): number {
+    return this.fields.reduce((count, field) => count + (this.hasFieldValue(field) ? 1 : 0), 0);
   }
 
   submitTemplate(): void {
@@ -322,15 +373,95 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
   }
 
   private toInteger(value: string | number, fallback = 0): number {
+    return Math.round(this.toNumber(value, fallback));
+  }
+
+  private toNumber(value: string | number, fallback = 0): number {
     const parsed = Number(value);
     if (!Number.isFinite(parsed)) {
       return fallback;
     }
-    return Math.round(parsed);
+    return parsed;
+  }
+
+  private toPositiveNumber(value: string | number, fallback = 1): number {
+    const numeric = this.toNumber(value, fallback);
+    return Math.max(numeric, fallback);
   }
 
   private toPositiveInteger(value: string | number, fallback = 1): number {
     const integer = this.toInteger(value, fallback);
     return Math.max(integer, fallback);
+  }
+
+  private resolvePdfScale(pageWidthAtScaleOne: number): number {
+    if (!pageWidthAtScaleOne) {
+      return this.pdfScale;
+    }
+
+    const viewportWidth = this.pdfViewport?.nativeElement.clientWidth || 0;
+    if (!viewportWidth) {
+      return this.pdfScale;
+    }
+
+    const gutter = window.innerWidth < 640 ? 16 : 28;
+    const availableWidth = Math.max(viewportWidth - gutter, 220);
+    const fitScale = availableWidth / pageWidthAtScaleOne;
+    return Math.min(this.maxPdfScale, Math.max(this.minPdfScale, fitScale));
+  }
+
+  private schedulePdfRerender(): void {
+    if (!this.pdfDoc) {
+      return;
+    }
+
+    if (this.resizeRenderTimeout) {
+      clearTimeout(this.resizeRenderTimeout);
+    }
+
+    this.resizeRenderTimeout = setTimeout(() => {
+      void this.renderPage(this.currentPage);
+    }, 120);
+  }
+
+  private drawSignatureGuide(): void {
+    if (!this.signCtx) return;
+
+    const guideY = this.signatureCanvasHeight * 0.72;
+    this.signCtx.save();
+    this.signCtx.strokeStyle = 'rgba(148, 163, 184, 0.55)';
+    this.signCtx.lineWidth = 1;
+    this.signCtx.setLineDash([7, 5]);
+    this.signCtx.beginPath();
+    this.signCtx.moveTo(18, guideY);
+    this.signCtx.lineTo(this.signatureCanvasWidth - 18, guideY);
+    this.signCtx.stroke();
+    this.signCtx.setLineDash([]);
+    this.signCtx.fillStyle = 'rgba(100, 116, 139, 0.75)';
+    this.signCtx.font = '14px "Segoe UI", sans-serif';
+    this.signCtx.fillText('X', 20, guideY + 4);
+    this.signCtx.restore();
+  }
+
+  private prepareSignatureBrush(): void {
+    if (!this.signCtx) return;
+
+    this.signCtx.strokeStyle = '#0f172a';
+    this.signCtx.fillStyle = '#0f172a';
+    this.signCtx.lineWidth = 2.4;
+    this.signCtx.lineCap = 'round';
+    this.signCtx.lineJoin = 'round';
+  }
+
+  private getSignaturePoint(event: PointerEvent): { x: number; y: number } {
+    if (!this.signatureCanvas?.nativeElement) {
+      return { x: 0, y: 0 };
+    }
+
+    const rect = this.signatureCanvas.nativeElement.getBoundingClientRect();
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top
+    };
   }
 }
