@@ -1,17 +1,32 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 
 import { DocumentService } from '../../../core/services/documents/document.service';
-import type { DocumentApi } from '../../../core/models/documents/document.model';
+import type { DocumentApi, DocumentParticipant } from '../../../core/models/documents/document.model';
 import { AuditService } from '../../../core/services/audit/audit.service';
-import type { AuditEvent } from '../../../core/models/audit/audit-event.model';
+import type { ProcessEvent } from '../../../core/models/audit/audit-event.model';
 import { UserService } from '../../../core/services/user/user.service';
 import type { UserSummary } from '../../../core/models/auth/user.model';
 import { CompanyService } from '../../../core/services/company/company.service';
 import { TemplateService } from '../../../core/services/templates/template.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
+
+interface ParticipantFilterOption {
+  key: string;
+  label: string;
+}
+
+interface ProcessEventView extends ProcessEvent {
+  participantKey: string;
+  participantLabel: string;
+}
+
+interface EventParticipantInfo {
+  participantKey: string;
+  participantLabel: string;
+}
 
 @Component({
   selector: 'app-document-detail',
@@ -24,7 +39,9 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
   loading = true;
   errorMessage = '';
   document?: DocumentApi;
-  auditEvents: AuditEvent[] = [];
+  auditEvents: ProcessEventView[] = [];
+  participantFilterOptions: ParticipantFilterOption[] = [{ key: 'ALL', label: 'Todos los participantes' }];
+  selectedParticipantKey = 'ALL';
   eventsLoading = false;
   eventsError = '';
   createdByDisplay = 'N/A';
@@ -33,6 +50,8 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
   templateNameDisplay = 'N/A';
   private usersById: Record<string, string> = {};
   private participantFlowMap: Record<string, string> = {};
+  private participantOptionByProcessId: Record<string, ParticipantFilterOption> = {};
+  private participantOptionByParticipantId: Record<string, ParticipantFilterOption> = {};
 
   private readonly subs = new Subscription();
 
@@ -91,6 +110,13 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
     return this.document?.participants?.length ?? 0;
   }
 
+  get visibleAuditEvents(): ProcessEventView[] {
+    if (this.selectedParticipantKey === 'ALL') {
+      return this.auditEvents;
+    }
+    return this.auditEvents.filter(event => event.participantKey === this.selectedParticipantKey);
+  }
+
   getStatusLabel(status: string | null | undefined): string {
     const normalized = (status || '').toUpperCase();
     switch (normalized) {
@@ -114,6 +140,27 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
       default:
         return status || 'N/A';
     }
+  }
+
+  getEventDetail(event: ProcessEvent): string {
+    const details: string[] = [];
+    if (event.processId) {
+      details.push(`process: ${event.processId}`);
+    }
+    if (event.documentId) {
+      details.push(`doc: ${event.documentId}`);
+    }
+    if (event.participantId) {
+      details.push(`participant: ${event.participantId}`);
+    }
+    if (event.fieldId) {
+      details.push(`field: ${event.fieldId}`);
+    }
+    return details.join(' | ') || 'N/A';
+  }
+
+  onParticipantFilterChange(rawValue: string): void {
+    this.selectedParticipantKey = rawValue || 'ALL';
   }
 
   buildFlowUrl(processId?: string | null): string {
@@ -150,10 +197,15 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
     this.companyDisplay = 'N/A';
     this.templateNameDisplay = 'N/A';
     this.participantFlowMap = {};
+    this.selectedParticipantKey = 'ALL';
+    this.participantFilterOptions = [{ key: 'ALL', label: 'Todos los participantes' }];
+    this.participantOptionByProcessId = {};
+    this.participantOptionByParticipantId = {};
 
     this.documentService.getDocumentDetail(this.documentId).subscribe({
       next: doc => {
         this.document = doc;
+        this.buildParticipantFilters(doc);
         this.resolveUserDisplays(doc);
         this.resolveCompanyDisplay();
         this.resolveTemplateDisplay(doc);
@@ -168,25 +220,51 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
   }
 
   private loadEvents(doc: DocumentApi): void {
-    const processIds = (doc.participants ?? [])
-      .map(p => p.processId)
-      .filter((id): id is string => !!id);
+    const processIds = Array.from(
+      new Set(
+        (doc.participants ?? [])
+          .map(p => this.getProcessIdForParticipant(p.participantId, p.processId))
+          .filter((id): id is string => !!id)
+      )
+    );
+
+    if (!processIds.length) {
+      this.auditEvents = [];
+      this.eventsLoading = false;
+      this.eventsError = '';
+      return;
+    }
 
     this.eventsLoading = true;
     this.eventsError = '';
 
-    this.auditService.getAuditEvents(200).subscribe({
-      next: events => {
-        const filtered = events
-          .filter(event => this.matchesDocumentOrFlow(event, this.documentId, processIds))
+    const requests = processIds.map(processId => this.auditService.getEventsByProcessId(processId, 50));
+    forkJoin(requests).subscribe({
+      next: groupedEvents => {
+        const merged = groupedEvents
+          .flat()
+          .filter(event => !!event?.eventId)
           .sort((a, b) => {
-            const aTs = Date.parse(a.occurredAt);
-            const bTs = Date.parse(b.occurredAt);
+            const aTs = Date.parse(a.timestamp);
+            const bTs = Date.parse(b.timestamp);
             return (Number.isFinite(bTs) ? bTs : 0) - (Number.isFinite(aTs) ? aTs : 0);
           });
 
-        this.auditEvents = filtered.slice(0, 30);
-        this.hydrateMissingProcessIdsFromEvents(doc, filtered);
+        const uniqueByEventId = new Map<string, ProcessEvent>();
+        for (const event of merged) {
+          if (!uniqueByEventId.has(event.eventId)) {
+            uniqueByEventId.set(event.eventId, event);
+          }
+        }
+
+        const ordered = Array.from(uniqueByEventId.values());
+        this.auditEvents = ordered
+          .map(event => ({
+            ...event,
+            ...this.resolveParticipantForEvent(event)
+          }))
+          .slice(0, 30);
+        this.hydrateMissingProcessIdsFromEvents(doc, ordered);
         this.eventsLoading = false;
       },
       error: err => {
@@ -194,22 +272,6 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
         this.eventsLoading = false;
       }
     });
-  }
-
-  private matchesDocumentOrFlow(event: AuditEvent, documentId: string, processIds: string[]): boolean {
-    const resourceId = (event.resource?.id ?? '').toString();
-    const path = event.http?.path ?? '';
-
-    if (resourceId === documentId) {
-      return true;
-    }
-    if (resourceId && processIds.includes(resourceId)) {
-      return true;
-    }
-    if (path.includes(`/v1/documents/${documentId}`)) {
-      return true;
-    }
-    return processIds.some(processId => path.includes(`/v1/flows/${processId}`));
   }
 
   private resolveUserDisplays(doc: DocumentApi): void {
@@ -249,6 +311,79 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
         error: () => {}
       });
     }
+  }
+
+  private buildParticipantFilters(doc: DocumentApi): void {
+    const base: ParticipantFilterOption[] = [{ key: 'ALL', label: 'Todos los participantes' }];
+    const participants = doc.participants ?? [];
+
+    this.participantOptionByProcessId = {};
+    this.participantOptionByParticipantId = {};
+
+    participants.forEach((participant, index) => {
+      const key = this.getParticipantStableKey(participant, index);
+      const label = this.buildParticipantLabel(participant, index);
+      const option: ParticipantFilterOption = { key, label };
+      base.push(option);
+
+      if (participant.processId) {
+        this.participantOptionByProcessId[participant.processId] = option;
+      }
+      if (participant.participantId) {
+        this.participantOptionByParticipantId[participant.participantId] = option;
+      }
+    });
+
+    this.participantFilterOptions = base;
+  }
+
+  private resolveParticipantForEvent(event: ProcessEvent): EventParticipantInfo {
+    if (event.participantId && this.participantOptionByParticipantId[event.participantId]) {
+      const option = this.participantOptionByParticipantId[event.participantId];
+      return { participantKey: option.key, participantLabel: option.label };
+    }
+    if (event.processId && this.participantOptionByProcessId[event.processId]) {
+      const option = this.participantOptionByProcessId[event.processId];
+      return { participantKey: option.key, participantLabel: option.label };
+    }
+    if (event.participantId) {
+      return { participantKey: `participant:${event.participantId}`, participantLabel: event.participantId };
+    }
+    if (event.processId) {
+      return { participantKey: `process:${event.processId}`, participantLabel: event.processId };
+    }
+    return { participantKey: 'UNKNOWN', participantLabel: 'N/A' };
+  }
+
+  private getParticipantStableKey(participant: DocumentParticipant, index: number): string {
+    if (participant.participantId) {
+      return `participant:${participant.participantId}`;
+    }
+    if (participant.processId) {
+      return `process:${participant.processId}`;
+    }
+    return `index:${index}`;
+  }
+
+  private buildParticipantLabel(participant: DocumentParticipant, index: number): string {
+    const name = (participant.displayName || '').trim();
+    const contact = (
+      participant.identity?.email ||
+      participant.identity?.phone ||
+      participant.identity?.documentNumber ||
+      ''
+    ).trim();
+
+    if (name && contact) {
+      return `${name} (${contact})`;
+    }
+    if (name) {
+      return name;
+    }
+    if (contact) {
+      return contact;
+    }
+    return `Participante ${index + 1}`;
   }
 
   private resolveCompanyDisplay(): void {
@@ -317,7 +452,7 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
     return (sessionUser.name || sessionUser.email || '').trim();
   }
 
-  private hydrateMissingProcessIdsFromEvents(doc: DocumentApi, events: AuditEvent[]): void {
+  private hydrateMissingProcessIdsFromEvents(doc: DocumentApi, events: ProcessEvent[]): void {
     const participants = doc.participants ?? [];
     if (!participants.length) {
       return;
@@ -326,7 +461,7 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
     const flowIds = Array.from(
       new Set(
         events
-          .map(event => this.extractFlowId(event))
+          .map(event => event.processId)
           .filter((id): id is string => !!id)
       )
     );
@@ -354,21 +489,5 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
         this.participantFlowMap[participantId] = flowIds[i];
       }
     }
-  }
-
-  private extractFlowId(event: AuditEvent): string | null {
-    const path = event.http?.path ?? '';
-    const pathMatch = path.match(/\/v1\/flows\/([^/?]+)/i);
-    if (pathMatch?.[1]) {
-      return decodeURIComponent(pathMatch[1]);
-    }
-
-    const resourceType = (event.resource?.type ?? '').toLowerCase();
-    const resourceId = (event.resource?.id ?? '').toString();
-    if (resourceType.includes('flow') && !!resourceId) {
-      return resourceId;
-    }
-
-    return null;
   }
 }

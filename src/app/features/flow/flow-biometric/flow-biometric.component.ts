@@ -50,7 +50,6 @@ interface CapturedImage {
 export class FlowBiometricComponent implements OnInit, OnDestroy {
   @ViewChild('video') videoRef?: ElementRef<HTMLVideoElement>;
   @ViewChild('canvas') canvasRef?: ElementRef<HTMLCanvasElement>;
-  @ViewChild('fileInput') fileInputRef?: ElementRef<HTMLInputElement>;
 
   processId = '';
   flowState: FlowState | null = null;
@@ -286,43 +285,25 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
   }
 
   retakePhoto(): void {
-    const requirement = this.currentStep as BiometricRequirement;
-    if (this.capturedImages[requirement]?.preview) {
-      URL.revokeObjectURL(this.capturedImages[requirement]!.preview);
-    }
-    delete this.capturedImages[requirement];
-    this.autoCaptureLocked = false;
-    this.startCamera();
-  }
-
-  triggerFileInput(): void {
-    this.fileInputRef?.nativeElement?.click();
-  }
-
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-
-    if (!file) return;
-
-    if (
-      file.type !== 'image/jpeg' &&
-      !file.name.toLowerCase().match(/\.(jpe?g)$/)
-    ) {
-      this.error = 'Por favor selecciona una imagen JPG/JPEG.';
+    if (!['selfie', 'idFront', 'idBack'].includes(this.currentStep)) {
       return;
     }
 
     const requirement = this.currentStep as BiometricRequirement;
-    const preview = URL.createObjectURL(file);
+    if (this.capturedImages[requirement]?.preview) {
+      URL.revokeObjectURL(this.capturedImages[requirement]!.preview);
+    }
 
-    this.capturedImages[requirement] = {
-      blob: file,
-      preview,
-    };
-
+    this.stopFaceDetection();
+    this.stopDocumentAutoCapture();
     this.stopCamera();
-    this.moveToNextStep();
+
+    delete this.capturedImages[requirement];
+    this.error = null;
+    this.cameraError = null;
+    this.resetCaptureState();
+    this.cdr.detectChanges();
+    this.startCamera();
   }
 
   moveToNextStep(): void {
@@ -702,7 +683,7 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
     this.stableFrames = 0;
     this.faceAligned = false;
     this.faceHint = 'Alinea tu rostro dentro del óvalo';
-    this.documentHint = 'Alinea el documento y presiona Capturar';
+    this.documentHint = 'Alinea el documento dentro del recuadro';
     this.cameraActive = false;
   }
 }

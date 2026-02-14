@@ -264,16 +264,19 @@ export class TemplateCreateComponent {
   }
 
   private buildTemplateFields(mapped: DocumentMappedField[]): TemplateField[] {
-    return mapped.map((field, index) => ({
-      page: String(field.page),
-      x: this.toPixelString(field.x, field.pageWidth),
-      y: this.toPixelString(field.y, field.pageHeight),
-      width: this.toPixelString(field.width, field.pageWidth),
-      height: this.toPixelString(field.height, field.pageHeight),
-      fieldName: this.toApiFieldName(field.label, field.name),
-      fieldType: this.mapFieldTypeForApi(field.type),
-      fieldCode: String(index + 1)
-    }));
+    return mapped.map((field) => {
+      const apiFieldType = this.mapFieldTypeForApi(field.type);
+      return {
+        page: String(field.page),
+        x: this.toPixelString(field.x, field.pdfPageWidth),
+        y: this.toPixelString(field.y, field.pdfPageHeight),
+        width: this.toPixelString(field.width, field.pdfPageWidth),
+        height: this.toPixelString(field.height, field.pdfPageHeight),
+        fieldName: this.toApiFieldName(field.label, field.name),
+        fieldType: apiFieldType,
+        fieldCode: this.mapFieldCodeForApiType(apiFieldType)
+      };
+    });
   }
 
   private toApiFieldName(label: string, fallbackCode: string): string {
@@ -366,6 +369,21 @@ export class TemplateCreateComponent {
         return 'sign';
       default:
         return 'text';
+    }
+  }
+
+  private mapFieldCodeForApiType(type: 'text' | 'number' | 'sign' | 'img'): string {
+    switch (type) {
+      case 'text':
+        return '1';
+      case 'number':
+        return '2';
+      case 'sign':
+        return '3';
+      case 'img':
+        return '4';
+      default:
+        return '1';
     }
   }
 
