@@ -3,7 +3,7 @@ import { PermissionMatrixRow } from '../../../shared/permissions/permission-matr
 export const ROLE_PERMISSION_MATRIX: PermissionMatrixRow[] = [
   {
     key: 'dashboard',
-    label: 'Dashboard',
+    label: 'Home',
     section: 'General',
     actions: [
       { action: 'view', permission: 'dashboard.view' }

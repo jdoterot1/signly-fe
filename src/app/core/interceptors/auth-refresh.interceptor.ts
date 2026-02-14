@@ -17,6 +17,15 @@ export class AuthRefreshInterceptor implements HttpInterceptor {
   private isRefreshing = false;
   private refreshDone$ = new Subject<void>();
   private readonly retryHeader = 'X-Refresh-Retry';
+  private readonly skipRefreshPaths = [
+    '/auth/login',
+    '/auth/register',
+    '/auth/logout',
+    '/auth/password/forgot',
+    '/auth/password/confirm',
+    '/auth/password/complete',
+    '/auth/token/refresh'
+  ];
 
   constructor(
     private authService: AuthService,
@@ -30,7 +39,7 @@ export class AuthRefreshInterceptor implements HttpInterceptor {
           return throwError(() => error);
         }
 
-        if (this.isAuthRefreshEndpoint(req.url) || this.hasRetried(req)) {
+        if (this.shouldSkipRefresh(req.url) || this.hasRetried(req)) {
           return throwError(() => error);
         }
 
@@ -91,8 +100,7 @@ export class AuthRefreshInterceptor implements HttpInterceptor {
     return req.clone({ headers });
   }
 
-  private isAuthRefreshEndpoint(url: string): boolean {
-    return url.includes('/auth/token/refresh');
+  private shouldSkipRefresh(url: string): boolean {
+    return this.skipRefreshPaths.some(path => url.includes(path));
   }
 }
-

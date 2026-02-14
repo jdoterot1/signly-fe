@@ -1,25 +1,23 @@
 <footer class="fixed bottom-0 left-0 right-0 z-40 bg-brand-surface-card border-t border-brand-subtle h-16 shadow-sm">
   <div class="w-full h-full flex flex-wrap items-center justify-center gap-x-6 gap-y-2 px-6 lg:px-16 text-sm text-brand-ink-secondary">
-    <button
-      type="button"
-      class="flex items-center gap-2 border border-brand rounded-full px-3 py-1 text-xs font-semibold text-brand-ink hover:bg-brand-surface transition"
+    <select
+      class="border border-brand rounded-full px-3 py-1 text-xs font-semibold text-brand-ink bg-brand-surface-card hover:bg-brand-surface transition"
+      aria-label="Selector de idioma"
     >
-      English (US)
-      <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
-        <path d="M1 1l4 4 4-4" stroke="var(--brand-primary-strong)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
-    </button>
+      <option value="es" selected>Español</option>
+      <option value="en-US">English (US)</option>
+    </select>
 
     <nav class="flex flex-wrap items-center gap-4 text-xs font-semibold uppercase tracking-wide text-brand-muted">
-      <a href="#" class="hover:text-brand-primary">Contact Us</a>
-      <a href="#" class="hover:text-brand-primary">Terms of Use</a>
-      <a href="#" class="hover:text-brand-primary">Privacy</a>
-      <a href="#" class="hover:text-brand-primary">Intellectual Property</a>
-      <a href="#" class="hover:text-brand-primary">Trust</a>
+      <a href="#" class="hover:text-brand-primary">Contáctanos</a>
+      <a href="#" class="hover:text-brand-primary">Términos de uso</a>
+      <a href="#" class="hover:text-brand-primary">Privacidad</a>
+      <a href="#" class="hover:text-brand-primary">Propiedad intelectual</a>
+      <a href="#" class="hover:text-brand-primary">Confianza</a>
     </nav>
 
     <span class="text-xs text-brand-muted-light whitespace-nowrap">
-      Copyright &copy; 2025 Apolo Systems. All rights reserved.
+      Copyright &copy; 2025 Apolo Systems. Todos los derechos reservados.
     </span>
   </div>
 </footer>

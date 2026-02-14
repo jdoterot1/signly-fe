@@ -55,10 +55,8 @@ export class HeaderComponent implements OnInit {
     accountInfo: ''
   }
 
-  readonly planStatus = "30 días restantes"
-
   readonly navLinks: NavLink[] = [
-    { label: "Inicio", path: "/dashboard" },
+    { label: "Inicio", path: "/home" },
     { label: "Documentos", path: "/documents" },
     { label: "Plantillas", path: "/templates" },
     { label: "Reportes", path: "/reports/usage" },

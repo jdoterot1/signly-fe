@@ -27,7 +27,7 @@ interface NavGroup {
 export class SidebarComponent {
   isCollapsed = false;
   isLoggingOut = false;
-  readonly singleNavItems: NavItem[] = [{ label: 'Inicio', path: '/dashboard', icon: 'assets/icons/sidebar/Dashboard.svg' }];
+  readonly singleNavItems: NavItem[] = [{ label: 'Inicio', path: '/home', icon: 'assets/icons/sidebar/Dashboard.svg' }];
   readonly activeMatchOptions: IsActiveMatchOptions = {
     paths: 'subset',
     fragment: 'ignored',

@@ -75,7 +75,7 @@ export class CompletePasswordComponent implements OnInit {
       next: () => {
         this.successMessage = 'Contraseña actualizada con éxito. Redirigiendo…';
         this.loading = false;
-        setTimeout(() => this.router.navigate(['/dashboard']), 1000);
+        setTimeout(() => this.router.navigate(['/home']), 1000);
       },
       error: (err: AuthError) => {
         this.errorMessage = err.message || 'No se pudo actualizar la contraseña.';

@@ -9,6 +9,8 @@ export interface GuideStep {
   status: GuideStepStatus;
 }
 
+type GuideCompletionState = Partial<Record<GuideStepKey, boolean>>;
+
 interface GuideStepDefinition {
   key: GuideStepKey;
   title: string;
@@ -30,14 +32,16 @@ export class GuideFlowService {
     }
   ];
 
-  getSteps(activeKey?: GuideStepKey): GuideStep[] {
-    const resolvedIndex = activeKey
-      ? this.steps.findIndex(step => step.key === activeKey)
-      : 0;
-    const activeIndex = resolvedIndex >= 0 ? resolvedIndex : 0;
+  getSteps(activeKey?: GuideStepKey, completed: GuideCompletionState = {}): GuideStep[] {
+    const firstPending = this.steps.findIndex(step => !completed[step.key]);
+    const fallbackActiveIndex = firstPending >= 0 ? firstPending : this.steps.length - 1;
+
+    const resolvedIndex = activeKey ? this.steps.findIndex(step => step.key === activeKey) : fallbackActiveIndex;
+    const activeIndex = resolvedIndex >= 0 ? resolvedIndex : fallbackActiveIndex;
 
     return this.steps.map((step, index) => {
-      const status: GuideStepStatus = index < activeIndex ? 'done' : index === activeIndex ? 'active' : 'pending';
+      const isCompleted = !!completed[step.key];
+      const status: GuideStepStatus = isCompleted ? 'done' : index === activeIndex ? 'active' : 'pending';
       return {
         title: step.title,
         description: step.description,

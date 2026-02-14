@@ -1,4 +1,15 @@
 <div class="min-h-[calc(100vh-8rem)] py-10 px-4 lg:px-10">
+  <app-guide-modal
+    *ngIf="showGuideModal"
+    title="Paso 2: crea tu documento"
+    subtitle="Tu plantilla ya está lista. Ahora crea tu primer documento para enviarlo a firma."
+    [steps]="guideSteps"
+    primaryLabel="Crear documento"
+    secondaryLabel="Más tarde"
+    (primary)="goToCreateDocument()"
+    (closed)="closeGuideModal()"
+  ></app-guide-modal>
+
   <div class="flex flex-col lg:flex-row gap-8 items-start">
     <app-admin-sidebar
       class="w-full lg:w-auto"

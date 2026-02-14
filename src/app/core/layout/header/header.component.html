@@ -1,7 +1,7 @@
 <div class="relative z-40 bg-brand-surface-card">
   <div class="w-full h-16 flex items-center justify-between px-8 lg:px-16 text-base text-brand-ink-secondary">
     <div class="flex items-center gap-7">
-      <a routerLink="/dashboard" class="flex items-center gap-2 text-xl font-semibold text-brand-ink">
+      <a routerLink="/home" class="flex items-center gap-2 text-xl font-semibold text-brand-ink">
         <img src="assets/icons/sidebar/ApoloLogo.svg" alt="Signly" class="w-9 h-9" />
         <span>Signly</span>
       </a>
@@ -25,7 +25,7 @@
     <div class="flex items-center gap-5">
       <button
         type="button"
-        class="inline-flex items-center gap-2 rounded-full border border-brand-primary-medium px-4 py-1.5 text-brand-primary-medium text-xs font-semibold hover:bg-brand-primary-medium hover:text-white transition shadow-sm"
+        class="inline-flex items-center gap-2 rounded-full border border-brand-primary-medium px-4 py-1.5 text-brand-primary-medium text-xs font-semibold hover:bg-brand-surface-raised hover:text-brand-primary-medium transition shadow-sm"
         (click)="openPricingModal()"
       >
         Créditos
@@ -33,10 +33,6 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7 7 7-7 7" />
         </svg>
       </button>
-      <div class="hidden lg:flex flex-col text-right leading-tight justify-center pr-3">
-        <span class="text-[11px] uppercase tracking-[0.2em] text-brand-muted-light">Plan vigente</span>
-        <span class="text-sm font-semibold text-brand-primary-medium">{{ planStatus }}</span>
-      </div>
 
       <app-theme-toggle></app-theme-toggle>
 
