@@ -5,6 +5,7 @@ import {
   EventEmitter,
   ElementRef,
   HostListener,
+  Input,
   OnDestroy,
   Output,
   QueryList,
@@ -27,6 +28,8 @@ interface PdfPageView {
   pageNumber: number;
   width: number;
   height: number;
+  pdfWidth: number;
+  pdfHeight: number;
   scale: number;
 }
 
@@ -93,6 +96,8 @@ export interface DocumentMappedField {
   height: number;
   pageWidth: number;
   pageHeight: number;
+  pdfPageWidth: number;
+  pdfPageHeight: number;
 }
 
 @Component({
@@ -104,6 +109,9 @@ export interface DocumentMappedField {
   encapsulation: ViewEncapsulation.None
 })
 export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
+  @Input() allowDocx = true;
+  @Input() allowFileReplace = true;
+
   @ViewChild('fileInput')
   private fileInputRef?: ElementRef<HTMLInputElement>;
 
@@ -128,6 +136,7 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
   });
 
   loading = false;
+  fileDropActive = false;
   dropTargetPage: number | null = null;
   activePageNumber = 1;
   documentMode: 'pdf' | 'docx' | null = null;
@@ -264,16 +273,18 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
       const pageMeta = this.pdfPages.find(page => page.pageNumber === pageNumber);
       const pageWidth = pageMeta?.width ?? 1000;
       const pageHeight = pageMeta?.height ?? 1400;
+      const pdfPageWidth = pageMeta?.pdfWidth ?? pageWidth;
+      const pdfPageHeight = pageMeta?.pdfHeight ?? pageHeight;
 
       const widthPx = this.toNumber(field.width, 180);
       const heightPx = this.toNumber(field.height, 70);
       const xPx = this.toNumber(field.x, 0);
       const yPx = this.toNumber(field.y, 0);
 
-      const normalizedWidth = this.clamp(widthPx / pageWidth, 0.01, 1);
-      const normalizedHeight = this.clamp(heightPx / pageHeight, 0.01, 1);
-      const normalizedX = this.clamp(xPx / pageWidth, 0, Math.max(1 - normalizedWidth, 0));
-      const normalizedY = this.clamp(yPx / pageHeight, 0, Math.max(1 - normalizedHeight, 0));
+      const normalizedWidth = this.clamp(widthPx / pdfPageWidth, 0.01, 1);
+      const normalizedHeight = this.clamp(heightPx / pdfPageHeight, 0.01, 1);
+      const normalizedX = this.clamp(xPx / pdfPageWidth, 0, Math.max(1 - normalizedWidth, 0));
+      const normalizedY = this.clamp(yPx / pdfPageHeight, 0, Math.max(1 - normalizedHeight, 0));
 
       const name = this.normalizeFieldName(field.fieldName || `CAMPO_${index + 1}`) || `CAMPO_${index + 1}`;
       const type = this.mapApiFieldTypeToUi(field.fieldType);
@@ -293,7 +304,9 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
         width: normalizedWidth,
         height: normalizedHeight,
         pageWidth,
-        pageHeight
+        pageHeight,
+        pdfPageWidth,
+        pdfPageHeight
       };
     });
 
@@ -517,11 +530,11 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
       if (this.isPdf(file)) {
         this.documentMode = 'pdf';
         await this.loadPdf(file);
-      } else if (this.isDocx(file)) {
+      } else if (this.allowDocx && this.isDocx(file)) {
         this.documentMode = 'docx';
         await this.loadDocx(file);
       } else {
-        throw new Error('Solo se permiten archivos PDF o Word (.docx).');
+        throw new Error(this.allowDocx ? 'Solo se permiten archivos PDF o Word (.docx).' : 'Solo se permiten archivos PDF.');
       }
     } catch (error) {
       this.errorMessage =
@@ -564,7 +577,65 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
   }
 
   openFilePicker(): void {
+    if (!this.allowFileReplace) {
+      return;
+    }
     this.fileInputRef?.nativeElement.click();
+  }
+
+  get fileInputAccept(): string {
+    return this.allowDocx
+      ? '.pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      : '.pdf,application/pdf';
+  }
+
+  get fileUploadHint(): string {
+    return this.allowDocx
+      ? 'Carga un PDF o Word para iniciar el mapeo y edición.'
+      : 'Carga un PDF para iniciar el mapeo y edición.';
+  }
+
+  get loadButtonLabel(): string {
+    return this.allowDocx ? 'Cargar archivo' : 'Cargar PDF';
+  }
+
+  onFileDragOver(event: DragEvent): void {
+    if (!this.allowFileReplace) {
+      return;
+    }
+    if (!this.hasDraggedFiles(event)) {
+      return;
+    }
+    event.preventDefault();
+    this.fileDropActive = true;
+  }
+
+  onFileDragLeave(event: DragEvent): void {
+    if (!this.allowFileReplace) {
+      return;
+    }
+    if (!this.hasDraggedFiles(event)) {
+      return;
+    }
+    const currentTarget = event.currentTarget as HTMLElement | null;
+    const relatedTarget = event.relatedTarget as Node | null;
+    if (currentTarget && relatedTarget && currentTarget.contains(relatedTarget)) {
+      return;
+    }
+    this.fileDropActive = false;
+  }
+
+  async onFileDrop(event: DragEvent): Promise<void> {
+    if (!this.allowFileReplace) {
+      return;
+    }
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) {
+      return;
+    }
+    event.preventDefault();
+    this.fileDropActive = false;
+    await this.processFile(file);
   }
 
   getFieldsForPage(pageNumber: number): DocumentMappedField[] {
@@ -716,7 +787,9 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
     width: number,
     height: number,
     pageWidth: number,
-    pageHeight: number
+    pageHeight: number,
+    pdfPageWidth: number,
+    pdfPageHeight: number
   ): DocumentMappedField {
     const palette = this.fieldPalette.find(item => item.type === type);
     const base = palette?.label || type;
@@ -736,7 +809,9 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
       width,
       height,
       pageWidth,
-      pageHeight
+      pageHeight,
+      pdfPageWidth,
+      pdfPageHeight
     };
   }
 
@@ -756,7 +831,9 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
       size.width,
       size.height,
       page.width,
-      page.height
+      page.height,
+      page.pdfWidth,
+      page.pdfHeight
     );
     this.pushHistory();
     this.mappedFields = [...this.mappedFields, field];
@@ -778,7 +855,16 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
     this.pushHistory();
     this.mappedFields = this.mappedFields.map(f =>
       f.id === fieldId
-        ? { ...f, page: pageNumber, x: normalizedX, y: normalizedY, pageWidth: page.width, pageHeight: page.height }
+        ? {
+            ...f,
+            page: pageNumber,
+            x: normalizedX,
+            y: normalizedY,
+            pageWidth: page.width,
+            pageHeight: page.height,
+            pdfPageWidth: page.pdfWidth,
+            pdfPageHeight: page.pdfHeight
+          }
         : f
     );
     this.selectedFieldId = fieldId;
@@ -789,7 +875,7 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
     const size = this.getDefaultFieldSize(type);
     const fieldsOnDocx = this.mappedFields.length;
     const y = this.clamp(0.12 + fieldsOnDocx * 0.06, 0, 0.92);
-    const field = this.createMappedField(type, 1, 0.08, y, size.width, size.height, 1000, 1400);
+    const field = this.createMappedField(type, 1, 0.08, y, size.width, size.height, 1000, 1400, 1000, 1400);
     this.pushHistory();
     this.mappedFields = [...this.mappedFields, field];
     this.selectedFieldId = field.id;
@@ -912,8 +998,7 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
     const arrayBuffer = await file.arrayBuffer();
     this.renderSession += 1;
     const currentSession = this.renderSession;
-    const loadingTask = getDocument({ data: new Uint8Array(arrayBuffer) });
-    const pdf = await loadingTask.promise;
+    const pdf = await this.loadPdfDocument(new Uint8Array(arrayBuffer));
     if (currentSession !== this.renderSession) {
       return;
     }
@@ -930,6 +1015,8 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
         pageNumber,
         width: Math.round(viewport.width),
         height: Math.round(viewport.height),
+        pdfWidth: baseViewport.width,
+        pdfHeight: baseViewport.height,
         scale
       });
       textItems.push(
@@ -963,6 +1050,30 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
 
     await this.waitForCanvasElements(pages.length);
     await this.renderPdfPages(currentSession);
+  }
+
+  private async loadPdfDocument(data: Uint8Array): Promise<any> {
+    try {
+      const loadingTask = getDocument({ data });
+      return await loadingTask.promise;
+    } catch (error) {
+      const message = error instanceof Error ? error.message.toLowerCase() : '';
+      const isWorkerIssue =
+        message.includes('worker') ||
+        message.includes('setting up fake worker') ||
+        message.includes('api version') ||
+        message.includes('module script');
+
+      if (!isWorkerIssue) {
+        throw error;
+      }
+
+      const fallbackTask = getDocument({
+        data,
+        disableWorker: true
+      } as any);
+      return fallbackTask.promise;
+    }
   }
 
   private async waitForCanvasElements(expected: number): Promise<void> {
@@ -1099,6 +1210,13 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
       file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
       file.name.toLowerCase().endsWith('.docx')
     );
+  }
+
+  private hasDraggedFiles(event: DragEvent): boolean {
+    if (!event.dataTransfer) {
+      return false;
+    }
+    return Array.from(event.dataTransfer.types).includes('Files');
   }
 
   private toNumber(value: number | string | null | undefined, fallback: number): number {

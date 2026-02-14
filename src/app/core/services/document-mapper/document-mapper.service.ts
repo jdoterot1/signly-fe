@@ -112,7 +112,7 @@ export class DocumentMapperService {
 
   private async convertPdf(file: File): Promise<DocumentConversionResult> {
     const arrayBuffer = await file.arrayBuffer();
-    const pdf = await getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+    const pdf = await this.loadPdfDocument(new Uint8Array(arrayBuffer));
 
     const paragraphs: string[] = [];
 
@@ -138,6 +138,25 @@ export class DocumentMapperService {
         paragraphs: paragraphs.length
       }
     };
+  }
+
+  private async loadPdfDocument(data: Uint8Array): Promise<any> {
+    try {
+      return await getDocument({ data }).promise;
+    } catch (error) {
+      const message = error instanceof Error ? error.message.toLowerCase() : '';
+      const isWorkerIssue =
+        message.includes('worker') ||
+        message.includes('setting up fake worker') ||
+        message.includes('api version') ||
+        message.includes('module script');
+
+      if (!isWorkerIssue) {
+        throw error;
+      }
+
+      return getDocument({ data, disableWorker: true } as any).promise;
+    }
   }
 
   private isTextItem(item: unknown): item is TextItem {

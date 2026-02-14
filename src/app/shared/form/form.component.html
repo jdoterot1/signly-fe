@@ -129,6 +129,7 @@
               <div class="sm:col-span-1">
                 <label [for]="field.key" class="block mb-2 text-sm font-semibold text-gray-700">
                   {{ field.label }}
+                  <span *ngIf="field.required" class="text-red-500">*</span>
                 </label>
                 <p-datepicker
                   [inputId]="field.key"

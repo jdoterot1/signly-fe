@@ -5,6 +5,16 @@ export const DOCUMENT_LANGUAGES = [
   { name: 'Inglés',  code: 'Inglés'  }
 ];
 
+export const DOCUMENT_PHONE_COUNTRY_CODES = [
+  { name: 'Colombia (+57)', code: '+57' },
+  { name: 'México (+52)', code: '+52' },
+  { name: 'Perú (+51)', code: '+51' },
+  { name: 'Chile (+56)', code: '+56' },
+  { name: 'Argentina (+54)', code: '+54' },
+  { name: 'Estados Unidos (+1)', code: '+1' },
+  { name: 'España (+34)', code: '+34' }
+];
+
 export const DOCUMENT_ORDER_MODES = [
   { name: 'Paralelo', code: 'PARALLEL' }
 ];
@@ -50,7 +60,8 @@ export const DOCUMENT_CREATE_FORM_CONFIG: FormConfig = {
       key: 'deadlineAt',
       type: 'date',
       label: 'Fecha límite',
-      placeholder: 'Selecciona la fecha'
+      placeholder: 'Selecciona la fecha',
+      required: true
     },
     {
       key: 'language',
@@ -80,10 +91,17 @@ export const DOCUMENT_CREATE_FORM_CONFIG: FormConfig = {
       placeholder: 'correo@ejemplo.com'
     },
     {
+      key: 'participantPhoneCountry',
+      type: 'select',
+      label: 'Indicativo',
+      placeholder: 'Selecciona indicativo',
+      options: DOCUMENT_PHONE_COUNTRY_CODES
+    },
+    {
       key: 'participantPhone',
       type: 'text',
       label: 'Teléfono del participante',
-      placeholder: '+573001112233'
+      placeholder: '3001112233'
     },
     {
       key: 'participantDocumentNumber',

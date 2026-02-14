@@ -90,13 +90,16 @@
 
             <!-- Camera overlay guide -->
             <div *ngIf="currentStep === 'selfie' && cameraActive"
-                 class="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div class="flex flex-col items-center gap-3">
+                 class="absolute inset-0 pointer-events-none">
+              <div class="h-full w-full flex items-center justify-center">
                 <div
-                  class="w-52 h-[22rem] border-2 rounded-full"
-                  [ngClass]="faceAligned ? 'border-green-300/80' : 'border-white/60'"
+                  class="w-[65%] h-[75%] border-[3px] rounded-full transition-colors duration-300"
+                  [ngClass]="faceAligned ? 'border-green-400/90 shadow-[0_0_20px_rgba(74,222,128,0.25)]' : 'border-white/50'"
                 ></div>
-                <span class="text-xs" [ngClass]="faceAligned ? 'text-green-200' : 'text-white/80'">
+              </div>
+              <div class="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full px-4 py-1.5 transition-colors duration-300"
+                   [ngClass]="faceAligned ? 'bg-green-600/70' : 'bg-slate-900/55'">
+                <span class="text-xs whitespace-nowrap font-medium" [ngClass]="faceAligned ? 'text-white' : 'text-white/90'">
                   {{ faceHint }}
                 </span>
               </div>
@@ -140,7 +143,6 @@
 
         <!-- Hidden elements -->
         <canvas #canvas class="hidden"></canvas>
-        <input #fileInput type="file" accept="image/jpeg" class="hidden" (change)="onFileSelected($event)" />
 
         <!-- Action Buttons -->
         <div class="flex flex-col sm:flex-row gap-3">
@@ -149,12 +151,6 @@
                     (click)="beginCamera()"
                     class="rounded-full bg-blue-600 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200/60 hover:bg-blue-700">
               Empezar
-            </button>
-            <button *ngIf="currentStep !== 'selfie'"
-                    (click)="triggerFileInput()"
-                    class="rounded-full border border-slate-200 px-6 py-2 text-sm font-semibold text-slate-600 hover:border-slate-300 flex items-center gap-2">
-              <i class="pi pi-upload text-xs"></i>
-              Subir archivo
             </button>
             <button *ngIf="currentStep !== 'selfie'"
                     (click)="capturePhoto()"

@@ -10,6 +10,37 @@
   (closed)="closeGuideModal()"
 ></app-guide-modal>
 
+<div class="max-w-5xl w-full mx-auto mt-8 px-6 sm:px-10">
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand-primary">Creación de documento</p>
+      <p class="text-sm text-gray-600 mt-1" *ngIf="currentStep === 1">Paso 1 de 2: Información del documento</p>
+      <p class="text-sm text-gray-600 mt-1" *ngIf="currentStep === 2">Paso 2 de 2: Participantes</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2">
+        <span
+          class="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-white"
+          [ngClass]="currentStep === 1 ? 'bg-brand-primary' : 'bg-brand-disabled'"
+        >
+          1
+        </span>
+        <span class="text-xs font-semibold text-gray-600">Documento</span>
+      </div>
+      <div class="h-px w-8 bg-gray-300"></div>
+      <div class="flex items-center gap-2">
+        <span
+          class="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-white"
+          [ngClass]="currentStep === 2 ? 'bg-brand-primary' : 'bg-brand-disabled'"
+        >
+          2
+        </span>
+        <span class="text-xs font-semibold text-gray-600">Participantes</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <app-form
   [config]="formConfig"
   [form]="form"
@@ -23,6 +54,16 @@
 
 <ng-template #participantsTemplate>
   <section *ngIf="currentStep === 2" class="space-y-4">
+    <div class="rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800">
+      <p class="font-semibold mb-2">¿Cómo agregar firmantes?</p>
+      <ol class="list-decimal list-inside space-y-1">
+        <li>Completa los datos del participante.</li>
+        <li>Si tienes varios firmantes, haz clic en <strong>Agregar participante</strong> para cada uno.</li>
+        <li>Si es un solo firmante, puedes crear el documento directamente.</li>
+        <li>Haz clic en <strong>Crear documento</strong>.</li>
+      </ol>
+    </div>
+
     <div class="flex items-center justify-between gap-3">
       <h3 class="text-base font-semibold text-gray-800">
         Participantes agregados ({{ participantsDraft.length }})
@@ -36,8 +77,12 @@
       </button>
     </div>
 
+    <div *ngIf="hasParticipantDraftInForm()" class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+      Tienes datos diligenciados. Al crear el documento se agregará este participante automáticamente.
+    </div>
+
     <p *ngIf="!participantsDraft.length" class="text-sm text-gray-500">
-      Completa los datos del participante y haz clic en "Agregar participante".
+      Completa los datos del participante. Si necesitas más de uno, usa "Agregar participante".
     </p>
 
     <div class="space-y-3" *ngIf="participantsDraft.length">

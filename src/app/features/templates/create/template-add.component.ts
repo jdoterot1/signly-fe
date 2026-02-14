@@ -1,6 +1,6 @@
 // src/app/features/templates/create/template-add.component.ts
 import { CommonModule } from '@angular/common';
-import { Component, ViewChild, inject } from '@angular/core';
+import { Component, ElementRef, ViewChild, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -24,6 +24,9 @@ import { GuideFlowService, GuideStep, GuideStepKey } from '../../../shared/servi
   templateUrl: './template-add.component.html'
 })
 export class TemplateCreateComponent {
+  @ViewChild('templateFileInput')
+  private templateFileInputRef?: ElementRef<HTMLInputElement>;
+
   @ViewChild(DocumentMapperComponent)
   private mapperComponent?: DocumentMapperComponent;
 
@@ -35,14 +38,17 @@ export class TemplateCreateComponent {
     description: ['', [Validators.maxLength(500)]]
   });
   currentStep: 1 | 2 = 1;
+  isDocumentDragOver = false;
+  documentFieldTouched = false;
   isSaving = false;
   isUploadingPdf = false;
   private readonly returnTo: string | null;
+  private readonly isEditingExistingTemplate: boolean;
   private uploadedFile?: File;
   private pdfToUpload?: File;
   templateId: string | null = null;
   versions: Array<{ name: string; code: string }> = [];
-  readonly versionControl = this.fb.control<string | null>(null, [Validators.required]);
+  readonly versionControl = this.fb.control<string | null>({ value: null, disabled: true }, [Validators.required]);
   private versionLoadSession = 0;
 
   showGuideModal = false;
@@ -68,10 +74,11 @@ export class TemplateCreateComponent {
     }
 
     const templateIdParam = this.route.snapshot.queryParamMap.get('templateId') ?? this.route.snapshot.paramMap.get('templateId');
+    this.isEditingExistingTemplate = !!templateIdParam;
     if (templateIdParam) {
       this.templateId = templateIdParam;
-      // Start in step 2 when editing a template.
-      this.currentStep = 2;
+      // Start in step 1 when editing so metadata can also be updated.
+      this.currentStep = 1;
       const versionParam = this.normalizeVersion(this.route.snapshot.queryParamMap.get('templateVersion'));
       if (versionParam) {
         this.versionControl.setValue(versionParam, { emitEvent: false });
@@ -87,12 +94,25 @@ export class TemplateCreateComponent {
     });
   }
 
+  private syncVersionControlState(): void {
+    if (this.templateId && this.versions.length) {
+      this.versionControl.enable({ emitEvent: false });
+    } else {
+      this.versionControl.disable({ emitEvent: false });
+    }
+  }
+
   goToStepTwo(): void {
     if (this.stepForm.invalid) {
       this.stepForm.markAllAsTouched();
       return;
     }
+    if (this.canEditDocumentFile && !this.uploadedFile) {
+      this.documentFieldTouched = true;
+      return;
+    }
     this.currentStep = 2;
+    void this.syncFileWithMapper();
   }
 
   goBackToStepOne(): void {
@@ -122,6 +142,7 @@ export class TemplateCreateComponent {
           this.templateId = tpl.templateId;
           const v = this.extractVersion(tpl.templateVersion) ?? this.normalizeVersion(String(tpl.version)) ?? '0001';
           this.versionControl.setValue(v, { emitEvent: false });
+          this.syncVersionControlState();
           this.loadHistory();
           this.finalizeTemplateSave();
         },
@@ -165,7 +186,7 @@ export class TemplateCreateComponent {
     const file = this.pdfToUpload ?? this.uploadedFile;
     if (!file || !this.isSupportedTemplateFile(file)) {
       this.isSaving = false;
-      this.alertService.showError('Debes subir un archivo válido (.pdf o .docx) para la plantilla.', 'Error');
+      this.alertService.showError('Debes subir un archivo PDF válido para la plantilla.', 'Error');
       return;
     }
 
@@ -184,7 +205,7 @@ export class TemplateCreateComponent {
 
     this.templateService.getTemplateUploadUrl(this.templateId, version).subscribe({
       next: res => {
-        const headers = new HttpHeaders().set('Content-Type', fileToUpload.type || 'application/octet-stream');
+        const headers = new HttpHeaders().set('Content-Type', fileToUpload.type || 'application/pdf');
         this.http.put(res.uploadUrl, fileToUpload, { headers, responseType: 'text' }).subscribe({
           next: () => this.saveFieldsAndFinish(fields),
           error: err => {
@@ -201,7 +222,7 @@ export class TemplateCreateComponent {
           const nextVersion = this.getNextVersionCode();
           this.templateService.getTemplateUploadUrl(this.templateId!, nextVersion).subscribe({
             next: nextRes => {
-              const nextHeaders = new HttpHeaders().set('Content-Type', fileToUpload.type || 'application/octet-stream');
+              const nextHeaders = new HttpHeaders().set('Content-Type', fileToUpload.type || 'application/pdf');
               this.http.put(nextRes.uploadUrl, fileToUpload, { headers: nextHeaders, responseType: 'text' }).subscribe({
                 next: () => {
                   this.versionControl.setValue(nextVersion, { emitEvent: false });
@@ -246,16 +267,19 @@ export class TemplateCreateComponent {
   }
 
   private buildTemplateFields(mapped: DocumentMappedField[]): TemplateField[] {
-    return mapped.map((field, index) => ({
-      page: String(field.page),
-      x: this.toPixelString(field.x, field.pageWidth),
-      y: this.toPixelString(field.y, field.pageHeight),
-      width: this.toPixelString(field.width, field.pageWidth),
-      height: this.toPixelString(field.height, field.pageHeight),
-      fieldName: this.toApiFieldName(field.label, field.name),
-      fieldType: this.mapFieldTypeForApi(field.type),
-      fieldCode: String(index + 1)
-    }));
+    return mapped.map((field) => {
+      const apiFieldType = this.mapFieldTypeForApi(field.type);
+      return {
+        page: String(field.page),
+        x: this.toPixelString(field.x, field.pdfPageWidth),
+        y: this.toPixelString(field.y, field.pdfPageHeight),
+        width: this.toPixelString(field.width, field.pdfPageWidth),
+        height: this.toPixelString(field.height, field.pdfPageHeight),
+        fieldName: this.toApiFieldName(field.label, field.name),
+        fieldType: apiFieldType,
+        fieldCode: this.mapFieldCodeForApiType(apiFieldType)
+      };
+    });
   }
 
   private toApiFieldName(label: string, fallbackCode: string): string {
@@ -351,6 +375,21 @@ export class TemplateCreateComponent {
     }
   }
 
+  private mapFieldCodeForApiType(type: 'text' | 'number' | 'sign' | 'img'): string {
+    switch (type) {
+      case 'text':
+        return '1';
+      case 'number':
+        return '2';
+      case 'sign':
+        return '3';
+      case 'img':
+        return '4';
+      default:
+        return '1';
+    }
+  }
+
   private toPixelString(value: number, dimension: number): string {
     const safe = Number.isFinite(value) ? value : 0;
     const normalized = Math.min(Math.max(safe, 0), 1);
@@ -392,10 +431,56 @@ export class TemplateCreateComponent {
 
   onFileSelected(file?: File): void {
     this.uploadedFile = file;
+    this.documentFieldTouched = true;
     if (file && !this.stepForm.get('name')?.dirty) {
       const suggestedName = file.name.replace(/\.[^.]+$/, '');
       this.stepForm.patchValue({ name: suggestedName });
     }
+  }
+
+  async onTemplateFileSelected(event: Event): Promise<void> {
+    if (!this.canEditDocumentFile) {
+      return;
+    }
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (file) {
+      await this.handleTemplateFileSelection(file);
+    }
+    input.value = '';
+  }
+
+  onTemplateFileDragOver(event: DragEvent): void {
+    if (!this.canEditDocumentFile) {
+      return;
+    }
+    event.preventDefault();
+    this.isDocumentDragOver = true;
+  }
+
+  onTemplateFileDragLeave(event: DragEvent): void {
+    if (!this.canEditDocumentFile) {
+      return;
+    }
+    const currentTarget = event.currentTarget as HTMLElement | null;
+    const relatedTarget = event.relatedTarget as Node | null;
+    if (currentTarget && relatedTarget && currentTarget.contains(relatedTarget)) {
+      return;
+    }
+    this.isDocumentDragOver = false;
+  }
+
+  async onTemplateFileDrop(event: DragEvent): Promise<void> {
+    if (!this.canEditDocumentFile) {
+      return;
+    }
+    event.preventDefault();
+    this.isDocumentDragOver = false;
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) {
+      return;
+    }
+    await this.handleTemplateFileSelection(file);
   }
 
   onPdfSelected(event: Event): void {
@@ -440,7 +525,7 @@ export class TemplateCreateComponent {
       return;
     }
     if (!this.isSupportedTemplateFile(file)) {
-      this.alertService.showError('El archivo a subir debe ser PDF o Word (.docx).', 'Error');
+      this.alertService.showError('El archivo a subir debe ser PDF.', 'Error');
       return;
     }
     if (this.isUploadingPdf) {
@@ -449,7 +534,7 @@ export class TemplateCreateComponent {
     this.isUploadingPdf = true;
     this.templateService.getTemplateUploadUrl(this.templateId, version).subscribe({
       next: res => {
-        const headers = new HttpHeaders().set('Content-Type', file.type || 'application/octet-stream');
+        const headers = new HttpHeaders().set('Content-Type', file.type || 'application/pdf');
         this.http.put(res.uploadUrl, file, { headers, responseType: 'text' }).subscribe({
           next: () => {
             this.alertService.showSuccess('Archivo subido correctamente', '¡Archivo actualizado!');
@@ -473,11 +558,19 @@ export class TemplateCreateComponent {
   }
 
   openDocumentPicker(): void {
-    this.mapperComponent?.openFilePicker();
+    if (!this.canEditDocumentFile) {
+      return;
+    }
+    this.documentFieldTouched = true;
+    this.templateFileInputRef?.nativeElement.click();
   }
 
   get selectedFile(): File | undefined {
     return this.uploadedFile;
+  }
+
+  get canEditDocumentFile(): boolean {
+    return !this.isEditingExistingTemplate;
   }
 
   get selectedPdfName(): string {
@@ -519,6 +612,7 @@ export class TemplateCreateComponent {
     this.templateService.getTemplateHistory(this.templateId).subscribe({
       next: history => {
         this.versions = this.buildVersionOptions(history);
+        this.syncVersionControlState();
         if (!this.versionControl.value && this.versions.length) {
           this.versionControl.setValue(this.versions[0].code, { emitEvent: true });
         }
@@ -691,14 +785,50 @@ export class TemplateCreateComponent {
     return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
   }
 
-  private isDocx(file: File): boolean {
-    return (
-      file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-      file.name.toLowerCase().endsWith('.docx')
-    );
+  private isSupportedTemplateFile(file: File): boolean {
+    return this.isPdf(file);
   }
 
-  private isSupportedTemplateFile(file: File): boolean {
-    return this.isPdf(file) || this.isDocx(file);
+  private async handleTemplateFileSelection(file: File): Promise<void> {
+    this.documentFieldTouched = true;
+    if (!this.isSupportedTemplateFile(file)) {
+      this.alertService.showError('Solo se permiten archivos PDF.', 'Error');
+      return;
+    }
+    this.onFileSelected(file);
+    await this.syncFileWithMapper();
+  }
+
+  private async syncFileWithMapper(): Promise<void> {
+    if (!this.uploadedFile) {
+      return;
+    }
+
+    const mapper = await this.waitForMapperComponent();
+    if (!mapper) {
+      return;
+    }
+
+    const mapperFile = mapper.selectedFile;
+    if (
+      mapperFile &&
+      mapperFile.name === this.uploadedFile.name &&
+      mapperFile.size === this.uploadedFile.size &&
+      mapperFile.lastModified === this.uploadedFile.lastModified
+    ) {
+      return;
+    }
+
+    const fileBackup = this.uploadedFile;
+    try {
+      await mapper.processFile(this.uploadedFile);
+    } catch (error) {
+      console.error('No se pudo procesar el PDF en el mapeador', error);
+      this.alertService.showError('No se pudo procesar el PDF seleccionado.', 'Error');
+    }
+    // Restore the file if the mapper cleared it on error (via fileSelected emit).
+    if (!this.uploadedFile && fileBackup) {
+      this.uploadedFile = fileBackup;
+    }
   }
 }
