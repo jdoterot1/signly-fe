@@ -9,7 +9,7 @@ import { ResetPasswordComponent }   from './features/auth/reset-password/reset-p
 import { CompletePasswordComponent } from './features/auth/complete-password/complete-password.component';
 import { RegisterComponent }        from './features/auth/register/register.component';
 import { LayoutComponent }          from './core/layout/layout/layout.component';
-import { DashboardComponent }       from './features/dashboard/dashboard.component';
+import { HomeComponent }       from './features/home/home.component';
 // importa aquí otros componentes o feature-modules que deban ir bajo el layout
 import { authGuard, authChildGuard } from './core/guards/auth.guard';
 import { paymentRedirectGuard } from './core/guards/payment-redirect.guard';
@@ -60,7 +60,8 @@ export const routes: Routes = [
     canActivate: [paymentRedirectGuard, authGuard],
     canActivateChild: [authChildGuard],
     children: [
-      { path: 'dashboard', component: DashboardComponent },
+      { path: 'home', component: HomeComponent },
+      { path: 'dashboard', redirectTo: 'home', pathMatch: 'full' },
       {
         path: 'billing/payment/return',
         loadComponent: () =>
@@ -142,7 +143,7 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/administration/administration.component').then(m => m.AdministrationComponent)
       },
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: '', redirectTo: 'home', pathMatch: 'full' },
       { path: '**', redirectTo: '/404' }
     ]
   },

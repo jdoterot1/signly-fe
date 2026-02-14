@@ -1,14 +1,26 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {
-  FormBuilder,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators
-} from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 import { AuthService, RegistrationRequest } from '../../../core/services/auth/auth.service';
+import { REGISTER_REGEX } from '../../../core/constants/auth/register-regex.constants';
+import { COLOMBIA_CITIES } from '../../../core/constants/location/colombia-cities.constant';
+
+type StepKey = 'user' | 'company' | 'security';
+
+interface StepDefinition {
+  key: StepKey;
+  title: string;
+  description: string;
+}
+
+interface DialCodeOption {
+  code: string;
+  label: string;
+  dialCode: string;
+}
 
 @Component({
   selector: 'app-register',
@@ -17,15 +29,19 @@ import { AuthService, RegistrationRequest } from '../../../core/services/auth/au
   templateUrl: './register.component.html',
   styleUrls: []
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnDestroy {
+  readonly defaultLocale = 'es-CO';
+  readonly defaultTimezone = 'America/Bogota';
+
   registerForm: FormGroup;
   currentStep = 0;
   loading = false;
   errorMessage: string | null = null;
   successPayload: unknown = null;
   showPassword = false;
+  private readonly subs = new Subscription();
 
-  readonly steps = [
+  readonly steps: StepDefinition[] = [
     { key: 'user', title: 'Tu cuenta', description: 'Datos personales y acceso' },
     { key: 'company', title: 'Tu empresa', description: 'Configura tu organización' },
     { key: 'security', title: 'Seguridad', description: 'Consentimientos y envío' }
@@ -41,6 +57,14 @@ export class RegisterComponent {
     'Legal'
   ];
 
+  readonly signlyActions = [
+    'Firmar contratos con clientes',
+    'Automatizar onboarding de personal',
+    'Aprobar documentos internos',
+    'Gestionar proveedores y compras',
+    'Otro'
+  ];
+
   readonly countries = [
     { code: 'CO', label: 'Colombia' },
     { code: 'US', label: 'Estados Unidos' },
@@ -49,6 +73,20 @@ export class RegisterComponent {
     { code: 'CL', label: 'Chile' }
   ];
 
+  readonly phoneDialCodes: DialCodeOption[] = [
+    { code: 'CO', label: 'Colombia', dialCode: '+57' },
+    { code: 'US', label: 'Estados Unidos', dialCode: '+1' },
+    { code: 'MX', label: 'México', dialCode: '+52' },
+    { code: 'AR', label: 'Argentina', dialCode: '+54' },
+    { code: 'CL', label: 'Chile', dialCode: '+56' },
+    { code: 'PE', label: 'Perú', dialCode: '+51' },
+    { code: 'EC', label: 'Ecuador', dialCode: '+593' },
+    { code: 'PA', label: 'Panamá', dialCode: '+507' },
+    { code: 'ES', label: 'España', dialCode: '+34' }
+  ];
+
+  readonly colombiaCities = COLOMBIA_CITIES;
+
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
@@ -56,47 +94,60 @@ export class RegisterComponent {
   ) {
     this.registerForm = this.fb.group({
       user: this.fb.group({
-        firstName: ['', [Validators.required, Validators.minLength(2)]],
-        lastName: ['', [Validators.required, Validators.minLength(2)]],
+        firstName: ['', [Validators.required, Validators.pattern(REGISTER_REGEX.name)]],
+        lastName: ['', [Validators.required, Validators.pattern(REGISTER_REGEX.name)]],
         email: ['', [Validators.required, Validators.email]],
-        phone: ['', [Validators.required, Validators.pattern(/^\+?[0-9]{7,15}$/)]],
-        password: ['', [Validators.required, Validators.minLength(8)]],
-        locale: ['es-CO'],
-        timezone: ['America/Bogota']
+        phoneDialCode: ['+57', [Validators.required, Validators.pattern(REGISTER_REGEX.phoneDialCode)]],
+        phone: ['', [Validators.required, Validators.pattern(REGISTER_REGEX.phoneNational)]],
+        password: ['', [Validators.required, Validators.pattern(REGISTER_REGEX.strongPassword)]],
+        locale: [this.defaultLocale],
+        timezone: [this.defaultTimezone]
       }),
       company: this.fb.group({
-        displayName: ['', [Validators.required]],
-        legalName: ['', [Validators.required]],
+        businessName: ['', [Validators.required, Validators.pattern(REGISTER_REGEX.companyName)]],
         industry: ['', [Validators.required]],
         country: ['CO', [Validators.required]],
-        city: ['', [Validators.required]],
+        city: ['', [Validators.required, Validators.pattern(REGISTER_REGEX.city)]],
         size: [10, [Validators.required, Validators.min(1)]],
+        useSameBillingEmail: [true],
         billingEmail: ['', [Validators.required, Validators.email]],
-        about: ['']
+        about: ['', [Validators.required]],
+        aboutOther: ['']
       }),
       security: this.fb.group({
         captchaToken: ['demo-token'],
         tosAccepted: [false, [Validators.requiredTrue]],
         privacyAccepted: [false, [Validators.requiredTrue]],
-        referralCode: ['']
+        referralCode: ['', [Validators.pattern(REGISTER_REGEX.referralCode)]]
       })
     });
+
+    this.setupBillingEmailSync();
+    this.setupAboutOtherBehavior();
   }
 
-  get userGroup() {
+  get userGroup(): FormGroup {
     return this.registerForm.get('user') as FormGroup;
   }
 
-  get companyGroup() {
+  get companyGroup(): FormGroup {
     return this.registerForm.get('company') as FormGroup;
   }
 
-  get securityGroup() {
+  get securityGroup(): FormGroup {
     return this.registerForm.get('security') as FormGroup;
   }
 
-  get step() {
-    return this.steps[this.currentStep];
+  get step(): StepDefinition {
+    return this.steps[this.currentStep] ?? this.steps[0];
+  }
+
+  get isOtherSignlyActionSelected(): boolean {
+    return this.companyGroup.get('about')?.value === 'Otro';
+  }
+
+  ngOnDestroy(): void {
+    this.subs.unsubscribe();
   }
 
   togglePassword(): void {
@@ -154,7 +205,7 @@ export class RegisterComponent {
     this.router.navigate(['/login']);
   }
 
-  private getGroupForStep(key: string): FormGroup | null {
+  private getGroupForStep(key: StepKey): FormGroup | null {
     if (key === 'user') return this.userGroup;
     if (key === 'company') return this.companyGroup;
     if (key === 'security') return this.securityGroup;
@@ -163,25 +214,27 @@ export class RegisterComponent {
 
   private buildPayload(): RegistrationRequest {
     const raw = this.registerForm.getRawValue();
+    const businessName = raw.company.businessName;
+
     return {
       user: {
         firstName: raw.user.firstName,
         lastName: raw.user.lastName,
         email: raw.user.email,
-        phone: this.normalizePhone(raw.user.phone, raw.company.country || 'CO'),
+        phone: this.normalizePhone(raw.user.phone, raw.user.phoneDialCode),
         password: raw.user.password,
-        locale: raw.user.locale,
-        timezone: raw.user.timezone
+        locale: this.defaultLocale,
+        timezone: this.defaultTimezone
       },
       company: {
-        displayName: raw.company.displayName,
-        legalName: raw.company.legalName,
+        displayName: businessName,
+        legalName: businessName,
         industry: raw.company.industry,
         country: raw.company.country,
         city: raw.company.city,
         size: Number(raw.company.size ?? 0),
         billingEmail: raw.company.billingEmail,
-        about: raw.company.about
+        about: raw.company.about === 'Otro' ? raw.company.aboutOther : raw.company.about
       },
       security: {
         captchaToken: raw.security.captchaToken || 'demo-token'
@@ -197,29 +250,83 @@ export class RegisterComponent {
     };
   }
 
-  private normalizePhone(phone: string, countryCode: string): string {
-    if (!phone) return phone;
+  private normalizePhone(phone: string, dialCode: string): string {
+    const digitsOnly = (phone || '').replace(/\D/g, '');
+    const normalizedDialCode = (dialCode || '+57').replace(/[^\d+]/g, '');
 
-    const cleaned = phone.trim();
-    const digitsOnly = cleaned.replace(/[^\d]/g, '');
-
-    if (!digitsOnly) return '';
-
-    // If the user already typed the country code, keep it and just ensure "+" prefix
-    if (cleaned.startsWith('+')) {
-      return `+${digitsOnly}`;
+    if (!digitsOnly) {
+      return '';
     }
 
-    // Default country code mapping (extend if needed)
-    const countryDialCode: Record<string, string> = {
-      CO: '+57',
-      US: '+1',
-      MX: '+52',
-      AR: '+54',
-      CL: '+56'
+    return `${normalizedDialCode}${digitsOnly}`;
+  }
+
+  private setupBillingEmailSync(): void {
+    const userEmailControl = this.userGroup.get('email');
+    const sameEmailControl = this.companyGroup.get('useSameBillingEmail');
+    const billingEmailControl = this.companyGroup.get('billingEmail');
+
+    if (!userEmailControl || !sameEmailControl || !billingEmailControl) {
+      return;
+    }
+
+    const applyMode = (useSameEmail: boolean): void => {
+      if (useSameEmail) {
+        const emailValue = String(userEmailControl.value || '').trim();
+        billingEmailControl.setValue(emailValue, { emitEvent: false });
+        billingEmailControl.disable({ emitEvent: false });
+        return;
+      }
+
+      billingEmailControl.enable({ emitEvent: false });
+      if (!billingEmailControl.value) {
+        billingEmailControl.setValue(String(userEmailControl.value || '').trim(), { emitEvent: false });
+      }
     };
 
-    const dialCode = countryDialCode[countryCode] || '+57';
-    return `${dialCode}${digitsOnly}`;
+    applyMode(!!sameEmailControl.value);
+
+    this.subs.add(
+      sameEmailControl.valueChanges.subscribe(value => {
+        applyMode(!!value);
+      })
+    );
+
+    this.subs.add(
+      userEmailControl.valueChanges.subscribe(value => {
+        if (sameEmailControl.value) {
+          billingEmailControl.setValue(String(value || '').trim(), { emitEvent: false });
+        }
+      })
+    );
+  }
+
+  private setupAboutOtherBehavior(): void {
+    const aboutControl = this.companyGroup.get('about');
+    const aboutOtherControl = this.companyGroup.get('aboutOther');
+
+    if (!aboutControl || !aboutOtherControl) {
+      return;
+    }
+
+    const applyMode = (aboutValue: string): void => {
+      if (aboutValue === 'Otro') {
+        aboutOtherControl.setValidators([Validators.required, Validators.minLength(3)]);
+        aboutOtherControl.enable({ emitEvent: false });
+      } else {
+        aboutOtherControl.clearValidators();
+        aboutOtherControl.setValue('', { emitEvent: false });
+        aboutOtherControl.disable({ emitEvent: false });
+      }
+      aboutOtherControl.updateValueAndValidity({ emitEvent: false });
+    };
+
+    applyMode(String(aboutControl.value || ''));
+
+    this.subs.add(
+      aboutControl.valueChanges.subscribe(value => {
+        applyMode(String(value || ''));
+      })
+    );
   }
 }

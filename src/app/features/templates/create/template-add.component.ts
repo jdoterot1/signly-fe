@@ -15,7 +15,7 @@ import {
   DocumentPdfTextEdit
 } from '../../document-mapper/document-mapper.component';
 import { GuideModalComponent } from '../../../shared/components/guide-modal/guide-modal.component';
-import { GuideFlowService, GuideStep } from '../../../shared/services/guide-flow/guide-flow.service';
+import { GuideFlowService, GuideStep, GuideStepKey } from '../../../shared/services/guide-flow/guide-flow.service';
 
 @Component({
   selector: 'app-template-create',
@@ -54,6 +54,7 @@ export class TemplateCreateComponent {
   showGuideModal = false;
   guideSteps: GuideStep[] = [];
   private readonly isGuidedFlow: boolean;
+  private readonly guideStep: GuideStepKey;
 
   constructor(
     private templateService: TemplateService,
@@ -64,9 +65,11 @@ export class TemplateCreateComponent {
   ) {
     this.returnTo = this.route.snapshot.queryParamMap.get('returnTo');
     const guidedParam = this.route.snapshot.queryParamMap.get('guided');
+    const guideStepParam = this.route.snapshot.queryParamMap.get('guideStep');
     this.isGuidedFlow = guidedParam === '1' || guidedParam === 'true';
-    if (this.isGuidedFlow) {
-      this.guideSteps = this.guideFlow.getSteps('template');
+    this.guideStep = guideStepParam === 'document' ? 'document' : 'template';
+    if (this.isGuidedFlow && this.guideStep !== 'template') {
+      this.guideSteps = this.guideFlow.getSteps(this.guideStep);
       this.showGuideModal = true;
     }
 
@@ -405,8 +408,8 @@ export class TemplateCreateComponent {
 
   private navigateAfterSave(): void {
     if (this.isGuidedFlow) {
-      const targetReturn = this.returnTo || '/dashboard';
-      this.router.navigate(['/documents/create'], {
+      const targetReturn = this.returnTo || '/home';
+      this.router.navigate(['/templates'], {
         queryParams: {
           guided: '1',
           guideStep: 'document',
