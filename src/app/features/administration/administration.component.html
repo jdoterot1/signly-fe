@@ -1,20 +1,16 @@
 <div class="min-h-[calc(100vh-8rem)] py-10 px-4 lg:px-10">
   <div class="flex flex-col lg:flex-row gap-8 items-start">
-    <app-admin-sidebar
-      class="w-full lg:w-auto"
-      [ownerName]="ownerName"
-      [accountId]="accountId"
-      [sections]="sidebarSections"
-      [selectedOption]="selectedOption"
-      (optionSelected)="onOptionSelected($event)"
-    ></app-admin-sidebar>
+    <app-admin-sidebar class="w-full lg:w-auto" [ownerName]="ownerName" [accountId]="accountId"
+      [sections]="sidebarSections" [selectedOption]="selectedOption"
+      (optionSelected)="onOptionSelected($event)"></app-admin-sidebar>
 
     <section class="flex-1 space-y-6 w-full">
       <div class="bg-brand-surface-card rounded-3xl border border-brand-subtle shadow-xl p-8">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-brand-primary">Centro de administración</p>
-            <h1 class="text-3xl font-semibold heading-brand mt-3">{{ selectedOption }}</h1>
+            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-brand-primary">{{
+              'ADMINISTRATION.CENTER_TITLE' | translate }}</p>
+            <h1 class="text-3xl font-semibold heading-brand mt-3">{{ selectedOption | translate }}</h1>
             <p class="text-gray-600 mt-3 leading-relaxed max-w-2xl">
               {{ currentDescription }}
             </p>
@@ -24,37 +20,32 @@
 
       </div>
 
-      <ng-container *ngIf="selectedOption === 'Información general'; else configurationPanel">
+      <ng-container *ngIf="selectedOption === 'ADMINISTRATION.SECTIONS.GENERAL'; else configurationPanel">
         <div class="bg-brand-surface-card rounded-3xl border border-brand-subtle shadow-lg p-6 space-y-6">
           <div class="flex items-center justify-between">
-            <span class="text-xl font-semibold text-brand-primary">Notificaciones</span>
-            <button
-              type="button"
+            <span class="text-xl font-semibold text-brand-primary">{{ 'ADMINISTRATION.NOTIFICATIONS' | translate
+              }}</span>
+            <button type="button"
               class="p-2 rounded-full border border-gray-200 text-brand-primary hover:bg-brand-surface-alt"
-              (click)="openPreferencesModal()"
-            >
+              (click)="openPreferencesModal()">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z"
-                />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </button>
           </div>
 
           <div class="grid gap-4 md:grid-cols-3">
-            <div
-              *ngFor="let shortcut of quickAccess"
+            <div *ngFor="let shortcut of quickAccess"
               class="p-4 rounded-2xl border border-gray-100 bg-indigo-50/40 hover:border-indigo-200 transition cursor-pointer"
-              (click)="onOptionSelected(shortcut.target)"
-            >
-              <p class="text-xs uppercase tracking-[0.25em] text-brand-primary font-semibold">{{ shortcut.label }}</p>
-              <p class="text-sm text-gray-600 mt-2">{{ shortcut.description }}</p>
+              (click)="onOptionSelected(shortcut.target)">
+              <p class="text-xs uppercase tracking-[0.25em] text-brand-primary font-semibold">{{ shortcut.label |
+                translate }}</p>
+              <p class="text-sm text-gray-600 mt-2">{{ shortcut.description | translate }}</p>
               <span class="inline-flex items-center gap-1 text-sm font-semibold text-brand-primary mt-3">
-                Abrir
+                {{ 'ADMINISTRATION.OPEN' | translate }}
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7 7 7-7 7" />
                 </svg>
@@ -68,11 +59,9 @@
 
       <ng-template #configurationPanel>
         <ng-container [ngSwitch]="selectedOption">
-          <app-users-list
-            *ngSwitchCase="'Usuarios'"
-            [returnTo]="'/administration/users'"
-          ></app-users-list>
-          <ng-container *ngSwitchCase="'Roles'">
+          <app-users-list *ngSwitchCase="'ADMINISTRATION.SECTIONS.USERS'"
+            [returnTo]="'/administration/users'"></app-users-list>
+          <ng-container *ngSwitchCase="'ADMINISTRATION.SECTIONS.ROLES'">
             <ng-container *ngIf="detailView === 'create-role'; else rolesListView">
               <app-role-create></app-role-create>
             </ng-container>
@@ -80,52 +69,57 @@
               <app-roles-list [returnTo]="rolesReturnTo"></app-roles-list>
             </ng-template>
           </ng-container>
-          <app-company-billing *ngSwitchCase="'Facturación'"></app-company-billing>
-          <ng-container *ngSwitchCase="'Órdenes'">
+          <app-company-billing *ngSwitchCase="'ADMINISTRATION.SECTIONS.BILLING_SECTION'"></app-company-billing>
+          <ng-container *ngSwitchCase="'ADMINISTRATION.SECTIONS.ORDERS'">
             <app-billing-order-detail *ngIf="detailId; else ordersList" [orderId]="detailId"></app-billing-order-detail>
             <ng-template #ordersList>
               <app-billing-orders></app-billing-orders>
             </ng-template>
           </ng-container>
-          <ng-container *ngSwitchCase="'Facturas'">
-            <app-billing-invoice-detail *ngIf="detailId; else invoicesList" [invoiceId]="detailId"></app-billing-invoice-detail>
+          <ng-container *ngSwitchCase="'ADMINISTRATION.SECTIONS.INVOICES'">
+            <app-billing-invoice-detail *ngIf="detailId; else invoicesList"
+              [invoiceId]="detailId"></app-billing-invoice-detail>
             <ng-template #invoicesList>
               <app-billing-invoices></app-billing-invoices>
             </ng-template>
           </ng-container>
-          <app-pricing-meters *ngSwitchCase="'Precios'"></app-pricing-meters>
-          <app-pricing-calculator *ngSwitchCase="'Calculadora'"></app-pricing-calculator>
-          <app-company-settings *ngSwitchCase="'Compañía'"></app-company-settings>
-          <app-company-branding *ngSwitchCase="'Branding y correos'"></app-company-branding>
-          <app-webhook-list *ngSwitchCase="'Webhooks'" [returnTo]="'/administration/webhooks'"></app-webhook-list>
-          <app-wallet *ngSwitchCase="'Billetera'"></app-wallet>
-          <ng-container *ngSwitchCase="'Registro de auditoría'">
+          <app-pricing-meters *ngSwitchCase="'ADMINISTRATION.SECTIONS.PRICING'"></app-pricing-meters>
+          <app-pricing-calculator *ngSwitchCase="'ADMINISTRATION.SECTIONS.CALCULATOR'"></app-pricing-calculator>
+          <app-company-settings *ngSwitchCase="'ADMINISTRATION.SECTIONS.COMPANY'"></app-company-settings>
+          <app-company-branding *ngSwitchCase="'ADMINISTRATION.SECTIONS.BRANDING'"></app-company-branding>
+          <app-webhook-list *ngSwitchCase="'ADMINISTRATION.SECTIONS.WEBHOOKS'"
+            [returnTo]="'/administration/webhooks'"></app-webhook-list>
+          <app-wallet *ngSwitchCase="'ADMINISTRATION.SECTIONS.WALLET'"></app-wallet>
+          <ng-container *ngSwitchCase="'ADMINISTRATION.SECTIONS.AUDIT_LOG'">
             <app-logs-list *ngIf="detailId; else auditList"></app-logs-list>
             <ng-template #auditList>
               <app-audit-list></app-audit-list>
             </ng-template>
           </ng-container>
           <div *ngSwitchDefault class="bg-brand-surface-card rounded-3xl border border-brand-subtle shadow-lg p-6">
-            <p class="text-sm font-semibold heading-brand">Acciones rápidas</p>
-            <p class="text-sm text-gray-500">Decide qué actualizar según la sección seleccionada.</p>
+            <p class="text-sm font-semibold heading-brand">{{ 'ADMINISTRATION.QUICK_ACTIONS' | translate }}</p>
+            <p class="text-sm text-gray-500">{{ 'ADMINISTRATION.QUICK_ACTIONS_DESC' | translate }}</p>
             <div class="mt-4 grid gap-4 md:grid-cols-2">
               <div class="p-4 rounded-2xl border border-gray-100 hover:border-indigo-200 transition">
-                <p class="text-xs font-semibold text-gray-400 uppercase tracking-[0.2em]">Configura</p>
-                <p class="text-lg font-semibold heading-brand mt-2">{{ selectedOption }}</p>
-                <p class="text-sm text-gray-500 mt-1">Revisa campos requeridos y personaliza los detalles clave.</p>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-[0.2em]">{{ 'ADMINISTRATION.CONFIGURE'
+                  | translate }}</p>
+                <p class="text-lg font-semibold heading-brand mt-2">{{ selectedOption | translate }}</p>
+                <p class="text-sm text-gray-500 mt-1">{{ 'ADMINISTRATION.REVIEW_FIELDS' | translate }}</p>
                 <button type="button" class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-indigo-600">
-                  Abrir configuración
+                  {{ 'ADMINISTRATION.OPEN_CONFIG' | translate }}
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7 7 7-7 7" />
                   </svg>
                 </button>
               </div>
               <div class="p-4 rounded-2xl border border-gray-100 hover:border-indigo-200 transition">
-                <p class="text-xs font-semibold text-gray-400 uppercase tracking-[0.2em]">Historial</p>
-                <p class="text-lg font-semibold heading-brand mt-2">Auditoría contextual</p>
-                <p class="text-sm text-gray-500 mt-1">Consulta todos los cambios y responsables por sección.</p>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-[0.2em]">{{ 'ADMINISTRATION.HISTORY' |
+                  translate }}</p>
+                <p class="text-lg font-semibold heading-brand mt-2">{{ 'ADMINISTRATION.CONTEXTUAL_AUDIT' | translate }}
+                </p>
+                <p class="text-sm text-gray-500 mt-1">{{ 'ADMINISTRATION.REVIEW_CHANGES' | translate }}</p>
                 <button type="button" class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-indigo-600">
-                  Ver registro
+                  {{ 'ADMINISTRATION.VIEW_LOG' | translate }}
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7 7 7-7 7" />
                   </svg>
@@ -139,17 +133,13 @@
   </div>
 </div>
 
-<div
-  *ngIf="showPreferencesModal"
-  class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4"
->
+<div *ngIf="showPreferencesModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
   <div class="bg-brand-surface-card rounded-3xl max-w-xl w-full shadow-2xl p-8">
     <div class="flex items-start justify-between">
       <div>
-        <h2 class="text-2xl font-semibold text-brand-primary">Preferencias de notificación</h2>
+        <h2 class="text-2xl font-semibold text-brand-primary">{{ 'ADMINISTRATION.NOTIFICATION_PREFS' | translate }}</h2>
         <p class="text-sm text-gray-600 mt-2">
-          Las notificaciones siempre aparecen en la página Información general de la configuración de eSignature.
-          Además, puede optar por recibir notificaciones por correo electrónico sobre:
+          {{ 'ADMINISTRATION.NOTIFICATION_DESC' | translate }}
         </p>
       </div>
       <button type="button" class="text-gray-400 hover:text-gray-600" (click)="closePreferencesModal()">
@@ -161,25 +151,33 @@
 
     <div class="mt-6 space-y-4 text-sm text-gray-700">
       <label class="flex items-start gap-3 cursor-pointer">
-        <input type="checkbox" class="mt-1 h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary" />
-        <span><strong>Estado de la cuenta:</strong> manténgase al tanto de las actividades importantes en su cuenta.</span>
+        <input type="checkbox"
+          class="mt-1 h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary" />
+        <span><strong>{{ 'ADMINISTRATION.ACCOUNT_STATUS' | translate }}</strong> {{ 'ADMINISTRATION.ACCOUNT_STATUS_DESC'
+          | translate }}</span>
       </label>
       <label class="flex items-start gap-3 cursor-pointer">
-        <input type="checkbox" class="mt-1 h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary" />
-        <span><strong>Actualización de productos:</strong> conozca los nuevos productos o mejoras.</span>
+        <input type="checkbox"
+          class="mt-1 h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary" />
+        <span><strong>{{ 'ADMINISTRATION.PRODUCT_UPDATES' | translate }}</strong> {{
+          'ADMINISTRATION.PRODUCT_UPDATES_DESC' | translate }}</span>
       </label>
       <label class="flex items-start gap-3 cursor-pointer">
-        <input type="checkbox" class="mt-1 h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary" />
-        <span><strong>Formación y aprendizaje:</strong> descubra los próximos entrenamientos, seminarios web y conferencias.</span>
+        <input type="checkbox"
+          class="mt-1 h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary" />
+        <span><strong>{{ 'ADMINISTRATION.TRAINING' | translate }}</strong> {{ 'ADMINISTRATION.TRAINING_DESC' | translate
+          }}</span>
       </label>
     </div>
 
     <div class="mt-8 flex justify-end gap-3">
-      <button type="button" class="px-5 py-2 rounded-xl border border-gray-200 text-brand-primary font-semibold" (click)="closePreferencesModal()">
-        Cancelar
+      <button type="button" class="px-5 py-2 rounded-xl border border-gray-200 text-brand-primary font-semibold"
+        (click)="closePreferencesModal()">
+        {{ 'COMMON.CANCEL' | translate }}
       </button>
-      <button type="button" class="px-5 py-2 rounded-xl bg-brand-disabled text-white font-semibold opacity-60 cursor-not-allowed">
-        Guardar
+      <button type="button"
+        class="px-5 py-2 rounded-xl bg-brand-disabled text-white font-semibold opacity-60 cursor-not-allowed">
+        {{ 'COMMON.SAVE' | translate }}
       </button>
     </div>
   </div>

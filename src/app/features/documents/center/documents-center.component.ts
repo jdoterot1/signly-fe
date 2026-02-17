@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { TranslateModule } from '@ngx-translate/core';
 
 import { AdminSidebarComponent, AdminSidebarSection } from '../../../shared/components/admin-sidebar/admin-sidebar.component';
 import { DocumentListComponent } from '../list/document-list.component';
@@ -9,17 +10,17 @@ import { DocumentListComponent } from '../list/document-list.component';
 @Component({
   selector: 'app-documents-center',
   standalone: true,
-  imports: [CommonModule, AdminSidebarComponent, DocumentListComponent],
+  imports: [CommonModule, AdminSidebarComponent, DocumentListComponent, TranslateModule],
   templateUrl: './documents-center.component.html'
 })
 export class DocumentsCenterComponent implements OnInit, OnDestroy {
-  readonly ownerName = 'Centro de documentos';
+  readonly ownerName = 'DOCUMENTS.CENTER_TITLE';
   readonly accountId = '';
   readonly sidebarSections: AdminSidebarSection[] = [
     {
-      label: 'Acuerdos',
+      label: 'DOCUMENTS.AGREEMENTS',
       items: [
-        { label: 'Todos' }
+        { label: 'DOCUMENTS.ALL' }
       ]
     }
   ];
@@ -35,7 +36,7 @@ export class DocumentsCenterComponent implements OnInit, OnDestroy {
 
   selectedOption = this.defaultOption;
 
-  constructor(private router: Router, private route: ActivatedRoute) {}
+  constructor(private router: Router, private route: ActivatedRoute) { }
 
   ngOnInit(): void {
     this.querySub = this.route.queryParamMap.subscribe(params => {
@@ -65,7 +66,7 @@ export class DocumentsCenterComponent implements OnInit, OnDestroy {
   }
 
   get currentDescription(): string {
-    return `Visualiza el estado de tus acuerdos bajo la vista "${this.selectedOption}".`;
+    return 'DOCUMENTS.DESCRIPTION';
   }
 
   get documentsReturnTo(): string {

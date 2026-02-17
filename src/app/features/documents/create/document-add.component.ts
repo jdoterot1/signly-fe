@@ -5,6 +5,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, ValidatorFn, Validators } from '@angular/forms';
 import { Subscription } from 'rxjs';
 
+import { TranslateService } from '@ngx-translate/core';
+
 import { DocumentService } from '../../../core/services/documents/document.service';
 import {
   CreateDocumentRequest,
@@ -49,8 +51,8 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
   formConfig = this.cloneFormConfig(DOCUMENT_CREATE_FORM_CONFIG);
   form: FormGroup;
   currentStep: 1 | 2 = 1;
-  submitLabel = 'Continuar';
-  cancelLabel = 'Cancelar';
+  submitLabel = '';
+  cancelLabel = '';
   formInitialValues = {
     orderMode: DOCUMENT_ORDER_MODES[0],
     language: DOCUMENT_LANGUAGES[0],
@@ -99,7 +101,8 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private alertService: AlertService, // ✅ Inyectar servicio
     private guideFlow: GuideFlowService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private translate: TranslateService
   ) {
     this.form = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(120), Validators.pattern(NO_DIGITS_PATTERN)]],
@@ -129,6 +132,9 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.submitLabel = this.translate.instant('DOCUMENTS.CREATE.CONTINUE');
+    this.cancelLabel = this.translate.instant('DOCUMENTS.CREATE.CANCEL');
+
     const query = this.route.snapshot.queryParamMap;
     this.preselectedTemplateId = query.get('templateId') ?? undefined;
     const rawVersion = query.get('templateVersion') ?? undefined;
@@ -189,12 +195,12 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     }
     const orderMode = this.readSelectValue(formValue.orderMode);
     const signatureModes = this.readMultiSelectValues(formValue.signatureMode) as DocumentSignatureMode[];
-    const language = this.readSelectValue(formValue.language) || 'Español';
+    const language = this.readSelectValue(formValue.language) || this.translate.instant('DOCUMENTS.CREATE.DEFAULT_LANGUAGE');
     const templateId = this.readSelectValue(formValue.templateId);
     const templateVersion = this.readSelectValue(formValue.templateVersion);
 
     if (!templateId || !templateVersion) {
-      this.alertService.showError('Selecciona template y versión', 'Error');
+      this.alertService.showError(this.translate.instant('DOCUMENTS.CREATE.ERROR_SELECT_TEMPLATE'), this.translate.instant('DOCUMENTS.CREATE.ERROR_TITLE'));
       return;
     }
     const inlineParticipant = this.buildParticipantFromForm(formValue, signatureModes);
@@ -207,7 +213,7 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
       participants.push(inlineParticipant);
     }
     if (!participants.length) {
-      this.alertService.showError('Debes registrar al menos un participante.', 'Error');
+      this.alertService.showError(this.translate.instant('DOCUMENTS.CREATE.MIN_PARTICIPANT'), this.translate.instant('DOCUMENTS.CREATE.ERROR_TITLE'));
       return;
     }
 
@@ -232,20 +238,20 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
 
     this.documentService.createDocument(payload).subscribe({
       next: () => {
-        this.alertService.showSuccess('El documento fue creado exitosamente', '¡Documento creado!');
+        this.alertService.showSuccess(this.translate.instant('DOCUMENTS.CREATE.SUCCESS_MSG'), this.translate.instant('DOCUMENTS.CREATE.SUCCESS_TITLE'));
         setTimeout(() => this.navigateBack(), 2600);
       },
       error: (err: any) => {
         const isInsufficientCredits = err?.status === 402 || err?.code === 'insufficient_credits';
         if (isInsufficientCredits) {
           this.alertService.showError(
-            'Te quedaste sin créditos. Te llevaremos a la sección de recarga para continuar.',
-            'Créditos insuficientes'
+            this.translate.instant('DOCUMENTS.CREATE.ERROR_INSUFFICIENT_CREDITS'),
+            this.translate.instant('DOCUMENTS.CREATE.ERROR_INSUFFICIENT_CREDITS_TITLE')
           );
           setTimeout(() => this.navigateToCreditsPurchase(), 1800);
           return;
         }
-        this.alertService.showError(err?.message || 'No se pudo crear el documento', 'Error');
+        this.alertService.showError(err?.message || this.translate.instant('DOCUMENTS.CREATE.ERROR_MSG'), this.translate.instant('DOCUMENTS.CREATE.ERROR_TITLE'));
         console.error('Error al crear el documento', err);
       }
     });
@@ -283,12 +289,12 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     const participant = this.buildParticipantFromForm(raw, signatureModes);
     if (!participant) {
       if (!this.hasInlineParticipantData(raw)) {
-        this.alertService.showError('Completa los datos del participante antes de agregar.', 'Error');
+        this.alertService.showError(this.translate.instant('DOCUMENTS.CREATE.ERROR_PARTICIPANT_INCOMPLETE'), this.translate.instant('DOCUMENTS.CREATE.ERROR_TITLE'));
       }
       return;
     }
     this.participantsDraft = [...this.participantsDraft, participant];
-    this.alertService.showSuccess('Participante agregado correctamente.', 'Participante agregado');
+    this.alertService.showSuccess(this.translate.instant('DOCUMENTS.CREATE.PARTICIPANT_ADDED_MSG'), this.translate.instant('DOCUMENTS.CREATE.PARTICIPANT_ADDED_TITLE'));
     this.form.patchValue(
       {
         participantName: '',
@@ -306,7 +312,7 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
       return;
     }
     this.participantsDraft = this.participantsDraft.filter((_, i) => i !== index);
-    this.alertService.showSuccess('Participante eliminado.', 'Actualizado');
+    this.alertService.showSuccess(this.translate.instant('DOCUMENTS.CREATE.PARTICIPANT_REMOVED_MSG'), this.translate.instant('DOCUMENTS.CREATE.PARTICIPANT_REMOVED_TITLE'));
   }
 
   hasParticipantDraftInForm(): boolean {
@@ -503,8 +509,8 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
 
   private applyStepState(): void {
     const step1 = this.currentStep === 1;
-    this.submitLabel = step1 ? 'Continuar' : 'Crear documento';
-    this.cancelLabel = step1 ? 'Cancelar' : 'Regresar';
+    this.submitLabel = step1 ? this.translate.instant('DOCUMENTS.CREATE.CONTINUE') : this.translate.instant('DOCUMENTS.CREATE.CREATE_DOCUMENT');
+    this.cancelLabel = step1 ? this.translate.instant('DOCUMENTS.CREATE.CANCEL') : this.translate.instant('DOCUMENTS.CREATE.GO_BACK');
 
     this.step1Keys.forEach(key => {
       this.setFormHidden(key, !step1);
@@ -522,7 +528,7 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
   private goToStepTwo(): void {
     const documentName = (this.form.get('name')?.value ?? '').toString().trim();
     if (/\d/.test(documentName)) {
-      this.alertService.showError('El nombre del documento no puede contener números.', 'Error');
+      this.alertService.showError(this.translate.instant('DOCUMENTS.CREATE.ERROR_DOC_NAME_NO_DIGITS'), this.translate.instant('DOCUMENTS.CREATE.ERROR_TITLE'));
       this.form.get('name')?.markAsTouched();
       return;
     }
@@ -600,19 +606,19 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
       return null;
     }
     if (!name) {
-      this.alertService.showError('El nombre del participante es obligatorio.', 'Error');
+      this.alertService.showError(this.translate.instant('DOCUMENTS.CREATE.VALIDATION.NAME_REQUIRED'), this.translate.instant('DOCUMENTS.CREATE.ERROR_TITLE'));
       return null;
     }
     if (/\d/.test(name)) {
-      this.alertService.showError('El nombre del participante no puede contener números.', 'Error');
+      this.alertService.showError(this.translate.instant('DOCUMENTS.CREATE.ERROR_PARTICIPANT_NAME_NO_DIGITS'), this.translate.instant('DOCUMENTS.CREATE.ERROR_TITLE'));
       return null;
     }
     if (!selectedModes.length) {
-      this.alertService.showError('Debes seleccionar al menos un modo de firma.', 'Error');
+      this.alertService.showError(this.translate.instant('DOCUMENTS.CREATE.VALIDATION.SIGN_MODE_REQUIRED'), this.translate.instant('DOCUMENTS.CREATE.ERROR_TITLE'));
       return null;
     }
     if (email && !SIMPLE_EMAIL_PATTERN.test(email)) {
-      this.alertService.showError('Ingresa un correo válido para el participante.', 'Error');
+      this.alertService.showError(this.translate.instant('DOCUMENTS.CREATE.ERROR_INVALID_EMAIL'), this.translate.instant('DOCUMENTS.CREATE.ERROR_TITLE'));
       return null;
     }
 
@@ -621,19 +627,19 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     const requiresDocument = selectedModes.some(mode => this.isBiometricMode(mode));
 
     if (requiresEmail && !email) {
-      this.alertService.showError('El correo es obligatorio por los modos seleccionados.', 'Error');
+      this.alertService.showError(this.translate.instant('DOCUMENTS.CREATE.VALIDATION.EMAIL_REQUIRED'), this.translate.instant('DOCUMENTS.CREATE.ERROR_TITLE'));
       return null;
     }
     if (requiresPhone && !phone) {
-      this.alertService.showError('El teléfono es obligatorio por los modos seleccionados.', 'Error');
+      this.alertService.showError(this.translate.instant('DOCUMENTS.CREATE.VALIDATION.PHONE_REQUIRED'), this.translate.instant('DOCUMENTS.CREATE.ERROR_TITLE'));
       return null;
     }
     if (requiresDocument && !documentNumber) {
-      this.alertService.showError('El documento es obligatorio para firma biométrica.', 'Error');
+      this.alertService.showError(this.translate.instant('DOCUMENTS.CREATE.VALIDATION.DOC_REQUIRED'), this.translate.instant('DOCUMENTS.CREATE.ERROR_TITLE'));
       return null;
     }
     if (requiresDocument && !email && !phone) {
-      this.alertService.showError('Para biometría debes tener al menos email o teléfono.', 'Error');
+      this.alertService.showError(this.translate.instant('DOCUMENTS.CREATE.VALIDATION.BIO_CONTACT'), this.translate.instant('DOCUMENTS.CREATE.ERROR_TITLE'));
       return null;
     }
 

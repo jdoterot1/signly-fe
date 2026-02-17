@@ -8,6 +8,7 @@ import { TableModel }           from '../../../shared/table/table.model';
 import { TemplateService }      from '../../../core/services/templates/template.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { Template, TemplateStatus } from '../../../core/models/templates/template.model';
+import { TranslateModule } from '@ngx-translate/core';
 
 interface TemplateRow {
   id: string;
@@ -22,60 +23,98 @@ interface TemplateRow {
 @Component({
   selector: 'app-template-list',
   standalone: true,
-  imports: [ CommonModule, RouterModule, FormsModule, TableComponent ],
+  imports: [ CommonModule, RouterModule, FormsModule, TableComponent,TranslateModule ],
   templateUrl: './template-list.component.html'
 })
 export class TemplateListComponent implements OnInit {
   @Input() returnTo: string | null = null;
 
   tableModel: TableModel<TemplateRow> = {
-    entityName: 'Lista de Plantillas',
-    tableConfig: {
-      pageSize: 8,
-      enableFiltering: true,
-      enableSorting: true,
-      showPagination: true,
-      showRowSelection: false,
-      showIndexColumn: false,
-      emptyMessage: 'No se encontraron plantillas.',
-      trackByField: 'id'
+  entityName: 'TEMPLATES.LIST_TITLE',
+
+  tableConfig: {
+    pageSize: 8,
+    enableFiltering: true,
+    enableSorting: true,
+    showPagination: true,
+    showRowSelection: false,
+    showIndexColumn: false,
+    emptyMessage: 'TEMPLATES.EMPTY',
+    trackByField: 'id'
+  },
+
+  columns: [
+    {
+      key: 'name',
+      header: 'TEMPLATES.NAME',
+      columnType: 'text',
+      sortable: true,
+      filterable: true,
+      visible: true
     },
-    columns: [
-      { key: 'name',         header: 'Nombre de plantilla', columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'description',  header: 'Descripción',         columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'creationDate', header: 'Fecha de creación',   columnType: 'text', sortable: true, filterable: false, visible: true },
-      { key: 'createdBy',    header: 'Creado por',          columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'language',     header: 'Idioma',              columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'status',       header: 'Estado',              columnType: 'text', sortable: true, filterable: false, visible: true },
-      {
-        key: 'actions',
-        header: 'Acciones',
-        columnType: 'action',
-        visible: true,
-        actions: [
-          {
-            label: '',
-            icon: 'view',
-            tooltip: 'Visualizar',
-            handler: row => this.onView(row)
-          },
-          {
-            label: '',
-            icon: 'edit',
-            tooltip: 'Editar',
-            handler: row => this.onEdit(row)
-          },
-          {
-            label: '',
-            icon: 'delete',
-            tooltip: 'Eliminar',
-            handler: row => this.onDelete(row)
-          }
-        ]
-      }
-    ],
-    data: []
-  };
+    {
+      key: 'description',
+      header: 'TEMPLATES.TEMPLATE_DESCRIPTION',
+      columnType: 'text',
+      sortable: true,
+      filterable: true,
+      visible: true
+    },
+    {
+      key: 'creationDate',
+      header: 'TEMPLATES.CREATED_AT',
+      columnType: 'text',
+      sortable: true,
+      filterable: false,
+      visible: true
+    },
+    {
+      key: 'createdBy',
+      header: 'TEMPLATES.CREATED_BY',
+      columnType: 'text',
+      sortable: true,
+      filterable: true,
+      visible: true
+    },
+    {
+      key: 'language',
+      header: 'TEMPLATES.LANGUAGE',
+      columnType: 'text',
+      sortable: true,
+      filterable: true,
+      visible: true
+    },
+    {
+      key: 'actions',
+      header: 'TEMPLATES.ACTIONS_LABEL',
+      columnType: 'action',
+      visible: true,
+      actions: [
+        {
+          label: '',
+          icon: 'view',
+          tooltip: 'TEMPLATES.VIEW',
+          handler: row => this.onView(row)
+        },
+        {
+          label: '',
+          icon: 'edit',
+          tooltip: 'TEMPLATES.EDIT',
+          handler: row => this.onEdit(row)
+        },
+        {
+          label: '',
+          icon: 'delete',
+          tooltip: 'TEMPLATES.DELETE',
+          handler: row => this.onDelete(row)
+        }
+      ]
+    }
+  ],
+
+  data: []
+};
+
 
   constructor(private templateService: TemplateService, private router: Router, private authService: AuthService) {}
 

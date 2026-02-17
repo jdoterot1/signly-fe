@@ -6,11 +6,12 @@ import { finalize } from 'rxjs/operators';
 import { CompanyService } from '../../core/services/company/company.service';
 import { CompanyBranding, UpdateCompanyBrandingPayload } from '../../core/models/company/company.model';
 import { AlertService } from '../../shared/alert/alert.service';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-company-branding',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslateModule],
   templateUrl: './company-branding.component.html'
 })
 export class CompanyBrandingComponent implements OnInit {
@@ -26,7 +27,8 @@ export class CompanyBrandingComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private companyService: CompanyService,
-    private alertService: AlertService
+    private alertService: AlertService,
+    private translate: TranslateService
   ) {
     this.brandingForm = this.fb.group({
       primary_color: ['#270089', [Validators.required, Validators.pattern(/^#[0-9a-fA-F]{6}$/)]],
@@ -50,8 +52,8 @@ export class CompanyBrandingComponent implements OnInit {
       .subscribe({
         next: data => this.brandingForm.patchValue(this.toBrandingForm(data)),
         error: err => {
-          const message = err instanceof Error ? err.message : 'No se pudo cargar la identidad visual.';
-          this.alertService.showError(message, 'Error al cargar branding');
+          const message = err instanceof Error ? err.message : this.translate.instant('COMPANY.BRANDING.ERROR_LOAD');
+          this.alertService.showError(message, this.translate.instant('COMPANY.SETTINGS.ERROR_LOAD_TITLE'));
         }
       });
   }
@@ -79,11 +81,14 @@ export class CompanyBrandingComponent implements OnInit {
       .subscribe({
         next: data => {
           this.brandingForm.patchValue(this.toBrandingForm(data));
-          this.alertService.showSuccess('Branding actualizado correctamente.', 'Branding guardado');
+          this.alertService.showSuccess(
+            this.translate.instant('COMPANY.BRANDING.SUCCESS'),
+            this.translate.instant('COMPANY.SETTINGS.SUCCESS_TITLE')
+          );
         },
         error: err => {
-          const message = err instanceof Error ? err.message : 'No se pudo actualizar el branding.';
-          this.alertService.showError(message, 'Error al guardar');
+          const message = err instanceof Error ? err.message : this.translate.instant('COMPANY.BRANDING.ERROR_SAVE');
+          this.alertService.showError(message, this.translate.instant('COMPANY.SETTINGS.ERROR_SAVE_TITLE'));
         }
       });
   }

@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { UsageService } from '../../../core/services/usage/usage.service';
 import { UsageSummaryItem } from '../../../core/models/usage/usage.model';
@@ -20,7 +21,7 @@ interface UsageSummaryRow {
 @Component({
   selector: 'app-usage-summary',
   standalone: true,
-  imports: [CommonModule, FormsModule, TableComponent],
+  imports: [CommonModule, FormsModule, TableComponent, TranslateModule],
   templateUrl: './usage-summary.component.html'
 })
 export class UsageSummaryComponent implements OnInit {
@@ -33,14 +34,14 @@ export class UsageSummaryComponent implements OnInit {
   lastRatedAt?: string;
 
   readonly meterLabels: Record<string, string> = {
-    SIGNATURE_EMAIL: 'Firmas por correo',
-    SIGNATURE_SMS: 'Firmas vía SMS',
-    SIGNATURE_WHATSAPP: 'Firmas vía WhatsApp',
-    SIGNATURE_BIOMETRIC: 'Firmas biométricas'
+    SIGNATURE_EMAIL: 'REPORTS.USAGE_SUMMARY.METERS.SIGNATURE_EMAIL',
+    SIGNATURE_SMS: 'REPORTS.USAGE_SUMMARY.METERS.SIGNATURE_SMS',
+    SIGNATURE_WHATSAPP: 'REPORTS.USAGE_SUMMARY.METERS.SIGNATURE_WHATSAPP',
+    SIGNATURE_BIOMETRIC: 'REPORTS.USAGE_SUMMARY.METERS.SIGNATURE_BIOMETRIC'
   };
 
   tableModel: TableModel<UsageSummaryRow> = {
-    entityName: 'Consumo por canal',
+    entityName: 'REPORTS.USAGE_SUMMARY.TITLE',
     tableConfig: {
       pageSize: 10,
       enableFiltering: true,
@@ -48,20 +49,20 @@ export class UsageSummaryComponent implements OnInit {
       showPagination: false,
       showRowSelection: false,
       showCreateButton: false,
-      emptyMessage: 'No hay registros de uso para el período seleccionado.'
+      emptyMessage: 'REPORTS.USAGE_SUMMARY.EMPTY'
     },
     columns: [
-      { key: 'concept', header: 'Concepto', columnType: 'text', visible: true },
-      { key: 'channel', header: 'Código', columnType: 'text', visible: true },
-      { key: 'qtyTotal', header: 'Cantidad', columnType: 'text', visible: true, sortable: true },
-      { key: 'unitPriceLabel', header: 'Precio unitario', columnType: 'text', visible: true },
-      { key: 'amountLabel', header: 'Total facturado', columnType: 'text', visible: true },
-      { key: 'ratedAt', header: 'Actualizado', columnType: 'text', visible: true }
+      { key: 'concept', header: 'REPORTS.USAGE_SUMMARY.CONCEPT', columnType: 'text', visible: true },
+      { key: 'channel', header: 'REPORTS.USAGE_SUMMARY.CODE', columnType: 'text', visible: true },
+      { key: 'qtyTotal', header: 'REPORTS.USAGE_SUMMARY.QUANTITY', columnType: 'text', visible: true, sortable: true },
+      { key: 'unitPriceLabel', header: 'REPORTS.USAGE_SUMMARY.UNIT_PRICE', columnType: 'text', visible: true },
+      { key: 'amountLabel', header: 'REPORTS.USAGE_SUMMARY.TOTAL_BILLED', columnType: 'text', visible: true },
+      { key: 'ratedAt', header: 'REPORTS.USAGE_SUMMARY.UPDATED', columnType: 'text', visible: true }
     ],
     data: []
   };
 
-  constructor(private usageService: UsageService) {}
+  constructor(private usageService: UsageService, private translate: TranslateService) { }
 
   ngOnInit(): void {
     this.fetchUsage();
@@ -86,8 +87,8 @@ export class UsageSummaryComponent implements OnInit {
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: data => this.handleUsageData(data),
-        error: err => {
-          const fallback = 'No pudimos obtener el resumen de uso. Intenta nuevamente en unos minutos.';
+        error: (err: any) => {
+          const fallback = this.translate.instant('REPORTS.USAGE_SUMMARY.ERROR_LOAD');
           this.errorMessage = err?.message || fallback;
           this.tableModel = { ...this.tableModel, data: [] };
           this.totalAmount = 0;
@@ -100,7 +101,7 @@ export class UsageSummaryComponent implements OnInit {
   private handleUsageData(data: UsageSummaryItem[]): void {
     this.currency = data[0]?.currency || 'COP';
     const rows: UsageSummaryRow[] = data.map(item => ({
-      concept: this.meterLabels[item.meterCode] || item.meterCode,
+      concept: this.translate.instant(this.meterLabels[item.meterCode]) || item.meterCode,
       channel: item.meterCode,
       qtyTotal: item.qtyTotal,
       unitPriceLabel: this.formatCurrency(item.unitPrice, item.currency),

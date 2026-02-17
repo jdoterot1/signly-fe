@@ -3,13 +3,13 @@
     <section class="bg-white rounded-3xl shadow px-6 py-8">
       <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <h2 class="text-xl font-semibold text-gray-900">Preferencias de facturación</h2>
-          <p class="text-sm text-gray-500">Actualiza correos, moneda, términos y proveedor de cobro.</p>
+          <h2 class="text-xl font-semibold text-gray-900">{{ 'COMPANY.BILLING.TITLE' | translate }}</h2>
+          <p class="text-sm text-gray-500">{{ 'COMPANY.BILLING.SUBTITLE' | translate }}</p>
         </div>
       </div>
 
       <div *ngIf="isLoadingBilling" class="mt-6 text-sm text-gray-500 animate-pulse">
-        Consultando preferencias de facturación...
+        {{ 'COMPANY.BILLING.LOADING' | translate }}
       </div>
 
       <form
@@ -20,95 +20,95 @@
       >
         <div class="grid gap-5 md:grid-cols-2">
           <div>
-            <label class="block text-sm font-medium text-gray-700">Correo de facturación</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'COMPANY.BILLING.EMAIL' | translate }}</label>
             <input
               type="email"
               formControlName="billing_email"
               class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-              placeholder="billing@apolosystems.co"
+              [placeholder]="'COMPANY.BILLING.EMAIL_PLACEHOLDER' | translate"
             />
             <p class="mt-1 text-xs text-red-500" *ngIf="billingForm.get('billing_email')?.invalid && billingForm.get('billing_email')?.touched">
-              Ingresa un correo válido.
+              {{ 'COMPANY.BILLING.EMAIL_ERROR' | translate }}
             </p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Modelo de cobro</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'COMPANY.BILLING.MODEL' | translate }}</label>
             <select
               formControlName="billing_model"
               class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent"
             >
-              <option value="" disabled>Selecciona un modelo</option>
+              <option value="" disabled>{{ 'COMPANY.BILLING.MODEL_SELECT' | translate }}</option>
               <option *ngIf="showBillingModelFallback" [value]="billingModelValue">
-                {{ billingModelValue }} (actual)
+                {{ 'COMPANY.BILLING.MODEL_CURRENT' | translate: {model: billingModelValue} }}
               </option>
               <option *ngFor="let model of billingModelOptions" [value]="model.value">{{ model.label }}</option>
             </select>
             <p class="mt-1 text-xs text-red-500" *ngIf="billingForm.get('billing_model')?.invalid && billingForm.get('billing_model')?.touched">
-              Selecciona el modelo de facturación.
+              {{ 'COMPANY.BILLING.MODEL_ERROR' | translate }}
             </p>
           </div>
         </div>
 
         <div class="grid gap-5 md:grid-cols-2">
           <div>
-            <label class="block text-sm font-medium text-gray-700">Moneda</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'COMPANY.BILLING.CURRENCY' | translate }}</label>
             <select
               formControlName="currency"
               class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent"
             >
-              <option value="" disabled>Selecciona la moneda</option>
+              <option value="" disabled>{{ 'COMPANY.BILLING.CURRENCY_SELECT' | translate }}</option>
               <option *ngIf="showCurrencyFallback" [value]="currencyValue">
-                {{ currencyValue }} (actual)
+                {{ 'COMPANY.BILLING.CURRENCY_CURRENT' | translate: {currency: currencyValue} }}
               </option>
               <option *ngFor="let currency of currencyOptions" [value]="currency">{{ currency }}</option>
             </select>
             <p class="mt-1 text-xs text-red-500" *ngIf="billingForm.get('currency')?.invalid && billingForm.get('currency')?.touched">
-              Selecciona una moneda.
+              {{ 'COMPANY.BILLING.CURRENCY_ERROR' | translate }}
             </p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Día de facturación</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'COMPANY.BILLING.INVOICE_DAY' | translate }}</label>
             <input
               type="number"
               min="1"
               max="31"
               formControlName="invoice_day"
               class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-              placeholder="10"
+              [placeholder]="'COMPANY.BILLING.INVOICE_DAY_PLACEHOLDER' | translate"
             />
           </div>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700">Dirección legal para facturas</label>
+          <label class="block text-sm font-medium text-gray-700">{{ 'COMPANY.BILLING.ADDRESS' | translate }}</label>
           <textarea
             rows="2"
             formControlName="legal_address"
             class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-            placeholder="Cra 1 # 23-45, Bogotá D.C., Colombia"
+            [placeholder]="'COMPANY.BILLING.ADDRESS_PLACEHOLDER' | translate"
           ></textarea>
         </div>
 
         <div class="grid gap-5 md:grid-cols-2">
           <div>
-            <label class="block text-sm font-medium text-gray-700">Términos de pago (días)</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'COMPANY.BILLING.TERMS' | translate }}</label>
             <input
               type="number"
               min="0"
               formControlName="net_terms_days"
               class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-              placeholder="30"
+              [placeholder]="'COMPANY.BILLING.TERMS_PLACEHOLDER' | translate"
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Proveedor de pago</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'COMPANY.BILLING.PROVIDER' | translate }}</label>
             <select
               formControlName="payment_provider"
               class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent"
             >
-              <option value="" disabled>Selecciona una opción</option>
+              <option value="" disabled>{{ 'COMPANY.BILLING.PROVIDER_SELECT' | translate }}</option>
               <option *ngIf="showPaymentProviderFallback" [value]="paymentProviderValue">
-                {{ paymentProviderValue }} (actual)
+                {{ 'COMPANY.BILLING.PROVIDER_CURRENT' | translate: {provider: paymentProviderValue} }}
               </option>
               <option *ngFor="let provider of paymentProviderOptions" [value]="provider.value">{{ provider.label }}</option>
             </select>
@@ -117,21 +117,21 @@
 
         <div class="grid gap-5 md:grid-cols-2">
           <div>
-            <label class="block text-sm font-medium text-gray-700">Referencia método de pago</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'COMPANY.BILLING.METHOD_REF' | translate }}</label>
             <input
               type="text"
               formControlName="payment_method_ref"
               class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-              placeholder="ID de oferta o referencia externa"
+              [placeholder]="'COMPANY.BILLING.METHOD_REF_PLACEHOLDER' | translate"
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Notas internas</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'COMPANY.BILLING.NOTES' | translate }}</label>
             <textarea
               rows="2"
               formControlName="notes"
               class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-              placeholder="Preferencias especiales del cliente"
+              [placeholder]="'COMPANY.BILLING.NOTES_PLACEHOLDER' | translate"
             ></textarea>
           </div>
         </div>
@@ -143,14 +143,14 @@
             (click)="loadBillingPreferences()"
             [disabled]="isSavingBilling"
           >
-            Descartar cambios
+            {{ 'COMPANY.BILLING.DISCARD' | translate }}
           </button>
           <button
             type="submit"
             class="px-5 py-2 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-hover disabled:opacity-60"
             [disabled]="isSavingBilling"
           >
-            {{ isSavingBilling ? 'Guardando...' : 'Actualizar facturación' }}
+            {{ isSavingBilling ? ('COMPANY.BILLING.SAVING' | translate) : ('COMPANY.BILLING.SAVE' | translate) }}
           </button>
         </div>
       </form>

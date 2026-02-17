@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+
 import { BillingService } from '../../../core/services/billing/billing.service';
 import { BillingOrderSummary } from '../../../core/models/billing/billing.model';
 import { AlertService } from '../../../shared/alert/alert.service';
@@ -12,54 +14,59 @@ import { TableModel } from '../../../shared/table/table.model';
 @Component({
   selector: 'app-billing-orders',
   standalone: true,
-  imports: [CommonModule, TableComponent],
+  imports: [CommonModule, TableComponent, TranslateModule],
   templateUrl: './billing-orders.component.html'
 })
 export class BillingOrdersComponent implements OnInit {
   isLoading = false;
   orders: BillingOrderSummary[] = [];
 
-  tableModel: TableModel<OrderRow> = {
-    entityName: 'Órdenes',
-    tableConfig: {
-      pageSize: 10,
-      enableFiltering: true,
-      enableSorting: true,
-      showPagination: true,
-      showRowSelection: false,
-      showIndexColumn: false,
-      emptyMessage: 'No se encontraron órdenes.',
-      trackByField: 'orderId',
-      showCreateButton: false
-    },
-    columns: [
-      { key: 'orderType', header: 'Tipo', columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'status', header: 'Estado', columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'total', header: 'Total', columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'dueDate', header: 'Vence', columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'createdAt', header: 'Creada', columnType: 'text', sortable: true, filterable: true, visible: true },
-      {
-        key: 'actions',
-        header: 'Acciones',
-        columnType: 'action',
-        visible: true,
-        actions: [
-          {
-            label: '',
-            icon: 'view',
-            tooltip: 'Ver detalle',
-            handler: row => this.onView(row)
-          }
-        ]
-      }
-    ],
-    data: []
-  };
+  get tableModel(): TableModel<OrderRow> {
+    return {
+      entityName: this.translate.instant('BILLING.ORDERS.TITLE'),
+      tableConfig: {
+        pageSize: 10,
+        enableFiltering: true,
+        enableSorting: true,
+        showPagination: true,
+        showRowSelection: false,
+        showIndexColumn: false,
+        emptyMessage: this.translate.instant('BILLING.ORDERS.EMPTY'),
+        trackByField: 'orderId',
+        showCreateButton: false
+      },
+      columns: [
+        { key: 'orderType', header: this.translate.instant('BILLING.ORDERS.HEADER_TYPE'), columnType: 'text', sortable: true, filterable: true, visible: true },
+        { key: 'status', header: this.translate.instant('BILLING.ORDERS.HEADER_STATUS'), columnType: 'text', sortable: true, filterable: true, visible: true },
+        { key: 'total', header: this.translate.instant('BILLING.ORDERS.HEADER_TOTAL'), columnType: 'text', sortable: true, filterable: true, visible: true },
+        { key: 'dueDate', header: this.translate.instant('BILLING.ORDERS.HEADER_DUE'), columnType: 'text', sortable: true, filterable: true, visible: true },
+        { key: 'createdAt', header: this.translate.instant('BILLING.ORDERS.HEADER_CREATED'), columnType: 'text', sortable: true, filterable: true, visible: true },
+        {
+          key: 'actions',
+          header: this.translate.instant('BILLING.ORDERS.HEADER_ACTIONS'),
+          columnType: 'action',
+          visible: true,
+          actions: [
+            {
+              label: '',
+              icon: 'view',
+              tooltip: this.translate.instant('BILLING.ORDERS.VIEW_DETAIL'),
+              handler: row => this.onView(row)
+            }
+          ]
+        }
+      ],
+      data: this._tableData
+    };
+  }
+
+  private _tableData: OrderRow[] = [];
 
   constructor(
     private billingService: BillingService,
     private alertService: AlertService,
-    private router: Router
+    private router: Router,
+    private translate: TranslateService
   ) {}
 
   ngOnInit(): void {
@@ -74,11 +81,11 @@ export class BillingOrdersComponent implements OnInit {
       .subscribe({
         next: orders => {
           this.orders = Array.isArray(orders) ? orders : [];
-          this.tableModel = { ...this.tableModel, data: this.mapOrdersToRows(this.orders) };
+          this._tableData = this.mapOrdersToRows(this.orders);
         },
         error: err => {
-          const message = err instanceof Error ? err.message : 'No se pudieron cargar las órdenes.';
-          this.alertService.showError(message, 'Error al cargar órdenes');
+          const message = err instanceof Error ? err.message : this.translate.instant('BILLING.ORDERS.ERROR_LOAD');
+          this.alertService.showError(message, this.translate.instant('BILLING.ORDERS.ERROR_LOAD_TITLE'));
         }
       });
   }
@@ -108,7 +115,7 @@ export class BillingOrdersComponent implements OnInit {
       return '—';
     }
     const map: Record<string, string> = {
-      prepaid_topup: 'Recarga de créditos (prepago)'
+      prepaid_topup: this.translate.instant('BILLING.ORDERS.TYPE_PREPAID_TOPUP')
     };
     return map[normalized] ?? normalized;
   }
@@ -119,11 +126,11 @@ export class BillingOrdersComponent implements OnInit {
       return '—';
     }
     const map: Record<string, string> = {
-      pending: 'Pendiente',
-      paid: 'Pagada',
-      canceled: 'Cancelada',
-      cancelled: 'Cancelada',
-      failed: 'Fallida'
+      pending: this.translate.instant('BILLING.ORDERS.STATUS_PENDING'),
+      paid: this.translate.instant('BILLING.ORDERS.STATUS_PAID'),
+      canceled: this.translate.instant('BILLING.ORDERS.STATUS_CANCELED'),
+      cancelled: this.translate.instant('BILLING.ORDERS.STATUS_CANCELED'),
+      failed: this.translate.instant('BILLING.ORDERS.STATUS_FAILED')
     };
     return map[normalized] ?? normalized;
   }

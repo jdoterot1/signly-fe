@@ -13,7 +13,7 @@
           #rla="routerLinkActive"
           class="relative px-4 py-2 rounded-full transition hover:text-brand-ink hover:bg-brand-surface-raised hover:shadow-sm"
         >
-          {{ link.label }}
+          {{ link.label | translate }}
           <span
             class="absolute left-0 -bottom-0.5 h-0.5 w-full bg-brand-primary-medium rounded-full transition opacity-0"
             [ngClass]="{ 'opacity-100': rla.isActive }"
@@ -28,7 +28,7 @@
         class="inline-flex items-center gap-2 rounded-full border border-brand-primary-medium px-4 py-1.5 text-brand-primary-medium text-xs font-semibold hover:bg-brand-surface-raised hover:text-brand-primary-medium transition shadow-sm"
         (click)="openPricingModal()"
       >
-        Créditos
+        {{ 'HEADER.CREDITS' | translate }}
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7 7 7-7 7" />
         </svg>
@@ -49,8 +49,8 @@
 
         <div *ngIf="isNotificationsOpen" class="absolute right-0 mt-3 w-80 rounded-3xl border border-brand-subtle bg-brand-surface-card shadow-2xl">
           <div class="px-5 py-4 border-b border-brand-subtle">
-            <p class="text-sm font-semibold text-brand-ink">Centro de notificaciones</p>
-            <p class="text-xs text-brand-muted">{{ notifications.length }} nuevas</p>
+            <p class="text-sm font-semibold text-brand-ink">{{ 'HEADER.NOTIFICATIONS.TITLE' | translate }}</p>
+            <p class="text-xs text-brand-muted">{{ 'HEADER.NOTIFICATIONS.NEW_COUNT' | translate: { count: notifications.length } }}</p>
           </div>
           <div class="max-h-80 overflow-y-auto divide-y divide-brand-subtle">
             <div *ngFor="let notification of notifications" class="px-5 py-4 hover:bg-brand-surface-raised">
@@ -64,7 +64,7 @@
             class="w-full px-5 py-3 text-sm font-semibold text-brand-primary-medium border-t border-brand-subtle hover:bg-brand-surface-raised"
             (click)="closeMenus()"
           >
-            Ver todas
+            {{ 'HEADER.NOTIFICATIONS.VIEW_ALL' | translate }}
           </button>
         </div>
       </div>
@@ -80,7 +80,7 @@
             {{ userInitials }}
           </div>
           <div class="hidden md:flex flex-col leading-tight text-left">
-            <span class="text-xs text-brand-muted-light uppercase tracking-wide">Cuenta</span>
+            <span class="text-xs text-brand-muted-light uppercase tracking-wide">{{ 'HEADER.ACCOUNT' | translate }}</span>
             <span class="text-sm font-semibold text-brand-ink">{{ dropdownDisplayName }}</span>
           </div>
           <svg

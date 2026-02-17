@@ -1,33 +1,23 @@
 <div class="min-h-[calc(100vh-8rem)] py-10 px-4 lg:px-10">
-  <app-guide-modal
-    *ngIf="showGuideModal"
-    title="Paso 2: crea tu documento"
-    subtitle="Tu plantilla ya está lista. Ahora crea tu primer documento para enviarlo a firma."
-    [steps]="guideSteps"
-    primaryLabel="Crear documento"
-    secondaryLabel="Más tarde"
-    (primary)="goToCreateDocument()"
-    (closed)="closeGuideModal()"
-  ></app-guide-modal>
+  <app-guide-modal *ngIf="showGuideModal" [title]="'TEMPLATES.GUIDE_STEP2_TITLE' | translate"
+    [subtitle]="'TEMPLATES.GUIDE_STEP2_SUBTITLE' | translate" [steps]="guideSteps"
+    [primaryLabel]="'TEMPLATES.GUIDE_PRIMARY' | translate" [secondaryLabel]="'TEMPLATES.GUIDE_SECONDARY' | translate"
+    (primary)="goToCreateDocument()" (closed)="closeGuideModal()"></app-guide-modal>
 
   <div class="flex flex-col lg:flex-row gap-8 items-start">
-    <app-admin-sidebar
-      class="w-full lg:w-auto"
-      [ownerName]="ownerName"
-      [accountId]="accountId"
-      [sections]="sidebarSections"
-      [selectedOption]="selectedOption"
-      (optionSelected)="onOptionSelected($event)"
-    ></app-admin-sidebar>
+    <app-admin-sidebar class="w-full lg:w-auto" [ownerName]="ownerName | translate" [accountId]="accountId"
+      [sections]="sidebarSections" [selectedOption]="selectedOption"
+      (optionSelected)="onOptionSelected($event)"></app-admin-sidebar>
 
     <section class="flex-1 space-y-6 w-full">
       <div class="bg-brand-surface-card rounded-3xl border border-brand-subtle shadow-xl p-8">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-brand-primary">Centro de plantillas</p>
-            <h1 class="text-3xl font-semibold heading-brand mt-3">{{ selectedOption }}</h1>
+            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-brand-primary">{{ 'TEMPLATES.CENTER_TITLE' |
+              translate }}</p>
+            <h1 class="text-3xl font-semibold heading-brand mt-3">{{ selectedOption | translate }}</h1>
             <p class="text-brand-muted mt-3 leading-relaxed max-w-2xl">
-              {{ currentDescription }}
+              {{ currentDescription | translate: {view: (selectedOption | translate)} }}
             </p>
           </div>
         </div>

@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { TranslateModule } from '@ngx-translate/core';
 
 import { AdminSidebarComponent, AdminSidebarSection } from '../../../shared/components/admin-sidebar/admin-sidebar.component';
 import { TemplateListComponent } from '../list/template-list.component';
@@ -11,23 +12,23 @@ import { GuideFlowService, GuideStep } from '../../../shared/services/guide-flow
 @Component({
   selector: 'app-templates-center',
   standalone: true,
-  imports: [CommonModule, AdminSidebarComponent, TemplateListComponent, GuideModalComponent],
+  imports: [CommonModule, AdminSidebarComponent, TemplateListComponent, GuideModalComponent, TranslateModule],
   templateUrl: './templates-center.component.html'
 })
 export class TemplatesCenterComponent implements OnInit, OnDestroy {
-  readonly ownerName = 'Catálogo de plantillas';
+  readonly ownerName = 'TEMPLATES.CATALOG';
   readonly accountId = 'TPL-5011';
   readonly sidebarSections: AdminSidebarSection[] = [
     {
-      label: 'PLANTILLAS DE SOBRES',
+      label: 'TEMPLATES.ENVELOPE_TEMPLATES',
       items: [
-        { label: 'Mis plantillas' },
-        { label: 'Favoritas' }
+        { label: 'TEMPLATES.MY_TEMPLATES' },
+        { label: 'TEMPLATES.FAVORITES' }
       ]
     },
     {
-      label: 'Todas las plantillas',
-      items: [{ label: 'Todas las plantillas' }]
+      label: 'TEMPLATES.ALL_TEMPLATES',
+      items: [{ label: 'TEMPLATES.ALL_TEMPLATES' }]
     }
   ];
 
@@ -49,7 +50,7 @@ export class TemplatesCenterComponent implements OnInit, OnDestroy {
     private router: Router,
     private route: ActivatedRoute,
     private guideFlow: GuideFlowService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.querySub = this.route.queryParamMap.subscribe(params => {
@@ -89,7 +90,7 @@ export class TemplatesCenterComponent implements OnInit, OnDestroy {
   }
 
   get currentDescription(): string {
-    return `Organiza tus plantillas según la vista "${this.selectedOption}".`;
+    return 'TEMPLATES.DESCRIPTION';
   }
 
   get templatesReturnTo(): string {

@@ -28,6 +28,8 @@ export interface TableColumn {
     columnType?: 'text' | 'action';
     actions?: TableCellAction[];
     width?: string;
+    statusTranslationPrefix?: string; // para columnas de estado, prefijo para traducciones
+    translate?: boolean;
 }
 
 export interface TableCellAction {

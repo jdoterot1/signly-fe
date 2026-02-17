@@ -6,11 +6,12 @@ import { finalize } from 'rxjs/operators';
 import { CompanyService } from '../../core/services/company/company.service';
 import { CompanyGeneralInfo, UpdateCompanyGeneralInfoPayload } from '../../core/models/company/company.model';
 import { AlertService } from '../../shared/alert/alert.service';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-company-settings',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslateModule],
   templateUrl: './company-settings.component.html'
 })
 export class CompanySettingsComponent implements OnInit {
@@ -24,7 +25,8 @@ export class CompanySettingsComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private companyService: CompanyService,
-    private alertService: AlertService
+    private alertService: AlertService,
+    private translate: TranslateService
   ) {
     this.generalForm = this.fb.group({
       display_name: ['', [Validators.required]],
@@ -53,8 +55,8 @@ export class CompanySettingsComponent implements OnInit {
       .subscribe({
         next: data => this.generalForm.patchValue(this.toGeneralForm(data)),
         error: err => {
-          const message = err instanceof Error ? err.message : 'No se pudo cargar la información general.';
-          this.alertService.showError(message, 'Error al cargar datos');
+          const message = err instanceof Error ? err.message : this.translate.instant('COMPANY.SETTINGS.ERROR_LOAD');
+          this.alertService.showError(message, this.translate.instant('COMPANY.SETTINGS.ERROR_LOAD_TITLE'));
         }
       });
   }
@@ -86,11 +88,14 @@ export class CompanySettingsComponent implements OnInit {
       .subscribe({
         next: data => {
           this.generalForm.patchValue(this.toGeneralForm(data));
-          this.alertService.showSuccess('Información general actualizada correctamente.', 'Datos guardados');
+          this.alertService.showSuccess(
+            this.translate.instant('COMPANY.SETTINGS.SUCCESS'),
+            this.translate.instant('COMPANY.SETTINGS.SUCCESS_TITLE')
+          );
         },
         error: err => {
-          const message = err instanceof Error ? err.message : 'No se pudo guardar la información general.';
-          this.alertService.showError(message, 'Error al guardar');
+          const message = err instanceof Error ? err.message : this.translate.instant('COMPANY.SETTINGS.ERROR_SAVE');
+          this.alertService.showError(message, this.translate.instant('COMPANY.SETTINGS.ERROR_SAVE_TITLE'));
         }
       });
   }

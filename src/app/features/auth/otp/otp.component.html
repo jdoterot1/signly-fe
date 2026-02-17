@@ -1,30 +1,21 @@
 <div class="min-h-screen w-full flex flex-col lg:flex-row bg-gradient-to-br from-white via-[#eaf1ff] to-[#f5f8ff]">
-  <div
-    class="relative w-full lg:w-1/2 h-[320px] lg:h-screen overflow-hidden
-           bg-[radial-gradient(circle_at_top_left,_#3366FF_0%,_#16173A_70%,_#16173A_100%)]"
-  >
+  <div class="relative w-full lg:w-1/2 h-[320px] lg:h-screen overflow-hidden
+           bg-[radial-gradient(circle_at_top_left,_#3366FF_0%,_#16173A_70%,_#16173A_100%)]">
     <div class="absolute -top-12 -left-24 h-64 w-64 bg-blue-400/30 blur-[120px]"></div>
     <div class="absolute bottom-0 -right-16 h-72 w-72 bg-indigo-900/40 blur-[140px]"></div>
 
-    <img
-      src="/assets/icons/Auth/Blurring_lock.svg"
-      alt="Blurring Lock Icon"
-      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[520px] w-[520px] opacity-80"
-    />
+    <img src="/assets/icons/Auth/Blurring_lock.svg" alt="Blurring Lock Icon"
+      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[520px] w-[520px] opacity-80" />
 
     <div class="relative z-10 p-8 lg:p-12 flex flex-col items-start h-full justify-center">
       <h1 class="text-white font-bold leading-tight text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl">
-        Protege tu<br />
-        Firma<br />
-        <span class="text-blue-300">Hoy</span>
+        {{ 'AUTH.HERO_TITLE' | translate }}
       </h1>
     </div>
   </div>
 
-  <div
-    class="relative w-full lg:w-1/2 h-auto lg:h-screen flex items-center justify-center overflow-hidden
-           bg-gradient-to-br from-white via-[#eef3ff] to-[#dce8ff]"
-  >
+  <div class="relative w-full lg:w-1/2 h-auto lg:h-screen flex items-center justify-center overflow-hidden
+           bg-gradient-to-br from-white via-[#eef3ff] to-[#dce8ff]">
     <div class="absolute -top-10 -left-12 h-44 w-44 bg-blue-200/50 blur-[110px]"></div>
     <div class="absolute bottom-[-30px] right-[-40px] h-60 w-60 bg-blue-400/30 blur-[140px]"></div>
 
@@ -35,117 +26,57 @@
         </div>
       </div>
 
-      <h2 class="text-5xl font-bold text-gray-800 mb-4">Verificación de código</h2>
-      <p class="text-lg text-gray-600 mb-10">Revisa tu correo para ver el código de verificación</p>
+      <h2 class="text-5xl font-bold text-gray-800 mb-4">{{ 'AUTH.OTP.TITLE' | translate }}</h2>
+      <p class="text-lg text-gray-600 mb-10">{{ 'AUTH.OTP.SUBTITLE' | translate }}</p>
 
       <form [formGroup]="otpForm" (ngSubmit)="onSubmit()" class="space-y-10">
         <div class="flex space-x-4 justify-start">
-          <input
-            #otpInput
-            type="text"
-            maxlength="1"
-            formControlName="otp1"
-            (keyup)="onKeyUp($event, 0)"
-            class="h-16 w-16 text-center border border-gray-300 rounded-lg
-                   focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl"
-          />
-          <input
-            #otpInput
-            type="text"
-            maxlength="1"
-            formControlName="otp2"
-            (keyup)="onKeyUp($event, 1)"
-            class="h-16 w-16 text-center border border-gray-300 rounded-lg
-                   focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl"
-          />
-          <input
-            #otpInput
-            type="text"
-            maxlength="1"
-            formControlName="otp3"
-            (keyup)="onKeyUp($event, 2)"
-            class="h-16 w-16 text-center border border-gray-300 rounded-lg
-                   focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl"
-          />
-          <input
-            #otpInput
-            type="text"
-            maxlength="1"
-            formControlName="otp4"
-            (keyup)="onKeyUp($event, 3)"
-            class="h-16 w-16 text-center border border-gray-300 rounded-lg
-                   focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl"
-          />
-          <input
-            #otpInput
-            type="text"
-            maxlength="1"
-            formControlName="otp5"
-            (keyup)="onKeyUp($event, 4)"
-            class="h-16 w-16 text-center border border-gray-300 rounded-lg
-                   focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl"
-          />
-          <input
-            #otpInput
-            type="text"
-            maxlength="1"
-            formControlName="otp6"
-            (keyup)="onKeyUp($event, 5)"
-            class="h-16 w-16 text-center border border-gray-300 rounded-lg
-                   focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl"
-          />
+          <input #otpInput type="text" maxlength="1" formControlName="otp1" (keyup)="onKeyUp($event, 0)" class="h-16 w-16 text-center border border-gray-300 rounded-lg
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl" />
+          <input #otpInput type="text" maxlength="1" formControlName="otp2" (keyup)="onKeyUp($event, 1)" class="h-16 w-16 text-center border border-gray-300 rounded-lg
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl" />
+          <input #otpInput type="text" maxlength="1" formControlName="otp3" (keyup)="onKeyUp($event, 2)" class="h-16 w-16 text-center border border-gray-300 rounded-lg
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl" />
+          <input #otpInput type="text" maxlength="1" formControlName="otp4" (keyup)="onKeyUp($event, 3)" class="h-16 w-16 text-center border border-gray-300 rounded-lg
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl" />
+          <input #otpInput type="text" maxlength="1" formControlName="otp5" (keyup)="onKeyUp($event, 4)" class="h-16 w-16 text-center border border-gray-300 rounded-lg
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl" />
+          <input #otpInput type="text" maxlength="1" formControlName="otp6" (keyup)="onKeyUp($event, 5)" class="h-16 w-16 text-center border border-gray-300 rounded-lg
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl" />
         </div>
 
         <div>
-          <button
-            type="submit"
-            [disabled]="loading"
-            class="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg
-                   focus:outline-none focus:ring-2 focus:ring-blue-500 text-xl"
-          >
-            Verificar
+          <button type="submit" [disabled]="loading" class="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 text-xl">
+            {{ 'AUTH.OTP.SUBMIT' | translate }}
           </button>
         </div>
 
         <div class="text-center text-sm text-gray-600">
-          <button
-            *ngIf="countdown === 0"
-            type="button"
-            (click)="resendCode()"
-            class="text-blue-600 hover:underline"
-          >
-            Reenviar código
+          <button *ngIf="countdown === 0" type="button" (click)="resendCode()" class="text-blue-600 hover:underline">
+            {{ 'AUTH.OTP.RESEND' | translate }}
           </button>
           <span *ngIf="countdown > 0">
-            Puedes reenviar el código en {{ countdown < 10 ? '00:0' + countdown : '00:' + countdown }}
-          </span>
+            {{ 'AUTH.OTP.COUNTDOWN' | translate: {time: (countdown < 10 ? '00:0' + countdown : '00:' + countdown)} }}
+              </span>
         </div>
 
         <div *ngIf="successMessage" class="text-green-600 text-center text-lg">
-          {{ successMessage }}
+          {{ successMessage | translate }}
         </div>
         <div *ngIf="errorMessage" class="text-red-600 text-center text-lg">
-          {{ errorMessage }}
+          {{ errorMessage | translate }}
         </div>
 
         <div class="mt-8 text-center">
-          <button
-            type="button"
-            (click)="goToLogin()"
+          <button type="button" (click)="goToLogin()"
             class="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700
-                   bg-white hover:bg-gray-50 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-blue-400"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5 mr-2 text-gray-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              stroke-width="2"
-            >
+                   bg-white hover:bg-gray-50 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-gray-600" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
-            Volver al inicio de sesión
+            {{ 'AUTH.BACK_TO_LOGIN' | translate }}
           </button>
         </div>
       </form>

@@ -18,7 +18,8 @@ import {
   TableCellAction,
 } from './table.model';
 import { TableFiltersModalComponent } from './table-filters-modal.component';
-import { IconComponent } from "../icon/icon.component";
+import { IconComponent } from '../icon/icon.component';
+import { TranslateModule } from '@ngx-translate/core';
 
 interface TableState<T> {
   filteredData: T[];
@@ -31,14 +32,21 @@ interface TableState<T> {
 @Component({
   selector: 'app-table',
   standalone: true,
-  imports: [CommonModule, FormsModule, TooltipModule, TableFiltersModalComponent, IconComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    TooltipModule,
+    TranslateModule,
+    TableFiltersModalComponent,
+    IconComponent,
+  ],
   templateUrl: './table.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TableComponent<T = any> implements OnChanges {
   @Input() model!: TableModel<T>;
   @Output() selectionChange = new EventEmitter<T[]>();
-  @Output() create        = new EventEmitter<void>();
+  @Output() create = new EventEmitter<void>();
 
   searchTerm = '';
   // valores de filtro aplicados
@@ -54,8 +62,14 @@ export class TableComponent<T = any> implements OnChanges {
     data: TableState<T>;
   } = {
     sortBy: undefined,
-    sortDir: 'desc',
-    data: { filteredData: [], currentPage: 1, totalPages: 0, totalItems: 0, pages: [] },
+    sortDir: 'asc',
+    data: {
+      filteredData: [],
+      currentPage: 1,
+      totalPages: 0,
+      totalItems: 0,
+      pages: [],
+    },
   };
 
   // selección de filas
@@ -64,13 +78,13 @@ export class TableComponent<T = any> implements OnChanges {
 
   // statusClasses con colores más suaves pero aún definidos
   statusClasses: Record<string, string> = {
-    Pending: 'bg-[#E35D5D]',         // rojo medio
-    'In Progress': 'bg-[#FFB347]',   // naranja medio
-    Completed: 'bg-[#4FD1A5]',       // verde medio
-    Completado: 'bg-[#4FD1A5]', 
-    Active: 'bg-[#4FD1A5]',          // verde medio
-    Inactive: 'bg-[#E35D5D]',        // rojo medio
-    Unresolved: 'bg-[#FFB347]',      // naranja medio
+    Pending: 'bg-[#E35D5D]', // rojo medio
+    'In Progress': 'bg-[#FFB347]', // naranja medio
+    Completed: 'bg-[#4FD1A5]', // verde medio
+    Completado: 'bg-[#4FD1A5]',
+    Active: 'bg-[#4FD1A5]', // verde medio
+    Inactive: 'bg-[#E35D5D]', // rojo medio
+    Unresolved: 'bg-[#FFB347]', // naranja medio
     Pendiente: 'bg-[#FFB347]',
     Pagada: 'bg-[#4FD1A5]',
     Emitida: 'bg-[#3366FF]',
@@ -87,7 +101,6 @@ export class TableComponent<T = any> implements OnChanges {
     EXPIRED: 'bg-slate-200 text-slate-700',
   };
 
-
   ngOnChanges(changes: SimpleChanges): void {
     if ('model' in changes) {
       this.resetState();
@@ -103,13 +116,17 @@ export class TableComponent<T = any> implements OnChanges {
     return this.model.columns;
   }
   get filterableColumns(): TableColumn[] {
-    return this.columns.filter(col => (col.visible ?? true) && col.columnType !== 'action');
+    return this.columns.filter(
+      (col) => (col.visible ?? true) && col.columnType !== 'action',
+    );
   }
   get data(): T[] {
     return this.model.data;
   }
   get sortLabel(): string {
-    return this.state.sortDir === 'desc' ? 'Más recientes' : 'Más antiguos';
+       return this.state.sortDir === 'desc'
+      ? 'TABLE.ORDER.NEWEST'
+      : 'TABLE.ORDER.OLDEST';
   }
 
   // alterna orden asc/desc
@@ -157,7 +174,9 @@ export class TableComponent<T = any> implements OnChanges {
   }
 
   get hasActiveFilters(): boolean {
-    return Object.values(this.columnFilters).some(value => !!value?.toString().trim());
+    return Object.values(this.columnFilters).some(
+      (value) => !!value?.toString().trim(),
+    );
   }
 
   private resetState(): void {
@@ -173,10 +192,12 @@ export class TableComponent<T = any> implements OnChanges {
     // 1) búsqueda global
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase();
-      list = list.filter(r =>
-        this.columns.some(c =>
-          String((r as any)[c.key]).toLowerCase().includes(term)
-        )
+      list = list.filter((r) =>
+        this.columns.some((c) =>
+          String((r as any)[c.key])
+            .toLowerCase()
+            .includes(term),
+        ),
       );
     }
 
@@ -184,8 +205,10 @@ export class TableComponent<T = any> implements OnChanges {
     Object.entries(this.columnFilters).forEach(([key, val]) => {
       const term = val?.toString().toLowerCase().trim();
       if (term) {
-        list = list.filter(r =>
-          String((r as any)[key]).toLowerCase().includes(term)
+        list = list.filter((r) =>
+          String((r as any)[key])
+            .toLowerCase()
+            .includes(term),
         );
       }
     });
@@ -205,7 +228,10 @@ export class TableComponent<T = any> implements OnChanges {
     const total = list.length;
     const perPage = this.config.pageSize;
     const totalPages = Math.ceil(total / perPage) || 1;
-    const current = Math.max(1, Math.min(this.state.data.currentPage, totalPages));
+    const current = Math.max(
+      1,
+      Math.min(this.state.data.currentPage, totalPages),
+    );
     const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
     const start = (current - 1) * perPage;
     const sliced = list.slice(start, start + perPage);
@@ -317,7 +343,7 @@ export class TableComponent<T = any> implements OnChanges {
     this.selectAll = !this.selectAll;
     this.selected.clear();
     if (this.selectAll) {
-      this.state.data.filteredData.forEach(r => this.selected.add(r));
+      this.state.data.filteredData.forEach((r) => this.selected.add(r));
     }
     this.emitSelection();
   }
@@ -328,7 +354,7 @@ export class TableComponent<T = any> implements OnChanges {
 
   private updateSelectAllState(): void {
     this.selectAll =
-      this.state.data.filteredData.every(r => this.selected.has(r)) &&
+      this.state.data.filteredData.every((r) => this.selected.has(r)) &&
       this.state.data.filteredData.length > 0;
   }
 
@@ -379,7 +405,7 @@ export class TableComponent<T = any> implements OnChanges {
   }
 
   visibleColumnsCount(): number {
-    return this.columns.filter(c => c.visible ?? true).length;
+    return this.columns.filter((c) => c.visible ?? true).length;
   }
 
   isActionDisabled(action: TableCellAction, row: T): boolean {

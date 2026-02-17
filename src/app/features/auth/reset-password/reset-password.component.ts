@@ -2,12 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+
 import { AuthService } from '../../../core/services/auth/auth.service';
 
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, TranslateModule],
   templateUrl: './reset-password.component.html',
   styleUrls: []
 })
@@ -25,7 +27,8 @@ export class ResetPasswordComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private translate: TranslateService
   ) {}
 
   ngOnInit(): void {
@@ -34,7 +37,7 @@ export class ResetPasswordComponent implements OnInit {
     this.otp = state?.otp ?? this.authService.getRecoveryOtp();
 
     if (!this.email || !this.otp) {
-      this.errorMessage = 'El enlace para restablecer la contraseña ha expirado. Inicia de nuevo el proceso.';
+      this.errorMessage = this.translate.instant('AUTH.ERROR_RESET_LINK_EXPIRED');
     }
 
     this.resetForm = this.fb.group({
@@ -53,7 +56,7 @@ export class ResetPasswordComponent implements OnInit {
     this.successMessage = null;
 
     if (!this.email || !this.otp) {
-      this.errorMessage = 'El proceso de restablecimiento no es válido. Intenta de nuevo.';
+      this.errorMessage = this.translate.instant('AUTH.ERROR_RESET_INVALID');
       return;
     }
 
@@ -63,14 +66,14 @@ export class ResetPasswordComponent implements OnInit {
 
     const { newPassword, confirmPassword } = this.resetForm.value;
     if (newPassword !== confirmPassword) {
-      this.errorMessage = 'Las contraseñas no coinciden.';
+      this.errorMessage = this.translate.instant('AUTH.ERROR_PASSWORDS_NO_MATCH');
       return;
     }
 
     this.loading = true;
     this.authService.verifyOtp(this.email, this.otp, newPassword).subscribe({
       next: () => {
-        this.successMessage = 'Contraseña restablecida con éxito. Redirigiendo al inicio de sesión…';
+        this.successMessage = this.translate.instant('AUTH.SUCCESS_PASSWORD_RESET');
         this.loading = false;
         setTimeout(() => {
           this.authService.clearRecoveryEmail();
@@ -79,7 +82,7 @@ export class ResetPasswordComponent implements OnInit {
         }, 1200);
       },
       error: (err) => {
-        this.errorMessage = err.message || 'No se pudo restablecer la contraseña.';
+        this.errorMessage = err.message || this.translate.instant('AUTH.ERROR_RESET_PASSWORD');
         this.loading = false;
       }
     });

@@ -4,6 +4,8 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
 
+import { TranslateModule } from '@ngx-translate/core';
+
 import { AuthService, RegistrationRequest } from '../../../core/services/auth/auth.service';
 import { REGISTER_REGEX } from '../../../core/constants/auth/register-regex.constants';
 import { COLOMBIA_CITIES } from '../../../core/constants/location/colombia-cities.constant';
@@ -25,7 +27,7 @@ interface DialCodeOption {
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, TranslateModule],
   templateUrl: './register.component.html',
   styleUrls: []
 })

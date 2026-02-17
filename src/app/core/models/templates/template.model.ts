@@ -1,7 +1,7 @@
 // src/app/shared/models/template.model.ts
 
 export type TemplateLanguage = 'Inglés' | 'Español' | string;
-export type TemplateStatus = 'Pendiente' | 'En Proceso' | 'Completado' | 'Active' | 'Inactive' | string;
+export type TemplateStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' |  string;
 
 export interface TemplateApiField {
   [key: string]: unknown;

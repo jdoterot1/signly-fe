@@ -3,12 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+
 import { AuthService, AuthError } from '../../../core/services/auth/auth.service';
 
 @Component({
   selector: 'app-complete-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, TranslateModule],
   templateUrl: './complete-password.component.html',
   styleUrls: []
 })
@@ -27,7 +29,8 @@ export class CompletePasswordComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private translate: TranslateService
   ) {}
 
   ngOnInit(): void {
@@ -36,7 +39,7 @@ export class CompletePasswordComponent implements OnInit {
     this.session = challenge?.session ?? null;
 
     if (!this.email || !this.session) {
-      this.errorMessage = 'La sesión para actualizar tu contraseña no es válida. Vuelve a iniciar sesión.';
+      this.errorMessage = this.translate.instant('AUTH.ERROR_SESSION_INVALID');
       setTimeout(() => this.router.navigate(['/login']), 1500);
     }
 
@@ -56,7 +59,7 @@ export class CompletePasswordComponent implements OnInit {
     this.successMessage = null;
 
     if (!this.email || !this.session) {
-      this.errorMessage = 'Por favor vuelve a iniciar sesión para continuar.';
+      this.errorMessage = this.translate.instant('AUTH.ERROR_LOGIN_AGAIN');
       return;
     }
 
@@ -66,19 +69,19 @@ export class CompletePasswordComponent implements OnInit {
 
     const { newPassword, confirmPassword } = this.passwordForm.value;
     if (newPassword !== confirmPassword) {
-      this.errorMessage = 'Las contraseñas no coinciden.';
+      this.errorMessage = this.translate.instant('AUTH.ERROR_PASSWORDS_NO_MATCH');
       return;
     }
 
     this.loading = true;
     this.authService.completePassword(this.email, this.session, newPassword).subscribe({
       next: () => {
-        this.successMessage = 'Contraseña actualizada con éxito. Redirigiendo…';
+        this.successMessage = this.translate.instant('AUTH.SUCCESS_PASSWORD_UPDATED');
         this.loading = false;
         setTimeout(() => this.router.navigate(['/home']), 1000);
       },
       error: (err: AuthError) => {
-        this.errorMessage = err.message || 'No se pudo actualizar la contraseña.';
+        this.errorMessage = err.message || this.translate.instant('AUTH.ERROR_UPDATE_PASSWORD');
         this.loading = false;
       }
     });

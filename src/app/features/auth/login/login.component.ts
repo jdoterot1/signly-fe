@@ -11,13 +11,15 @@ import { RouterModule, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+
 import { AuthService, AuthError } from '../../../core/services/auth/auth.service';
 import { AuthSession } from '../../../core/models/auth/auth-session.model';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule, TranslateModule],
   templateUrl: './login.component.html',
   styleUrls: []
 })
@@ -31,7 +33,8 @@ export class LoginComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private translate: TranslateService
   ) {}
 
   ngOnInit(): void {
@@ -78,11 +81,11 @@ export class LoginComponent implements OnInit {
             return;
           }
 
-          this.errorMessage = 'Necesitas establecer una nueva contraseña, pero no pudimos iniciar el proceso.';
+          this.errorMessage = this.translate.instant('AUTH.ERROR_PASSWORD_CHALLENGE');
           return;
         }
 
-        this.errorMessage = err.message || 'Error al iniciar sesión';
+        this.errorMessage = err.message || this.translate.instant('AUTH.ERROR_LOGIN');
       }
     });
   }

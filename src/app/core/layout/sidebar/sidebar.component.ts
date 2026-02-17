@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, type IsActiveMatchOptions } from '@angular/router';
 import { finalize } from 'rxjs/operators';
+import { TranslateModule } from '@ngx-translate/core';
 import { AuthService } from '../../services/auth/auth.service';
 
 interface NavItem {
@@ -21,13 +22,13 @@ interface NavGroup {
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, TranslateModule],
   templateUrl: './sidebar.component.html'
 })
 export class SidebarComponent {
   isCollapsed = false;
   isLoggingOut = false;
-  readonly singleNavItems: NavItem[] = [{ label: 'Inicio', path: '/home', icon: 'assets/icons/sidebar/Dashboard.svg' }];
+  readonly singleNavItems: NavItem[] = [{ label: 'SIDEBAR.HOME', path: '/home', icon: 'assets/icons/sidebar/Dashboard.svg' }];
   readonly activeMatchOptions: IsActiveMatchOptions = {
     paths: 'subset',
     fragment: 'ignored',
@@ -36,37 +37,37 @@ export class SidebarComponent {
   };
   readonly navGroups: NavGroup[] = [
     {
-      label: 'Documentos',
+      label: 'SIDEBAR.DOCUMENTS',
       icon: 'assets/icons/sidebar/files.svg',
       section: 'main',
       children: [
-        { label: 'Plantillas', path: '/templates', icon: 'assets/icons/sidebar/DocumentTemplate.svg' },
-        { label: 'Documentos', path: '/documents', icon: 'assets/icons/sidebar/files.svg' },
-        { label: 'Mapeador', path: '/document-mapper', icon: 'assets/icons/sidebar/DocumentTemplate.svg' }
+        { label: 'SIDEBAR.TEMPLATES', path: '/templates', icon: 'assets/icons/sidebar/DocumentTemplate.svg' },
+        { label: 'SIDEBAR.DOCUMENTS', path: '/documents', icon: 'assets/icons/sidebar/files.svg' },
+        { label: 'SIDEBAR.MAPPER', path: '/document-mapper', icon: 'assets/icons/sidebar/DocumentTemplate.svg' }
       ]
     },
     {
-      label: 'Gestión de usuarios',
+      label: 'SIDEBAR.USER_MANAGEMENT',
       icon: 'assets/icons/sidebar/Roles.svg',
       section: 'main',
       children: [
-        { label: 'Usuarios', path: '/users', icon: 'assets/icons/header/User.svg' },
-        { label: 'Roles', path: '/roles', icon: 'assets/icons/sidebar/Roles.svg' }
+        { label: 'SIDEBAR.USERS', path: '/users', icon: 'assets/icons/header/User.svg' },
+        { label: 'SIDEBAR.ROLES', path: '/roles', icon: 'assets/icons/sidebar/Roles.svg' }
       ]
     },
     {
-      label: 'Auditoría',
+      label: 'SIDEBAR.AUDIT',
       icon: 'assets/icons/sidebar/Audit.svg',
       section: 'main',
-      children: [{ label: 'Reportes de uso', path: '/reports/usage', icon: 'assets/icons/sidebar/Audit.svg' }]
+      children: [{ label: 'SIDEBAR.USAGE_REPORTS', path: '/reports/usage', icon: 'assets/icons/sidebar/Audit.svg' }]
     },
     {
-      label: 'Sistema',
+      label: 'SIDEBAR.SYSTEM',
       icon: 'assets/icons/sidebar/Settings.svg',
       section: 'secondary',
       children: [
-        { label: 'Webhooks', path: '/webhooks', icon: 'assets/icons/sidebar/files.svg' },
-        { label: 'Mi compañía', path: '/company', icon: 'assets/icons/sidebar/ApoloLogo.svg' }
+        { label: 'SIDEBAR.WEBHOOKS', path: '/webhooks', icon: 'assets/icons/sidebar/files.svg' },
+        { label: 'SIDEBAR.MY_COMPANY', path: '/company', icon: 'assets/icons/sidebar/ApoloLogo.svg' }
       ]
     }
   ];

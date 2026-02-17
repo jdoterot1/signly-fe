@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { TranslateModule } from '@ngx-translate/core';
 
 export interface AdminSidebarItem {
   label: string;
@@ -7,14 +8,14 @@ export interface AdminSidebarItem {
 }
 
 export interface AdminSidebarSection {
-  label: string;
+  label: string; 
   items: AdminSidebarItem[];
 }
 
 @Component({
   selector: 'app-admin-sidebar',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslateModule],
   templateUrl: './admin-sidebar.component.html'
 })
 export class AdminSidebarComponent implements OnChanges {

@@ -3,183 +3,148 @@
     <section class="bg-white rounded-3xl shadow px-6 py-8">
       <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <h2 class="text-xl font-semibold text-gray-900">Información general</h2>
-          <p class="text-sm text-gray-500">Datos visibles por tus clientes y firmantes.</p>
+          <h2 class="text-xl font-semibold text-gray-900">{{ 'COMPANY.SETTINGS.TITLE' | translate }}</h2>
+          <p class="text-sm text-gray-500">{{ 'COMPANY.SETTINGS.SUBTITLE' | translate }}</p>
         </div>
       </div>
 
       <div *ngIf="isLoadingGeneral" class="mt-6 text-sm text-gray-500 animate-pulse">
-        Cargando información de la compañía...
+        {{ 'COMPANY.SETTINGS.LOADING' | translate }}
       </div>
 
-      <form
-        *ngIf="!isLoadingGeneral"
-        class="mt-6 space-y-6"
-        [formGroup]="generalForm"
-        (ngSubmit)="onSaveGeneral()"
-      >
+      <form *ngIf="!isLoadingGeneral" class="mt-6 space-y-6" [formGroup]="generalForm" (ngSubmit)="onSaveGeneral()">
         <div class="grid gap-5 md:grid-cols-2">
           <div>
-            <label class="block text-sm font-medium text-gray-700">Nombre comercial</label>
-            <input
-              type="text"
-              formControlName="display_name"
+            <label class="block text-sm font-medium text-gray-700">{{ 'COMPANY.SETTINGS.DISPLAY_NAME' | translate
+              }}</label>
+            <input type="text" formControlName="display_name"
               class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-              placeholder="Apolo Systems Co."
-            />
-            <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('display_name')?.invalid && generalForm.get('display_name')?.touched">
-              Ingresa el nombre con el que se mostrará tu compañía.
+              [placeholder]="'COMPANY.SETTINGS.DISPLAY_NAME_PLACEHOLDER' | translate" />
+            <p class="mt-1 text-xs text-red-500"
+              *ngIf="generalForm.get('display_name')?.invalid && generalForm.get('display_name')?.touched">
+              {{ 'COMPANY.SETTINGS.DISPLAY_NAME_ERROR' | translate }}
             </p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Razón social</label>
-            <input
-              type="text"
-              formControlName="legal_name"
+            <label class="block text-sm font-medium text-gray-700">{{ 'COMPANY.SETTINGS.LEGAL_NAME' | translate
+              }}</label>
+            <input type="text" formControlName="legal_name"
               class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-              placeholder="Apolo Systems Company S.A.S."
-            />
-            <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('legal_name')?.invalid && generalForm.get('legal_name')?.touched">
-              La razón social es obligatoria.
+              [placeholder]="'COMPANY.SETTINGS.LEGAL_NAME_PLACEHOLDER' | translate" />
+            <p class="mt-1 text-xs text-red-500"
+              *ngIf="generalForm.get('legal_name')?.invalid && generalForm.get('legal_name')?.touched">
+              {{ 'COMPANY.SETTINGS.LEGAL_NAME_ERROR' | translate }}
             </p>
           </div>
         </div>
 
         <div class="grid gap-5 md:grid-cols-2">
           <div>
-            <label class="block text-sm font-medium text-gray-700">País</label>
-            <input
-              type="text"
-              formControlName="country"
+            <label class="block text-sm font-medium text-gray-700">{{ 'COMPANY.SETTINGS.COUNTRY' | translate }}</label>
+            <input type="text" formControlName="country"
               class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-              placeholder="CO"
-            />
-            <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('country')?.invalid && generalForm.get('country')?.touched">
-              Indica el país desde donde operas.
+              [placeholder]="'COMPANY.SETTINGS.COUNTRY_PLACEHOLDER' | translate" />
+            <p class="mt-1 text-xs text-red-500"
+              *ngIf="generalForm.get('country')?.invalid && generalForm.get('country')?.touched">
+              {{ 'COMPANY.SETTINGS.COUNTRY_ERROR' | translate }}
             </p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Ciudad</label>
-            <input
-              type="text"
-              formControlName="city"
+            <label class="block text-sm font-medium text-gray-700">{{ 'COMPANY.SETTINGS.CITY' | translate }}</label>
+            <input type="text" formControlName="city"
               class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-              placeholder="Bogotá"
-            />
-            <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('city')?.invalid && generalForm.get('city')?.touched">
-              La ciudad es requerida.
+              [placeholder]="'COMPANY.SETTINGS.CITY_PLACEHOLDER' | translate" />
+            <p class="mt-1 text-xs text-red-500"
+              *ngIf="generalForm.get('city')?.invalid && generalForm.get('city')?.touched">
+              {{ 'COMPANY.SETTINGS.CITY_ERROR' | translate }}
             </p>
           </div>
         </div>
 
         <div class="grid gap-5 md:grid-cols-2">
           <div>
-            <label class="block text-sm font-medium text-gray-700">Industria</label>
-            <input
-              type="text"
-              formControlName="industry"
+            <label class="block text-sm font-medium text-gray-700">{{ 'COMPANY.SETTINGS.INDUSTRY' | translate }}</label>
+            <input type="text" formControlName="industry"
               class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-              placeholder="Software & Cloud"
-            />
+              [placeholder]="'COMPANY.SETTINGS.INDUSTRY_PLACEHOLDER' | translate" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Número de empleados</label>
-            <input
-              type="number"
-              min="1"
-              formControlName="size"
+            <label class="block text-sm font-medium text-gray-700">{{ 'COMPANY.SETTINGS.SIZE' | translate }}</label>
+            <input type="number" min="1" formControlName="size"
               class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-              placeholder="25"
-            />
+              [placeholder]="'COMPANY.SETTINGS.SIZE_PLACEHOLDER' | translate" />
           </div>
         </div>
 
         <div class="grid gap-5 md:grid-cols-2">
           <div>
-            <label class="block text-sm font-medium text-gray-700">Sitio web</label>
-            <input
-              type="url"
-              formControlName="website"
+            <label class="block text-sm font-medium text-gray-700">{{ 'COMPANY.SETTINGS.WEBSITE' | translate }}</label>
+            <input type="url" formControlName="website"
               class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-              placeholder="https://www.apolosystems.co"
-            />
-            <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('website')?.invalid && generalForm.get('website')?.touched">
-              Agrega el sitio web principal.
+              [placeholder]="'COMPANY.SETTINGS.WEBSITE_PLACEHOLDER' | translate" />
+            <p class="mt-1 text-xs text-red-500"
+              *ngIf="generalForm.get('website')?.invalid && generalForm.get('website')?.touched">
+              {{ 'COMPANY.SETTINGS.WEBSITE_ERROR' | translate }}
             </p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">NIT / Tax ID</label>
-            <input
-              type="text"
-              formControlName="tax_id"
+            <label class="block text-sm font-medium text-gray-700">{{ 'COMPANY.SETTINGS.TAX_ID' | translate }}</label>
+            <input type="text" formControlName="tax_id"
               class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-              placeholder="901234567-8"
-            />
-            <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('tax_id')?.invalid && generalForm.get('tax_id')?.touched">
-              Ingresa el NIT que aparecerá en los documentos.
+              [placeholder]="'COMPANY.SETTINGS.TAX_ID_PLACEHOLDER' | translate" />
+            <p class="mt-1 text-xs text-red-500"
+              *ngIf="generalForm.get('tax_id')?.invalid && generalForm.get('tax_id')?.touched">
+              {{ 'COMPANY.SETTINGS.TAX_ID_ERROR' | translate }}
             </p>
           </div>
         </div>
 
         <div class="grid gap-5 md:grid-cols-2">
           <div>
-            <label class="block text-sm font-medium text-gray-700">Locale</label>
-            <select
-              formControlName="locale"
-              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent"
-            >
-              <option value="" disabled>Selecciona un locale</option>
-              <option
-                *ngIf="generalForm.value.locale && !localeOptions.includes(generalForm.value.locale)"
-                [value]="generalForm.value.locale"
-              >
-                {{ generalForm.value.locale }} (actual)
+            <label class="block text-sm font-medium text-gray-700">{{ 'COMPANY.SETTINGS.LOCALE' | translate }}</label>
+            <select formControlName="locale"
+              class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent">
+              <option value="" disabled>{{ 'COMPANY.SETTINGS.LOCALE_SELECT' | translate }}</option>
+              <option *ngIf="generalForm.value.locale && !localeOptions.includes(generalForm.value.locale)"
+                [value]="generalForm.value.locale">
+                {{ 'COMPANY.SETTINGS.LOCALE_CURRENT' | translate:{ locale: generalForm.value.locale } }}
               </option>
               <option *ngFor="let locale of localeOptions" [value]="locale">{{ locale }}</option>
             </select>
-            <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('locale')?.invalid && generalForm.get('locale')?.touched">
-              Define el locale predeterminado.
+            <p class="mt-1 text-xs text-red-500"
+              *ngIf="generalForm.get('locale')?.invalid && generalForm.get('locale')?.touched">
+              {{ 'COMPANY.SETTINGS.LOCALE_ERROR' | translate }}
             </p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Zona horaria (IANA)</label>
-            <input
-              type="text"
-              formControlName="timezone"
+            <label class="block text-sm font-medium text-gray-700">{{ 'COMPANY.SETTINGS.TIMEZONE' | translate }}</label>
+            <input type="text" formControlName="timezone"
               class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-              placeholder="America/Bogota"
-            />
-            <p class="mt-1 text-xs text-red-500" *ngIf="generalForm.get('timezone')?.invalid && generalForm.get('timezone')?.touched">
-              Ejemplo: America/Bogota.
+              [placeholder]="'COMPANY.SETTINGS.TIMEZONE_PLACEHOLDER' | translate" />
+            <p class="mt-1 text-xs text-red-500"
+              *ngIf="generalForm.get('timezone')?.invalid && generalForm.get('timezone')?.touched">
+              {{ 'COMPANY.SETTINGS.TIMEZONE_ERROR' | translate }}
             </p>
           </div>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700">Descripción</label>
-          <textarea
-            rows="3"
-            formControlName="about"
+          <label class="block text-sm font-medium text-gray-700">{{ 'COMPANY.SETTINGS.DESCRIPTION' | translate
+            }}</label>
+          <textarea rows="3" formControlName="about"
             class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-            placeholder="We build modern SaaS for LATAM."
-          ></textarea>
+            [placeholder]="'COMPANY.SETTINGS.DESCRIPTION_PLACEHOLDER' | translate"></textarea>
         </div>
 
         <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            class="px-4 py-2 rounded-xl border text-sm text-gray-600 hover:bg-gray-50"
-            (click)="loadGeneralInfo()"
-            [disabled]="isSavingGeneral"
-          >
-            Descartar cambios
+          <button type="button" class="px-4 py-2 rounded-xl border text-sm text-gray-600 hover:bg-gray-50"
+            (click)="loadGeneralInfo()" [disabled]="isSavingGeneral">
+            {{ 'COMPANY.SETTINGS.DISCARD' | translate }}
           </button>
-          <button
-            type="submit"
+          <button type="submit"
             class="px-5 py-2 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-hover disabled:opacity-60"
-            [disabled]="isSavingGeneral"
-          >
-            {{ isSavingGeneral ? 'Guardando...' : 'Guardar cambios' }}
+            [disabled]="isSavingGeneral">
+            {{ isSavingGeneral ? ('COMPANY.SETTINGS.SAVING' | translate) : ('COMPANY.SETTINGS.SAVE' | translate) }}
           </button>
         </div>
       </form>

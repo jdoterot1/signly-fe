@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+
 import { PricingService } from '../../core/services/pricing/pricing.service';
 import { PricingMeter, PricingTier } from '../../core/models/pricing/pricing.model';
 import { AlertService } from '../../shared/alert/alert.service';
@@ -11,7 +13,7 @@ import { AlertService } from '../../shared/alert/alert.service';
 @Component({
   selector: 'app-pricing-meters',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TranslateModule],
   templateUrl: './pricing-meters.component.html'
 })
 export class PricingMetersComponent implements OnInit {
@@ -27,7 +29,8 @@ export class PricingMetersComponent implements OnInit {
 
   constructor(
     private pricingService: PricingService,
-    private alertService: AlertService
+    private alertService: AlertService,
+    private translate: TranslateService
   ) {}
 
   ngOnInit(): void {
@@ -46,8 +49,8 @@ export class PricingMetersComponent implements OnInit {
           this.ensureSelectedMeter();
         },
         error: err => {
-          const message = err instanceof Error ? err.message : 'No se pudieron cargar los precios.';
-          this.alertService.showError(message, 'Error al cargar precios');
+          const message = err instanceof Error ? err.message : this.translate.instant('PRICING.ERROR_LOAD');
+          this.alertService.showError(message, this.translate.instant('PRICING.ERROR_LOAD_TITLE'));
         }
       });
   }

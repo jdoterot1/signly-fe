@@ -5,13 +5,14 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormControl } 
 import { RouterModule, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
+import { TranslateModule } from '@ngx-translate/core';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { Subscription, interval } from 'rxjs';
 
 @Component({
   selector: 'app-otp',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule, TranslateModule],
   templateUrl: './otp.component.html',
   styleUrls: []
 })
@@ -34,14 +35,14 @@ export class OtpComponent implements OnInit {
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     const navigationEmail = history.state?.email as string | undefined;
     this.email = navigationEmail || this.authService.getRecoveryEmail();
 
     if (!this.email) {
-      this.errorMessage = 'No se encontró un correo asociado a la recuperación.';
+      this.errorMessage = 'AUTH.OTP.ERROR_NO_EMAIL';
     }
 
     // Creamos 6 controles, cada uno para un dígito
@@ -74,7 +75,7 @@ export class OtpComponent implements OnInit {
     this.successMessage = null;
 
     if (!this.email) {
-      this.errorMessage = 'Por favor inicia el proceso de recuperación nuevamente.';
+      this.errorMessage = 'AUTH.OTP.ERROR_RESTART';
       return;
     }
 
@@ -93,7 +94,7 @@ export class OtpComponent implements OnInit {
 
     this.loading = true;
     this.authService.setRecoveryOtp(otpValue);
-    this.successMessage = 'Código verificado, continua con el cambio de contraseña.';
+    this.successMessage = 'AUTH.OTP.SUCCESS';
     this.loading = false;
     setTimeout(() => {
       this.router.navigate(['/reset-password'], {
