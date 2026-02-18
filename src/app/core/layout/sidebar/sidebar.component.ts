@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, type IsActiveMatchOptions } from '@angular/router';
 import { finalize } from 'rxjs/operators';
@@ -27,6 +27,7 @@ interface NavGroup {
 })
 export class SidebarComponent {
   isCollapsed = false;
+  isMobileOpen = false;
   isLoggingOut = false;
   readonly singleNavItems: NavItem[] = [{ label: 'SIDEBAR.HOME', path: '/home', icon: 'assets/icons/sidebar/Dashboard.svg' }];
   readonly activeMatchOptions: IsActiveMatchOptions = {
@@ -88,8 +89,26 @@ export class SidebarComponent {
     return this.singleNavItems;
   }
 
-  constructor(private authService: AuthService, private router: Router) {}
-  
+  constructor(private authService: AuthService, private router: Router) {
+    // Check screen size on init
+    this.checkScreenSize();
+  }
+
+  @HostListener('window:resize', ['$event'])
+  onResize() {
+    this.checkScreenSize();
+  }
+
+  private checkScreenSize(): void {
+    if (typeof window !== 'undefined') {
+      const isDesktop = window.innerWidth >= 1024; // lg breakpoint
+      if (!isDesktop && !this.isCollapsed) {
+        // Auto-collapse on mobile/tablet
+        this.isCollapsed = true;
+      }
+    }
+  }
+
   private openDefaultGroups(): void {
     this.openGroups = this.navGroups.reduce<Record<string, boolean>>((acc, group) => {
       acc[group.label] = group.section !== 'secondary';
@@ -102,6 +121,14 @@ export class SidebarComponent {
     if (!this.isCollapsed) {
       this.openDefaultGroups();
     }
+  }
+
+  toggleMobile(): void {
+    this.isMobileOpen = !this.isMobileOpen;
+  }
+
+  closeMobile(): void {
+    this.isMobileOpen = false;
   }
 
   toggleGroup(group: NavGroup): void {

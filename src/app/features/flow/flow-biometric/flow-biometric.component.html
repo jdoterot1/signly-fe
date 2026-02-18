@@ -80,7 +80,7 @@
           <!-- Camera Preview -->
           <div *ngIf="!hasCurrentCapture()"
                class="aspect-[4/3] overflow-hidden rounded-2xl border-4 border-slate-100 bg-slate-900 relative"
-               [ngClass]="{'aspect-square rounded-full': currentStep === 'selfie'}">
+               [ngClass]="{'aspect-square rounded-2xl': currentStep === 'selfie'}">
             <video #video
                    autoplay
                    playsinline
@@ -93,8 +93,8 @@
                  class="absolute inset-0 pointer-events-none">
               <div class="h-full w-full flex items-center justify-center">
                 <div
-                  class="w-[65%] h-[75%] border-[3px] rounded-full transition-colors duration-300"
-                  [ngClass]="faceAligned ? 'border-green-400/90 shadow-[0_0_20px_rgba(74,222,128,0.25)]' : 'border-white/50'"
+                class="w-[70%] h-[75%] border-[3px] rounded-2xl transition-colors duration-300"
+                   [ngClass]="faceAligned ? 'border-green-400/90 shadow-[0_0_20px_rgba(74,222,128,0.25)]' : 'border-white/50'"
                 ></div>
               </div>
               <div class="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full px-4 py-1.5 transition-colors duration-300"
@@ -133,7 +133,7 @@
           <!-- Captured Image Preview -->
           <div *ngIf="hasCurrentCapture()"
                class="aspect-[4/3] overflow-hidden rounded-2xl border-4 border-green-200 relative"
-               [ngClass]="{'aspect-square rounded-full': currentStep === 'selfie'}">
+               [ngClass]="{'aspect-square rounded-2xl': currentStep === 'selfie'}">
             <img [src]="getCurrentPreview()" alt="Captured" class="w-full h-full object-cover" />
             <div class="absolute top-2 right-2 w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
               <i class="pi pi-check text-white text-sm"></i>

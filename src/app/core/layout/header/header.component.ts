@@ -41,6 +41,7 @@ interface HeaderUserProfile {
 export class HeaderComponent implements OnInit {
   isNotificationsOpen = false
   isUserMenuOpen = false
+  isMobileMenuOpen = false
   isLoggingOut = false
 
   @Output() pricingModalRequested = new EventEmitter<void>()
@@ -101,11 +102,20 @@ export class HeaderComponent implements OnInit {
     this.fetchAccountInfo()
   }
 
+  toggleMobileMenu(): void {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen
+    if (this.isMobileMenuOpen) {
+      this.isNotificationsOpen = false
+      this.isUserMenuOpen = false
+    }
+  }
+
   toggleNotifications(event: Event): void {
     event.stopPropagation()
     this.isNotificationsOpen = !this.isNotificationsOpen
     if (this.isNotificationsOpen) {
       this.isUserMenuOpen = false
+      this.isMobileMenuOpen = false
     }
   }
 
@@ -114,12 +124,14 @@ export class HeaderComponent implements OnInit {
     this.isUserMenuOpen = !this.isUserMenuOpen
     if (this.isUserMenuOpen) {
       this.isNotificationsOpen = false
+      this.isMobileMenuOpen = false
     }
   }
 
   closeMenus(): void {
     this.isNotificationsOpen = false
     this.isUserMenuOpen = false
+    this.isMobileMenuOpen = false
   }
 
   openPricingModal(): void {

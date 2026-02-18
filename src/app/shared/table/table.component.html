@@ -1,28 +1,15 @@
 <div
-  class="p-6 bg-brand-surface-card rounded-lg shadow"
+  class="p-4 sm:p-6 bg-brand-surface-card rounded-lg shadow"
   style="font-family: &quot;Poppins&quot;, sans-serif"
 >
   <!-- HEADER: título, filtros, búsqueda y sort -->
-  <div class="flex justify-between items-center mb-4">
-    <h2 class="text-2xl font-bold">{{ model.entityName | translate }}</h2>
-    <div class="flex space-x-3">
-      <!-- Toggle fila de filtros -->
-      <button
-        (click)="openFiltersModal()"
-        class="flex items-center rounded-full p-2 transition"
-        [ngClass]="
-          hasActiveFilters
-            ? 'bg-brand-surface-alt text-brand-accent'
-            : 'bg-brand-surface hover:bg-brand-surface-raised'
-        "
-      >
-        <app-icon
-          name="filter"
-          class="w-5 h-5 text-brand-muted transition-colors"
-        ></app-icon>
-      </button>
-      <!-- Search -->
-      <div class="relative">
+  <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
+    <h2 class="text-xl sm:text-2xl font-bold">{{ model.entityName | translate }}</h2>
+
+    <!-- Mobile: Stack controls vertically -->
+    <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
+      <!-- Row 1: Search bar (full width on mobile) -->
+      <div class="relative flex-1 sm:flex-none">
         <img
           src="assets/icons/tables/Search.svg"
           alt="Search"
@@ -33,37 +20,61 @@
           [placeholder]="'TABLE.SEARCH_PLACEHOLDER' | translate"
           [(ngModel)]="searchTerm"
           (ngModelChange)="onSearchTermChange()"
-          class="bg-brand-surface placeholder-brand-muted-light text-sm rounded-full pl-10 pr-3 py-2 focus:outline-none"
+          class="w-full bg-brand-surface placeholder-brand-muted-light text-sm rounded-full pl-10 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
         />
       </div>
-      <!-- Sort by -->
-      <div
-        (click)="onSortToggle()"
-        class="flex items-center bg-brand-surface rounded-full px-4 py-2 cursor-pointer select-none"
-      >
-        <span class="text-sm text-gray-700">
-          {{ "TABLE.SORT_BY" | translate }}:
-          <span class="font-bold">{{ sortLabel | translate }}</span>
-        </span>
-        <img
-          src="assets/icons/tables/ChevronDown.svg"
-          alt="Toggle sort"
-          class="w-4 h-4 ml-2"
-        />
+
+      <!-- Row 2: Buttons in a row -->
+      <div class="flex gap-2 sm:gap-3">
+        <!-- Toggle fila de filtros -->
+        <button
+          (click)="openFiltersModal()"
+          class="flex items-center justify-center rounded-full p-2 transition flex-shrink-0"
+          [ngClass]="
+            hasActiveFilters
+              ? 'bg-brand-surface-alt text-brand-accent'
+              : 'bg-brand-surface hover:bg-brand-surface-raised'
+          "
+          [attr.aria-label]="'TABLE.FILTERS' | translate"
+        >
+          <app-icon
+            name="filter"
+            class="w-5 h-5 text-brand-muted transition-colors"
+          ></app-icon>
+        </button>
+
+        <!-- Sort by -->
+        <div
+          (click)="onSortToggle()"
+          class="flex items-center bg-brand-surface rounded-full px-3 sm:px-4 py-2 cursor-pointer select-none flex-1 sm:flex-none"
+        >
+          <span class="text-xs sm:text-sm text-gray-700 truncate">
+            {{ "TABLE.SORT_BY" | translate }}:
+            <span class="font-bold">{{ sortLabel | translate }}</span>
+          </span>
+          <img
+            src="assets/icons/tables/ChevronDown.svg"
+            alt="Toggle sort"
+            class="w-4 h-4 ml-2 flex-shrink-0"
+          />
+        </div>
+
+        <!-- Create button -->
+        <button
+          *ngIf="config.showCreateButton !== false"
+          type="button"
+          (click)="onCreate()"
+          class="bg-brand-primary text-white px-3 sm:px-4 py-2 rounded-full hover:bg-brand-primary-hover transition text-sm font-medium whitespace-nowrap"
+        >
+          <span class="hidden sm:inline">{{ "TABLE.CREATE" | translate }}</span>
+          <span class="sm:hidden">+</span>
+        </button>
       </div>
-      <button
-        *ngIf="config.showCreateButton !== false"
-        type="button"
-        (click)="onCreate()"
-        class="bg-brand-primary text-white px-4 py-2 rounded hover:bg-brand-primary-hover"
-      >
-        {{ "TABLE.CREATE" | translate }}
-      </button>
     </div>
   </div>
 
-  <!-- TABLE -->
-  <div class="overflow-x-auto w-full">
+  <!-- TABLE - Desktop view (hidden on mobile) -->
+  <div class="hidden md:block overflow-x-auto w-full">
     <table class="min-w-full w-full table-fixed divide-y divide-gray-200">
       <thead class="bg-gray-50">
         <!-- fila de headers -->
@@ -202,16 +213,111 @@
             "
             class="px-4 py-4 text-center text-gray-500"
           >
-            {{ "TABLE.NO_DATA" | translate }}
+            {{ config.emptyMessage || ("TABLE.NO_DATA" | translate) }}
           </td>
         </tr>
       </tbody>
     </table>
   </div>
 
+  <!-- MOBILE CARD VIEW -->
+  <div class="md:hidden space-y-3">
+    <div
+      *ngFor="let row of state.data.filteredData; trackBy: trackByFn"
+      class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm"
+    >
+      <!-- Checkbox for selection -->
+      <div *ngIf="config.showRowSelection" class="mb-3 flex items-center">
+        <input
+          type="checkbox"
+          [checked]="isSelected(row)"
+          (change)="toggleRow(row)"
+          class="h-4 w-4 text-brand-accent focus:ring-brand-accent border-gray-300 rounded"
+        />
+        <label class="ml-2 text-sm text-gray-600">{{ 'TABLE.SELECT' | translate }}</label>
+      </div>
+
+      <!-- Display all visible columns as rows -->
+      <div class="space-y-2">
+        <ng-container *ngFor="let col of columns">
+          <div *ngIf="col.visible && col.columnType !== 'action'" class="flex justify-between items-start gap-2">
+            <span class="text-xs font-medium text-gray-500 uppercase flex-shrink-0">
+              {{ col.header | translate }}:
+            </span>
+            <span class="text-sm text-gray-900 text-right break-words flex-1">
+              <ng-container *ngIf="col.key === 'status'">
+                <span
+                  class="inline-flex justify-center items-center px-2 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="statusClasses[getCellValue(row, col.key)]"
+                >
+                  <ng-container *ngIf="col.statusTranslationPrefix">
+                    {{
+                      col.statusTranslationPrefix +
+                        "." +
+                        getCellValue(row, col.key) | translate
+                    }}
+                  </ng-container>
+                  <ng-container *ngIf="!col.statusTranslationPrefix">
+                    {{ getCellValue(row, col.key) }}
+                  </ng-container>
+                </span>
+              </ng-container>
+              <ng-container *ngIf="col.key !== 'status'">
+                <ng-container *ngIf="col.translate">
+                  {{ getCellValue(row, col.key) | translate }}
+                </ng-container>
+                <ng-container *ngIf="!col.translate">
+                  {{ getCellValue(row, col.key) }}
+                </ng-container>
+              </ng-container>
+            </span>
+          </div>
+        </ng-container>
+      </div>
+
+      <!-- Actions at the bottom -->
+      <ng-container *ngFor="let col of columns">
+        <div *ngIf="col.visible && col.columnType === 'action'" class="mt-3 pt-3 border-t border-gray-100 flex flex-wrap justify-center gap-2">
+          <ng-container *ngFor="let action of col.actions">
+            <button
+              *ngIf="!isActionDisabled(action, row)"
+              type="button"
+              class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition flex-1 min-w-[100px]"
+              [ngClass]="{
+                'bg-brand-primary text-white hover:bg-brand-primary-hover': action.icon === 'edit',
+                'bg-red-50 text-red-600 hover:bg-red-100': action.icon === 'delete',
+                'bg-blue-50 text-blue-600 hover:bg-blue-100': action.icon === 'eye',
+                'bg-gray-100 text-gray-700 hover:bg-gray-200': action.icon !== 'edit' && action.icon !== 'delete' && action.icon !== 'eye'
+              }"
+              (click)="onActionClick(action, row, $event)"
+            >
+              <app-icon [name]="action.icon" class="w-4 h-4 flex-shrink-0"></app-icon>
+              <span class="truncate">{{ action.tooltip | translate }}</span>
+            </button>
+
+            <button
+              *ngIf="isActionDisabled(action, row)"
+              type="button"
+              disabled
+              class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-gray-50 text-gray-400 cursor-not-allowed flex-1 min-w-[100px]"
+            >
+              <app-icon [name]="action.icon" class="w-4 h-4 flex-shrink-0"></app-icon>
+              <span class="truncate">{{ action.tooltip | translate }}</span>
+            </button>
+          </ng-container>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- Empty state for mobile -->
+    <div *ngIf="!state.data.filteredData.length" class="text-center py-8 text-gray-500">
+      {{ config.emptyMessage || ("TABLE.NO_DATA" | translate) }}
+    </div>
+  </div>
+
   <!-- PAGINACIÓN -->
-  <div class="flex items-center justify-between mt-4 text-sm">
-    <div class="text-brand-muted-light">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6 text-sm">
+    <div class="text-brand-muted-light text-center sm:text-left">
       {{
         "TABLE.PAGINATION"
           | translate
@@ -225,7 +331,7 @@
       }}
     </div>
 
-    <div class="inline-flex items-center">
+    <div class="inline-flex items-center justify-center">
       <img
         src="assets/icons/tables/MoveLeft.svg"
         alt="Previous"
@@ -243,7 +349,7 @@
               'border border-gray-300 text-gray-700 hover:bg-gray-200':
                 state.data.currentPage !== p,
             }"
-            class="px-3 py-1 mx-1 rounded"
+            class="px-2 sm:px-3 py-1 mx-1 rounded text-sm"
           >
             {{ p }}
           </button>

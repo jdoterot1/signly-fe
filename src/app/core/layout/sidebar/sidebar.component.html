@@ -1,8 +1,10 @@
+<!-- Sidebar container with responsive behavior -->
 <div
   [class.w-[68px]]="isCollapsed"
   [class.w-64]="!isCollapsed"
-  class="flex flex-col h-full bg-brand-surface-card border-r border-brand-subtle shadow-xl shadow-brand-surface/20 transition-all duration-300"
+  class="hidden lg:flex flex-col h-full bg-brand-surface-card border-r border-brand-subtle shadow-xl shadow-brand-surface/20 transition-all duration-300"
 >
+  <!-- Header with logo and collapse button -->
   <div
     class="flex items-center py-4"
     [ngClass]="{
@@ -54,6 +56,7 @@
     </button>
   </div>
 
+  <!-- Navigation -->
   <nav class="flex-1 overflow-y-auto px-3 pb-4 space-y-4 pt-2">
 
     <div class="space-y-1">
@@ -240,6 +243,7 @@
     </div>
   </nav>
 
+  <!-- Logout button -->
   <div class="mt-auto border-t border-brand-subtle bg-brand-surface-card p-3 flex items-center shrink-0">
     <button
       type="button"
