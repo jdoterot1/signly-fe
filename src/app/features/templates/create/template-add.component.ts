@@ -7,7 +7,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { PDFDocument, rgb } from 'pdf-lib';
 
 import { TemplateService } from '../../../core/services/templates/template.service';
-import type { CreateTemplateRequest, TemplateApi, TemplateField } from '../../../core/models/templates/template.model';
+import type { CreateTemplateRequest, TemplateApi, TemplateApiField, TemplateField } from '../../../core/models/templates/template.model';
 import { AlertService } from '../../../shared/alert/alert.service';
 import {
   DocumentMappedField,
@@ -638,29 +638,34 @@ export class TemplateCreateComponent {
           name: tpl.templateName,
           description: tpl.description ?? ''
         });
-        this.loadDocumentAndFieldsForVersion(version, session);
+        this.loadDocumentAndFieldsForVersion(version, session, tpl.fields ?? []);
       },
       error: err => console.error('No se pudo cargar la versión del template', err)
     });
   }
 
-  private loadDocumentAndFieldsForVersion(version: string, session: number): void {
+  private loadDocumentAndFieldsForVersion(version: string, session: number, fieldsForVersion: TemplateApiField[]): void {
     if (!this.templateId) {
       return;
     }
 
     this.templateService.getTemplateDownloadUrl(this.templateId, version).subscribe({
       next: res => {
-        void this.hydrateMapperFromDownload(res.downloadUrl, version, session);
+        void this.hydrateMapperFromDownload(res.downloadUrl, version, session, fieldsForVersion);
       },
       error: err => {
         console.error('No se pudo obtener el PDF de la versión para edición', err);
-        void this.hydrateFieldsOnly(session);
+        void this.hydrateFieldsOnly(session, fieldsForVersion);
       }
     });
   }
 
-  private async hydrateMapperFromDownload(downloadUrl: string, version: string, session: number): Promise<void> {
+  private async hydrateMapperFromDownload(
+    downloadUrl: string,
+    version: string,
+    session: number,
+    fieldsForVersion: TemplateApiField[]
+  ): Promise<void> {
     if (!this.templateId) {
       return;
     }
@@ -691,43 +696,19 @@ export class TemplateCreateComponent {
         return;
       }
 
-      this.templateService.getTemplateFields(this.templateId).subscribe({
-        next: fields => {
-          if (session !== this.versionLoadSession) {
-            return;
-          }
-          mapper.loadMappedFieldsFromApi(fields);
-        },
-        error: err => {
-          console.error('No se pudieron cargar los fields del template', err);
-        }
-      });
+      mapper.loadMappedFieldsFromApi(fieldsForVersion as any);
     } catch (error) {
       console.error('No se pudo hidratar la versión del template en el mapper', error);
-      await this.hydrateFieldsOnly(session);
+      await this.hydrateFieldsOnly(session, fieldsForVersion);
     }
   }
 
-  private async hydrateFieldsOnly(session: number): Promise<void> {
-    if (!this.templateId) {
-      return;
-    }
+  private async hydrateFieldsOnly(session: number, fieldsForVersion: TemplateApiField[]): Promise<void> {
     const mapper = await this.waitForMapperComponent();
     if (!mapper || session !== this.versionLoadSession) {
       return;
     }
-
-    this.templateService.getTemplateFields(this.templateId).subscribe({
-      next: fields => {
-        if (session !== this.versionLoadSession) {
-          return;
-        }
-        mapper.loadMappedFieldsFromApi(fields);
-      },
-      error: err => {
-        console.error('No se pudieron cargar los fields del template', err);
-      }
-    });
+    mapper.loadMappedFieldsFromApi(fieldsForVersion as any);
   }
 
   private async waitForMapperComponent(maxAttempts = 40): Promise<DocumentMapperComponent | undefined> {

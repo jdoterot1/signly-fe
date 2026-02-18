@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { finalize, take } from 'rxjs/operators';
 
+import { TranslateModule } from '@ngx-translate/core';
 import { UserProfileDropdownComponent } from '../../../shared/components/user-profile-dropdown/user-profile-dropdown.component';
 import { ThemeToggleComponent } from '../../../shared/components/theme-toggle/theme-toggle.component';
 import { AuthService } from '../../services/auth/auth.service';
@@ -34,7 +35,7 @@ interface HeaderUserProfile {
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterModule, UserProfileDropdownComponent, ThemeToggleComponent],
+  imports: [CommonModule, RouterModule, TranslateModule, UserProfileDropdownComponent, ThemeToggleComponent],
   templateUrl: './header.component.html'
 })
 export class HeaderComponent implements OnInit {
@@ -56,11 +57,11 @@ export class HeaderComponent implements OnInit {
   }
 
   readonly navLinks: NavLink[] = [
-    { label: "Inicio", path: "/home" },
-    { label: "Documentos", path: "/documents" },
-    { label: "Plantillas", path: "/templates" },
-    { label: "Reportes", path: "/reports/usage" },
-    { label: "Administración", path: "/administration" },
+    { label: "HEADER.NAV.HOME", path: "/home" },
+    { label: "HEADER.NAV.DOCUMENTS", path: "/documents" },
+    { label: "HEADER.NAV.TEMPLATES", path: "/templates" },
+    { label: "HEADER.NAV.REPORTS", path: "/reports/usage" },
+    { label: "HEADER.NAV.ADMINISTRATION", path: "/administration" },
   ]
 
   readonly notifications: NotificationItem[] = [
@@ -82,9 +83,9 @@ export class HeaderComponent implements OnInit {
   ]
 
   readonly userMenuItems: UserMenuItem[] = [
-    { label: "Mi perfil", path: "/users" },
-    { label: "Preferencias", path: "/settings" },
-    { label: "Notificaciones", path: "/notifications" },
+    { label: "USER_PROFILE.MY_PROFILE", path: "/users" },
+    { label: "USER_PROFILE.PREFERENCES", path: "/settings" },
+    { label: "USER_PROFILE.NOTIFICATIONS", path: "/notifications" },
   ]
 
   constructor(

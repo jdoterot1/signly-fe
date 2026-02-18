@@ -4,7 +4,13 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
 
-import { AuthService, RegistrationRequest } from '../../../core/services/auth/auth.service';
+import { TranslateModule } from '@ngx-translate/core';
+
+import {
+  AuthService,
+  PendingRegisterConfirmRequest,
+  RegisterRequest
+} from '../../../core/services/auth/auth.service';
 import { REGISTER_REGEX } from '../../../core/constants/auth/register-regex.constants';
 import { COLOMBIA_CITIES } from '../../../core/constants/location/colombia-cities.constant';
 
@@ -25,7 +31,7 @@ interface DialCodeOption {
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, TranslateModule],
   templateUrl: './register.component.html',
   styleUrls: []
 })
@@ -37,7 +43,6 @@ export class RegisterComponent implements OnDestroy {
   currentStep = 0;
   loading = false;
   errorMessage: string | null = null;
-  successPayload: unknown = null;
   showPassword = false;
   private readonly subs = new Subscription();
 
@@ -105,6 +110,8 @@ export class RegisterComponent implements OnDestroy {
       }),
       company: this.fb.group({
         businessName: ['', [Validators.required, Validators.pattern(REGISTER_REGEX.companyName)]],
+        subdomain: ['', [Validators.required, Validators.pattern(REGISTER_REGEX.subdomain)]],
+        website: ['', [Validators.pattern(REGISTER_REGEX.website)]],
         industry: ['', [Validators.required]],
         country: ['CO', [Validators.required]],
         city: ['', [Validators.required, Validators.pattern(REGISTER_REGEX.city)]],
@@ -118,12 +125,14 @@ export class RegisterComponent implements OnDestroy {
         captchaToken: ['demo-token'],
         tosAccepted: [false, [Validators.requiredTrue]],
         privacyAccepted: [false, [Validators.requiredTrue]],
-        referralCode: ['', [Validators.pattern(REGISTER_REGEX.referralCode)]]
+        hasReferralCode: [false],
+        referralCode: [{ value: '', disabled: true }, [Validators.pattern(REGISTER_REGEX.referralCode)]]
       })
     });
 
     this.setupBillingEmailSync();
     this.setupAboutOtherBehavior();
+    this.setupReferralCodeBehavior();
   }
 
   get userGroup(): FormGroup {
@@ -146,6 +155,10 @@ export class RegisterComponent implements OnDestroy {
     return this.companyGroup.get('about')?.value === 'Otro';
   }
 
+  get hasReferralCodeEnabled(): boolean {
+    return !!this.securityGroup.get('hasReferralCode')?.value;
+  }
+
   ngOnDestroy(): void {
     this.subs.unsubscribe();
   }
@@ -160,6 +173,7 @@ export class RegisterComponent implements OnDestroy {
     if (target?.invalid) {
       return;
     }
+
     this.currentStep = Math.min(this.currentStep + 1, this.steps.length - 1);
   }
 
@@ -180,19 +194,22 @@ export class RegisterComponent implements OnDestroy {
       return;
     }
 
-    const securityGroup = this.securityGroup;
-    securityGroup.markAllAsTouched();
-    if (securityGroup.invalid) {
+    this.securityGroup.markAllAsTouched();
+    if (this.securityGroup.invalid) {
       return;
     }
 
-    this.loading = true;
-    const payload = this.buildPayload();
+    const registerPayload = this.buildRegisterPayload();
+    const confirmPayload = this.buildRegisterConfirmPayload();
 
-    this.authService.register(payload).subscribe({
-      next: res => {
+    this.loading = true;
+    this.authService.register(registerPayload).subscribe({
+      next: () => {
         this.loading = false;
-        this.successPayload = res;
+        this.authService.setPendingRegistration(registerPayload, confirmPayload);
+        this.router.navigate(['/register/confirm'], {
+          state: { email: registerPayload.email }
+        });
       },
       error: err => {
         this.loading = false;
@@ -212,30 +229,28 @@ export class RegisterComponent implements OnDestroy {
     return null;
   }
 
-  private buildPayload(): RegistrationRequest {
+  private buildRegisterPayload(): RegisterRequest {
     const raw = this.registerForm.getRawValue();
-    const businessName = raw.company.businessName;
 
     return {
-      user: {
-        firstName: raw.user.firstName,
-        lastName: raw.user.lastName,
-        email: raw.user.email,
-        phone: this.normalizePhone(raw.user.phone, raw.user.phoneDialCode),
-        password: raw.user.password,
-        locale: this.defaultLocale,
-        timezone: this.defaultTimezone
-      },
-      company: {
-        displayName: businessName,
-        legalName: businessName,
-        industry: raw.company.industry,
-        country: raw.company.country,
-        city: raw.company.city,
-        size: Number(raw.company.size ?? 0),
-        billingEmail: raw.company.billingEmail,
-        about: raw.company.about === 'Otro' ? raw.company.aboutOther : raw.company.about
-      },
+      firstName: raw.user.firstName,
+      lastName: raw.user.lastName,
+      email: raw.user.email,
+      phone: this.normalizePhone(raw.user.phone, raw.user.phoneDialCode),
+      password: raw.user.password,
+      locale: this.defaultLocale,
+      timezone: this.defaultTimezone
+    };
+  }
+
+  private buildRegisterConfirmPayload(): PendingRegisterConfirmRequest {
+    const raw = this.registerForm.getRawValue();
+    const referralCode = raw.security.hasReferralCode ? raw.security.referralCode || null : null;
+    const company = this.buildBusinessCompanyPayload(raw);
+
+    return {
+      email: String(raw.user.email || '').trim(),
+      company,
       security: {
         captchaToken: raw.security.captchaToken || 'demo-token'
       },
@@ -245,8 +260,31 @@ export class RegisterComponent implements OnDestroy {
       },
       metadata: {
         signupSource: 'web',
-        referralCode: raw.security.referralCode || null
+        referralCode
       }
+    };
+  }
+
+  private buildBusinessCompanyPayload(raw: any): PendingRegisterConfirmRequest['company'] {
+    const businessName = String(raw.company.businessName || '').trim();
+    const website = this.normalizeWebsite(raw.company.website);
+    const subdomain = this.resolveRequiredSubdomain(
+      raw.company.subdomain,
+      businessName,
+      raw.user?.email
+    );
+
+    return {
+      displayName: businessName,
+      legalName: businessName,
+      industry: raw.company.industry,
+      country: raw.company.country,
+      city: raw.company.city,
+      subdomain,
+      website,
+      size: Number(raw.company.size ?? 0),
+      billingEmail: raw.company.billingEmail,
+      about: raw.company.about === 'Otro' ? raw.company.aboutOther : raw.company.about
     };
   }
 
@@ -259,6 +297,55 @@ export class RegisterComponent implements OnDestroy {
     }
 
     return `${normalizedDialCode}${digitsOnly}`;
+  }
+
+  private normalizeSubdomain(subdomain: string): string {
+    const normalized = String(subdomain || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    return normalized;
+  }
+
+  private resolveRequiredSubdomain(primary: string, fallback: string, email?: string): string {
+    const emailLocalPart = String(email || '').split('@')[0] || '';
+    let candidate = this.normalizeSubdomain(primary);
+
+    if (!candidate) {
+      candidate = this.normalizeSubdomain(fallback);
+    }
+
+    if (!candidate) {
+      candidate = this.normalizeSubdomain(emailLocalPart);
+    }
+
+    if (!candidate) {
+      candidate = 'signly-user';
+    }
+
+    candidate = candidate.slice(0, 63).replace(/-+$/g, '');
+    while (candidate.length < 3) {
+      candidate += 'x';
+    }
+
+    return candidate;
+  }
+
+  private normalizeWebsite(website: string): string | undefined {
+    const cleanWebsite = String(website || '').trim();
+    if (!cleanWebsite) {
+      return undefined;
+    }
+
+    if (/^https?:\/\//i.test(cleanWebsite)) {
+      return cleanWebsite;
+    }
+
+    return `https://${cleanWebsite}`;
   }
 
   private setupBillingEmailSync(): void {
@@ -326,6 +413,35 @@ export class RegisterComponent implements OnDestroy {
     this.subs.add(
       aboutControl.valueChanges.subscribe(value => {
         applyMode(String(value || ''));
+      })
+    );
+  }
+
+  private setupReferralCodeBehavior(): void {
+    const hasReferralCodeControl = this.securityGroup.get('hasReferralCode');
+    const referralCodeControl = this.securityGroup.get('referralCode');
+
+    if (!hasReferralCodeControl || !referralCodeControl) {
+      return;
+    }
+
+    const applyMode = (enabled: boolean): void => {
+      if (enabled) {
+        referralCodeControl.enable({ emitEvent: false });
+        referralCodeControl.updateValueAndValidity({ emitEvent: false });
+        return;
+      }
+
+      referralCodeControl.setValue('', { emitEvent: false });
+      referralCodeControl.disable({ emitEvent: false });
+      referralCodeControl.updateValueAndValidity({ emitEvent: false });
+    };
+
+    applyMode(!!hasReferralCodeControl.value);
+
+    this.subs.add(
+      hasReferralCodeControl.valueChanges.subscribe(value => {
+        applyMode(!!value);
       })
     );
   }

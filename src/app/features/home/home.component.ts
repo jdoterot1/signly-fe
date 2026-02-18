@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { TranslateModule } from '@ngx-translate/core';
 import { AuthService } from '../../core/services/auth/auth.service';
 import { Router } from '@angular/router';
 import { GuideModalComponent } from '../../shared/components/guide-modal/guide-modal.component';
@@ -39,7 +40,7 @@ interface TemplateCard {
 @Component({
   selector: "app-home",
   standalone: true,
-  imports: [CommonModule, RouterModule, GuideModalComponent],
+  imports: [CommonModule, RouterModule, GuideModalComponent, TranslateModule],
   templateUrl: "./home.component.html",
   styleUrls: [],
 })
@@ -85,26 +86,26 @@ export class HomeComponent implements OnInit {
 
   readonly homeShortcuts: HomeShortcut[] = [
     {
-      title: 'Crear plantilla',
-      description: 'Diseña una plantilla lista para reutilizar en tus procesos.',
+      title: 'DASHBOARD.CREATE_TEMPLATE',
+      description: 'DASHBOARD.CREATE_TEMPLATE_DESC',
       path: '/templates/create',
       tone: 'blue'
     },
     {
-      title: 'Crear documento',
-      description: 'Genera un documento y prepáralo para envío a firma.',
+      title: 'DASHBOARD.CREATE_DOCUMENT',
+      description: 'DASHBOARD.CREATE_DOCUMENT_DESC',
       path: '/documents/create',
       tone: 'emerald'
     },
     {
-      title: 'Comprar créditos',
-      description: 'Administra y recarga los créditos de tu cuenta.',
+      title: 'DASHBOARD.BUY_CREDITS',
+      description: 'DASHBOARD.BUY_CREDITS_DESC',
       path: '/administration/billing',
       tone: 'indigo'
     },
     {
-      title: 'Reportes',
-      description: 'Revisa métricas y consumo desde el módulo de reportes.',
+      title: 'DASHBOARD.REPORTS',
+      description: 'DASHBOARD.REPORTS_DESC',
       path: '/reports/usage',
       tone: 'amber'
     }
@@ -116,7 +117,7 @@ export class HomeComponent implements OnInit {
     private guideFlow: GuideFlowService,
     private templateService: TemplateService,
     private documentService: DocumentService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.resolveGuideStatus();
@@ -190,19 +191,19 @@ export class HomeComponent implements OnInit {
   get homeKpis(): HomeKpi[] {
     return [
       {
-        title: 'Plantillas creadas',
+        title: 'DASHBOARD.KPI_TEMPLATES',
         value: String(this.templateCount),
-        helper: this.templateCount > 0 ? 'Base lista para nuevos envíos' : 'Crea tu primera plantilla'
+        helper: this.templateCount > 0 ? 'DASHBOARD.KPI_TEMPLATES_READY' : 'DASHBOARD.KPI_TEMPLATES_EMPTY'
       },
       {
-        title: 'Documentos creados',
+        title: 'DASHBOARD.KPI_DOCUMENTS',
         value: String(this.documentCount),
-        helper: this.documentCount > 0 ? 'Actividad en marcha' : 'Aún no tienes documentos'
+        helper: this.documentCount > 0 ? 'DASHBOARD.KPI_DOCUMENTS_ACTIVE' : 'DASHBOARD.KPI_DOCUMENTS_EMPTY'
       },
       {
-        title: 'Progreso de onboarding',
+        title: 'DASHBOARD.KPI_ONBOARDING',
         value: `${this.completedSteps}/${this.onboardingProgress.total}`,
-        helper: this.shouldShowGuideSection ? 'Completa los 2 pasos iniciales' : 'Onboarding completado'
+        helper: this.shouldShowGuideSection ? 'DASHBOARD.KPI_ONBOARDING_PENDING' : 'DASHBOARD.KPI_ONBOARDING_DONE'
       }
     ];
   }
@@ -222,10 +223,10 @@ export class HomeComponent implements OnInit {
 
   get daySummaryItems(): DaySummaryItem[] {
     return [
-      { label: 'Enviados hoy', value: this.summarySentToday },
-      { label: 'Completados', value: this.summaryCompleted },
-      { label: 'Pendientes', value: this.summaryPending },
-      { label: 'Vencen hoy', value: this.summaryDueToday }
+      { label: 'DASHBOARD.SENT_TODAY', value: this.summarySentToday },
+      { label: 'DASHBOARD.COMPLETED', value: this.summaryCompleted },
+      { label: 'DASHBOARD.PENDING', value: this.summaryPending },
+      { label: 'DASHBOARD.DUE_TODAY', value: this.summaryDueToday }
     ];
   }
 

@@ -1,6 +1,6 @@
 // src/app/features/auth/login/login.component.ts
 
-import { Component, OnInit } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -8,8 +8,10 @@ import {
   ReactiveFormsModule
 } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
+
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { AuthService, AuthError } from '../../../core/services/auth/auth.service';
 import { AuthSession } from '../../../core/models/auth/auth-session.model';
@@ -17,7 +19,7 @@ import { AuthSession } from '../../../core/models/auth/auth-session.model';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule, TranslateModule],
   templateUrl: './login.component.html',
   styleUrls: []
 })
@@ -31,7 +33,9 @@ export class LoginComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private translate: TranslateService,
+    @Inject(DOCUMENT) private document: Document
   ) {}
 
   ngOnInit(): void {
@@ -78,11 +82,11 @@ export class LoginComponent implements OnInit {
             return;
           }
 
-          this.errorMessage = 'Necesitas establecer una nueva contraseña, pero no pudimos iniciar el proceso.';
+          this.errorMessage = this.translate.instant('AUTH.ERROR_PASSWORD_CHALLENGE');
           return;
         }
 
-        this.errorMessage = err.message || 'Error al iniciar sesión';
+        this.errorMessage = err.message || this.translate.instant('AUTH.ERROR_LOGIN');
       }
     });
   }
@@ -95,6 +99,8 @@ export class LoginComponent implements OnInit {
   }
 
   goToRegister(): void {
-    this.router.navigate(['/register']);
+    this.router.navigateByUrl('/register').catch(() => {
+      this.document.defaultView?.location.assign('/register');
+    });
   }
 }

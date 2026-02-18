@@ -20,6 +20,7 @@ export class AuthRefreshInterceptor implements HttpInterceptor {
   private readonly skipRefreshPaths = [
     '/auth/login',
     '/auth/register',
+    '/auth/register/confirm',
     '/auth/logout',
     '/auth/password/forgot',
     '/auth/password/confirm',

@@ -2,8 +2,12 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
-import { AdminSidebarComponent, AdminSidebarSection } from '../../shared/components/admin-sidebar/admin-sidebar.component';
+import {
+  AdminSidebarComponent,
+  AdminSidebarSection,
+} from '../../shared/components/admin-sidebar/admin-sidebar.component';
 import { UsersListComponent } from '../user/list/user-list.component';
 import { RolesListComponent } from '../roles/list/roles-list.component';
 import { RolesCreateComponent } from '../roles/create/roles-add.component';
@@ -68,9 +72,10 @@ interface NotificationRow {
     WebhookListComponent,
     WalletComponent,
     AuditListComponent,
-    LogsListComponent
+    LogsListComponent,
+    TranslateModule,
   ],
-  templateUrl: './administration.component.html'
+  templateUrl: './administration.component.html',
 })
 export class AdministrationComponent implements OnInit, OnDestroy {
   ownerName = 'Usuario';
@@ -79,122 +84,124 @@ export class AdministrationComponent implements OnInit, OnDestroy {
 
   readonly sidebarSections: AdminSidebarSection[] = [
     {
-      label: 'Información general',
-      items: [{ label: 'Información general' }]
+      label: 'ADMINISTRATION.SECTIONS.GENERAL',
+      items: [{ label: 'ADMINISTRATION.SECTIONS.GENERAL' }],
     },
     {
-      label: 'Cuenta',
+      label: 'ADMINISTRATION.SECTIONS.ACCOUNT',
       items: [
-        { label: 'Compañía' },
-        { label: 'Branding y correos' },
-        { label: 'Calculadora' }
-      ]
+        { label: 'ADMINISTRATION.SECTIONS.COMPANY' },
+        { label: 'ADMINISTRATION.SECTIONS.BRANDING' },
+        { label: 'ADMINISTRATION.SECTIONS.CALCULATOR' },
+      ],
     },
     {
-      label: 'Facturación y pagos',
+      label: 'ADMINISTRATION.SECTIONS.BILLING',
       items: [
-        { label: 'Facturación' },
-        { label: 'Órdenes' },
-        { label: 'Facturas' },
-        { label: 'Precios' },
-        { label: 'Billetera' }
-      ]
+        { label: 'ADMINISTRATION.SECTIONS.BILLING_SECTION' },
+        { label: 'ADMINISTRATION.SECTIONS.ORDERS' },
+        { label: 'ADMINISTRATION.SECTIONS.INVOICES' },
+        { label: 'ADMINISTRATION.SECTIONS.PRICING' },
+        { label: 'ADMINISTRATION.SECTIONS.WALLET' },
+      ],
     },
     {
-      label: 'Gestión de usuarios',
+      label: 'ADMINISTRATION.SECTIONS.USER_MANAGEMENT',
       items: [
-        { label: 'Usuarios' },
-        { label: 'Roles' }
-      ]
+        { label: 'ADMINISTRATION.SECTIONS.USERS' },
+        { label: 'ADMINISTRATION.SECTIONS.ROLES' },
+      ],
     },
     {
-      label: 'Integraciones',
+      label: 'ADMINISTRATION.SECTIONS.INTEGRATIONS',
       items: [
-        { label: 'Aplicaciones y claves' },
-        { label: 'Centro de uso de la API' },
-        { label: 'Webhooks' }
-      ]
+        { label: 'ADMINISTRATION.SECTIONS.APPS_KEYS' },
+        { label: 'ADMINISTRATION.SECTIONS.API_CENTER' },
+        { label: 'ADMINISTRATION.SECTIONS.WEBHOOKS' },
+      ],
     },
     {
-      label: 'Auditoría',
-      items: [{ label: 'Registro de auditoría' }]
-    }
+      label: 'ADMINISTRATION.SECTIONS.AUDIT',
+      items: [{ label: 'ADMINISTRATION.SECTIONS.AUDIT_LOG' }],
+    },
   ];
 
   readonly sectionDescriptions: Record<string, string> = {
-    'Información general': 'Monitorea novedades del producto, anuncios críticos y accesos rápidos a la configuración.',
-    'Compañía': 'Actualiza la razón social, domicilios y datos fiscales de la empresa.',
-    'Branding y correos': 'Configura colores, logos y remitentes para todas las comunicaciones.',
-    Calculadora: 'Estima el impacto financiero de tus flujos y licencias.',
-    'Facturación': 'Consulta planes, ciclos de pago y comprobantes emitidos.',
-    'Órdenes': 'Consulta recargas y compras de créditos, con su estado y detalle.',
-    Facturas: 'Revisa facturas emitidas y descarga adjuntos cuando estén disponibles.',
-    Precios: 'Consulta precios por canal, región y escalas de consumo.',
-    Billetera: 'Administra saldos prepagados y movimientos en tu billetera.',
-    Usuarios: 'Administra usuarios, invita nuevos miembros y define su estado.',
-    Roles: 'Determina qué permisos tiene cada equipo en Signly.',
-    'Eliminar firmas y envíos': 'Solicita la depuración controlada de documentos y envíos antiguos.',
-    'Aplicaciones y claves': 'Gestiona credenciales para desarrolladores y API keys.',
-    'Centro de uso de la API': 'Monitorea uso y límites de tus integraciones.',
-    Webhooks: 'Gestiona los endpoints que reciben eventos automáticos de Signly.',
-    'Registro de auditoría': 'Consulta cada acción registrada para auditoría.'
+    'ADMINISTRATION.SECTIONS.GENERAL': 'ADMINISTRATION.DESCRIPTIONS.GENERAL',
+    'ADMINISTRATION.SECTIONS.COMPANY': 'ADMINISTRATION.DESCRIPTIONS.COMPANY',
+    'ADMINISTRATION.SECTIONS.BRANDING': 'ADMINISTRATION.DESCRIPTIONS.BRANDING',
+    'ADMINISTRATION.SECTIONS.CALCULATOR':
+      'ADMINISTRATION.DESCRIPTIONS.CALCULATOR',
+    'ADMINISTRATION.SECTIONS.BILLING_SECTION':
+      'ADMINISTRATION.DESCRIPTIONS.BILLING',
+    'ADMINISTRATION.SECTIONS.ORDERS': 'ADMINISTRATION.DESCRIPTIONS.ORDERS',
+    'ADMINISTRATION.SECTIONS.INVOICES': 'ADMINISTRATION.DESCRIPTIONS.INVOICES',
+    'ADMINISTRATION.SECTIONS.PRICING': 'ADMINISTRATION.DESCRIPTIONS.PRICING',
+    'ADMINISTRATION.SECTIONS.WALLET': 'ADMINISTRATION.DESCRIPTIONS.WALLET',
+    'ADMINISTRATION.SECTIONS.USERS': 'ADMINISTRATION.DESCRIPTIONS.USERS',
+    'ADMINISTRATION.SECTIONS.ROLES': 'ADMINISTRATION.DESCRIPTIONS.ROLES',
+    'ADMINISTRATION.SECTIONS.APPS_KEYS':
+      'ADMINISTRATION.DESCRIPTIONS.APPS_KEYS',
+    'ADMINISTRATION.SECTIONS.API_CENTER':
+      'ADMINISTRATION.DESCRIPTIONS.API_CENTER',
+    'ADMINISTRATION.SECTIONS.WEBHOOKS': 'ADMINISTRATION.DESCRIPTIONS.WEBHOOKS',
+    'ADMINISTRATION.SECTIONS.AUDIT_LOG':
+      'ADMINISTRATION.DESCRIPTIONS.AUDIT_LOG',
   };
 
   readonly quickAccess: QuickAccessItem[] = [
     {
-      label: 'Facturación',
-      description: 'Consulta ciclos, métodos de pago y facturas.',
-      target: 'Facturación'
+      label: 'ADMINISTRATION.QUICK_ACCESS.BILLING_LABEL',
+      description: 'ADMINISTRATION.QUICK_ACCESS.BILLING_DESC',
+      target: 'ADMINISTRATION.SECTIONS.BILLING_SECTION',
     },
     {
-      label: 'Usuarios',
-      description: 'Gestiona invitaciones y permisos.',
-      target: 'Usuarios'
+      label: 'ADMINISTRATION.QUICK_ACCESS.USERS_LABEL',
+      description: 'ADMINISTRATION.QUICK_ACCESS.USERS_DESC',
+      target: 'ADMINISTRATION.SECTIONS.USERS',
     },
     {
-      label: 'Aplicaciones y claves',
-      description: 'Revisa integraciones y credenciales activas.',
-      target: 'Aplicaciones y claves'
-    }
+      label: 'ADMINISTRATION.QUICK_ACCESS.APPS_LABEL',
+      description: 'ADMINISTRATION.QUICK_ACCESS.APPS_DESC',
+      target: 'ADMINISTRATION.SECTIONS.APPS_KEYS',
+    },
   ];
 
   readonly productUpdates: ProductUpdate[] = [
     {
-      type: 'Actualización del producto',
-      daysAgo: '22 días',
-      title: 'Versión básica',
-      description:
-        'Hay nuevas funciones de Signly disponibles en Production como parte de la versión de noviembre de 2025. Consulte las notas de la versión para más información sobre los últimos cambios.',
-      linkLabel: 'Notas de la versión básica'
+      type: 'ADMINISTRATION.PRODUCT_UPDATE.TYPE',
+      daysAgo: 'ADMINISTRATION.PRODUCT_UPDATE.DAYS_AGO_22',
+      title: 'ADMINISTRATION.PRODUCT_UPDATE.BASIC_VERSION',
+      description: 'ADMINISTRATION.PRODUCT_UPDATE.BASIC_DESC',
+      linkLabel: 'ADMINISTRATION.PRODUCT_UPDATE.BASIC_LINK',
     },
     {
-      type: 'Actualización del producto',
-      daysAgo: '27 días',
-      title: 'Nueva versión de Admin',
-      description:
-        'Hay una nueva versión de Signly Admin disponible. Visite las notas de la versión para informarse sobre los últimos cambios.',
-      linkLabel: 'Notas de la versión del administrador'
+      type: 'ADMINISTRATION.PRODUCT_UPDATE.TYPE',
+      daysAgo: 'ADMINISTRATION.PRODUCT_UPDATE.DAYS_AGO_27',
+      title: 'ADMINISTRATION.PRODUCT_UPDATE.ADMIN_VERSION',
+      description: 'ADMINISTRATION.PRODUCT_UPDATE.ADMIN_DESC',
+      linkLabel: 'ADMINISTRATION.PRODUCT_UPDATE.ADMIN_LINK',
     },
     {
-      type: 'Actualización del producto',
-      daysAgo: '34 días',
-      title: 'Nueva versión de Admin',
-      description:
-        'Hay una nueva versión de Signly Admin disponible. Visite las notas de la versión para informarse sobre los últimos cambios.',
-      linkLabel: 'Notas de la versión del administrador'
-    }
+      type: 'ADMINISTRATION.PRODUCT_UPDATE.TYPE',
+      daysAgo: 'ADMINISTRATION.PRODUCT_UPDATE.DAYS_AGO_34',
+      title: 'ADMINISTRATION.PRODUCT_UPDATE.ADMIN_VERSION',
+      description: 'ADMINISTRATION.PRODUCT_UPDATE.ADMIN_DESC',
+      linkLabel: 'ADMINISTRATION.PRODUCT_UPDATE.ADMIN_LINK',
+    },
   ];
 
-  readonly notificationTableModel: TableModel<NotificationRow> = this.buildNotificationsModel();
+  readonly notificationTableModel: TableModel<NotificationRow> =
+    this.buildNotificationsModel();
 
   private readonly defaultSection = this.resolveInitialSelection();
   private readonly slugOverrides: Record<string, string> = {
     'Información general': 'overview',
-    'Compañía': 'company',
+    Compañía: 'company',
     'Branding y correos': 'branding',
     Calculadora: 'calculator',
-    'Facturación': 'billing',
-    'Órdenes': 'orders',
+    Facturación: 'billing',
+    Órdenes: 'orders',
     Facturas: 'invoices',
     Precios: 'pricing',
     Billetera: 'wallet',
@@ -204,7 +211,7 @@ export class AdministrationComponent implements OnInit, OnDestroy {
     Webhooks: 'webhooks',
     Roles: 'roles',
     'Eliminar firmas y envíos': 'delete-signatures-sends',
-    'Registro de auditoría': 'audit-log'
+    'Registro de auditoría': 'audit-log',
   };
   private readonly labelToSlugMap = this.buildLabelToSlugMap();
   private readonly slugToLabelMap = this.buildSlugToLabelMap();
@@ -219,13 +226,17 @@ export class AdministrationComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private route: ActivatedRoute,
-    private authService: AuthService
+    private authService: AuthService,
+    private translate: TranslateService,
   ) {}
 
   ngOnInit(): void {
     this.hydrateOwnerFromSession();
-    this.routeSub = this.route.paramMap.subscribe(params => {
-      const slug = params.get('section') ?? (this.route.snapshot.data?.['section'] as string | undefined) ?? null;
+    this.routeSub = this.route.paramMap.subscribe((params) => {
+      const slug =
+        params.get('section') ??
+        (this.route.snapshot.data?.['section'] as string | undefined) ??
+        null;
       this.detailId = params.get('id');
       if (!slug) {
         this.selectedOption = this.defaultSection;
@@ -241,7 +252,7 @@ export class AdministrationComponent implements OnInit, OnDestroy {
       this.navigateToSection(this.defaultSection);
     });
 
-    this.querySub = this.route.queryParamMap.subscribe(params => {
+    this.querySub = this.route.queryParamMap.subscribe((params) => {
       this.detailView = params.get('view');
     });
   }
@@ -274,7 +285,10 @@ export class AdministrationComponent implements OnInit, OnDestroy {
   }
 
   get currentDescription(): string {
-    return this.sectionDescriptions[this.selectedOption] || 'Explora las configuraciones disponibles en este módulo.';
+    const descKey = this.sectionDescriptions[this.selectedOption];
+    return descKey
+      ? this.translate.instant(descKey)
+      : this.translate.instant('ADMINISTRATION.DEFAULT_DESC');
   }
 
   private resolveInitialSelection(): string {
@@ -284,16 +298,16 @@ export class AdministrationComponent implements OnInit, OnDestroy {
   }
 
   private buildNotificationsModel(): TableModel<NotificationRow> {
-    const data: NotificationRow[] = this.productUpdates.map(update => ({
+    const data: NotificationRow[] = this.productUpdates.map((update) => ({
       title: update.title,
       type: update.type,
       daysAgo: update.daysAgo,
       description: update.description,
-      linkLabel: update.linkLabel
+      linkLabel: update.linkLabel,
     }));
 
     return {
-      entityName: 'Notificaciones',
+      entityName: 'ADMINISTRATION.NOTIFICATIONS_TABLE.TITLE',
       tableConfig: {
         pageSize: 10,
         enableFiltering: false,
@@ -302,16 +316,46 @@ export class AdministrationComponent implements OnInit, OnDestroy {
         showRowSelection: false,
         showIndexColumn: false,
         showCreateButton: false,
-        emptyMessage: 'No hay notificaciones recientes.'
+        emptyMessage: 'ADMINISTRATION.NOTIFICATIONS_TABLE.EMPTY',
       },
       columns: [
-        { key: 'title', header: 'Título', columnType: 'text', visible: true },
-        { key: 'type', header: 'Tipo', columnType: 'text', visible: true },
-        { key: 'daysAgo', header: 'Actualización', columnType: 'text', visible: true },
-        { key: 'description', header: 'Descripción', columnType: 'text', visible: true },
-        { key: 'linkLabel', header: 'Referencia', columnType: 'text', visible: true }
+        {
+          key: 'title',
+          header: 'ADMINISTRATION.NOTIFICATIONS_TABLE.HEADER_TITLE',
+          columnType: 'text',
+          visible: true,
+          translate: true,
+        },
+        {
+          key: 'type',
+          header: 'ADMINISTRATION.NOTIFICATIONS_TABLE.HEADER_TYPE',
+          columnType: 'text',
+          visible: true,
+          translate: true,
+        },
+        {
+          key: 'daysAgo',
+          header: 'ADMINISTRATION.NOTIFICATIONS_TABLE.HEADER_UPDATE',
+          columnType: 'text',
+          visible: true,
+          translate: true,
+        },
+        {
+          key: 'description',
+          header: 'ADMINISTRATION.NOTIFICATIONS_TABLE.HEADER_DESC',
+          columnType: 'text',
+          visible: true,
+          translate: true,
+        },
+        {
+          key: 'linkLabel',
+          header: 'ADMINISTRATION.NOTIFICATIONS_TABLE.HEADER_REF',
+          columnType: 'text',
+          visible: true,
+          translate: true,
+        },
       ],
-      data
+      data,
     };
   }
   private navigateToSection(option: string): void {
@@ -321,13 +365,13 @@ export class AdministrationComponent implements OnInit, OnDestroy {
     if (option === this.defaultSection || !slug) {
       this.router.navigate(['/administration'], {
         queryParams: { view: null, returnTo: null },
-        queryParamsHandling: 'merge'
+        queryParamsHandling: 'merge',
       });
       return;
     }
     this.router.navigate(['/administration', slug], {
       queryParams: { view: null, returnTo: null },
-      queryParamsHandling: 'merge'
+      queryParamsHandling: 'merge',
     });
   }
 
@@ -336,22 +380,29 @@ export class AdministrationComponent implements OnInit, OnDestroy {
   }
 
   private buildLabelToSlugMap(): Record<string, string> {
-    return this.sidebarSections.reduce<Record<string, string>>((acc, section) => {
-      section.items.forEach(item => {
-        const slug = this.slugOverrides[item.label] ?? this.slugify(item.label);
-        if (slug) {
-          acc[item.label] = slug;
-        }
-      });
-      return acc;
-    }, {});
+    return this.sidebarSections.reduce<Record<string, string>>(
+      (acc, section) => {
+        section.items.forEach((item) => {
+          const slug =
+            this.slugOverrides[item.label] ?? this.slugify(item.label);
+          if (slug) {
+            acc[item.label] = slug;
+          }
+        });
+        return acc;
+      },
+      {},
+    );
   }
 
   private buildSlugToLabelMap(): Record<string, string> {
-    return Object.entries(this.labelToSlugMap).reduce<Record<string, string>>((acc, [label, slug]) => {
-      acc[slug] = label;
-      return acc;
-    }, {});
+    return Object.entries(this.labelToSlugMap).reduce<Record<string, string>>(
+      (acc, [label, slug]) => {
+        acc[slug] = label;
+        return acc;
+      },
+      {},
+    );
   }
 
   private getSlug(label: string): string {

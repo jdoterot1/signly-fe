@@ -6,6 +6,7 @@ import { finalize } from 'rxjs/operators';
 import { PricingService } from '../../core/services/pricing/pricing.service';
 import { PricingMeter, PricingTier } from '../../core/models/pricing/pricing.model';
 import { AlertService } from '../../shared/alert/alert.service';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 interface MeterEstimate {
   meter: PricingMeter;
@@ -15,7 +16,7 @@ interface MeterEstimate {
 @Component({
   selector: 'app-pricing-calculator',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslateModule],
   templateUrl: './pricing-calculator.component.html'
 })
 export class PricingCalculatorComponent implements OnInit {
@@ -30,7 +31,8 @@ export class PricingCalculatorComponent implements OnInit {
 
   constructor(
     private pricingService: PricingService,
-    private alertService: AlertService
+    private alertService: AlertService,
+    private translate: TranslateService
   ) {}
 
   ngOnInit(): void {
@@ -49,8 +51,8 @@ export class PricingCalculatorComponent implements OnInit {
           this.hydrateDefaultsFromData();
         },
         error: err => {
-          const message = err instanceof Error ? err.message : 'No se pudo cargar la calculadora.';
-          this.alertService.showError(message, 'Error al cargar');
+          const message = err instanceof Error ? err.message : this.translate.instant('PRICING.CALCULATOR.ERROR_LOAD');
+          this.alertService.showError(message, this.translate.instant('PRICING.CALCULATOR.ERROR_LOAD_TITLE'));
         }
       });
   }

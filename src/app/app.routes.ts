@@ -8,6 +8,7 @@ import { OtpComponent }             from './features/auth/otp/otp.component';
 import { ResetPasswordComponent }   from './features/auth/reset-password/reset-password.component';
 import { CompletePasswordComponent } from './features/auth/complete-password/complete-password.component';
 import { RegisterComponent }        from './features/auth/register/register.component';
+import { RegisterConfirmComponent } from './features/auth/register-confirm/register-confirm.component';
 import { LayoutComponent }          from './core/layout/layout/layout.component';
 import { HomeComponent }       from './features/home/home.component';
 // importa aquí otros componentes o feature-modules que deban ir bajo el layout
@@ -18,6 +19,7 @@ export const routes: Routes = [
   // 1) Rutas públicas (sin layout)
   { path: 'login',           component: LoginComponent },
   { path: 'register',        component: RegisterComponent },
+  { path: 'register/confirm', component: RegisterConfirmComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'otp',             component: OtpComponent },
   { path: 'reset-password',  component: ResetPasswordComponent },

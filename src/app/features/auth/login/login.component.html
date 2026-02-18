@@ -9,9 +9,7 @@
 
       <div class="relative z-10 p-8 lg:p-12 flex flex-col items-start h-full justify-center">
         <h1 class="text-white font-bold leading-tight text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl">
-          Protege tu<br />
-          Firma<br />
-          <span class="text-blue-300">Hoy</span>
+          {{ 'AUTH.HERO_TITLE' | translate }}
         </h1>
       </div>
 
@@ -32,13 +30,13 @@
       <div class="absolute -top-10 -left-12 h-44 w-44 bg-blue-200/50 blur-[110px]"></div>
       <div class="absolute bottom-[-30px] right-[-40px] h-60 w-60 bg-blue-400/30 blur-[140px]"></div>
       <div class="w-full max-w-xl px-12 py-16">
-        <h2 class="text-5xl font-bold text-gray-800 mb-4">Bienvenido de nuevo</h2>
-        <p class="text-lg text-gray-600 mb-12">Inicia sesión para continuar</p>
+        <h2 class="text-5xl font-bold text-gray-800 mb-4">{{ 'AUTH.LOGIN.WELCOME' | translate }}</h2>
+        <p class="text-lg text-gray-600 mb-12">{{ 'AUTH.LOGIN.SUBTITLE' | translate }}</p>
 
         <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-10">
 
           <div>
-            <label for="email" class="block text-lg font-medium text-gray-700 mb-2 required-marker">Correo electrónico</label>
+            <label for="email" class="block text-lg font-medium text-gray-700 mb-2 required-marker">{{ 'AUTH.LOGIN.EMAIL_LABEL' | translate }}</label>
             <div class="relative">
               <input
                 id="email"
@@ -47,7 +45,7 @@
                 autocomplete="email"
                 required
                 class="block w-full pl-14 pr-4 py-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
-                placeholder="Ingresa tu correo"
+                [placeholder]="'AUTH.LOGIN.EMAIL_PLACEHOLDER' | translate"
               />
               <div class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none">
                 <svg class="h-6 w-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
@@ -59,7 +57,7 @@
           </div>
 
           <div>
-            <label for="hs-toggle-password" class="block text-lg font-medium text-gray-700 mb-2 required-marker">Contraseña</label>
+            <label for="hs-toggle-password" class="block text-lg font-medium text-gray-700 mb-2 required-marker">{{ 'AUTH.LOGIN.PASSWORD_LABEL' | translate }}</label>
             <div class="relative">
               <input
                 id="hs-toggle-password"
@@ -68,7 +66,7 @@
                 autocomplete="current-password"
                 required
                 class="py-4 ps-14 pe-14 block w-full border border-gray-300 rounded-lg text-lg focus:border-blue-500 focus:ring-blue-500"
-                placeholder="Ingresa tu contraseña"
+                [placeholder]="'AUTH.LOGIN.PASSWORD_PLACEHOLDER' | translate"
               />
               <div class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none">
                 <svg class="h-6 w-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
@@ -81,7 +79,7 @@
                 type="button"
                 (click)="togglePassword()"
                 class="absolute inset-y-0 right-0 flex items-center z-20 px-4 text-gray-400 hover:text-blue-600"
-                [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                [attr.aria-label]="(showPassword ? 'AUTH.RESET_PASSWORD.HIDE_PASSWORD' : 'AUTH.RESET_PASSWORD.SHOW_PASSWORD') | translate"
               >
                 <svg class="shrink-0 w-5 h-5" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -108,11 +106,16 @@
 
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-lg">
             <button type="button" (click)="goToForgotPassword()" class="font-medium text-blue-600 hover:text-blue-500">
-              ¿Olvidaste tu contraseña?
+              {{ 'AUTH.LOGIN.FORGOT_PASSWORD' | translate }}
             </button>
             <div class="flex items-center gap-2 text-gray-500 text-base">
-              <button type="button" (click)="goToRegister()" class="font-semibold text-blue-600 hover:text-blue-500">
-                Crear cuenta
+              <button
+                type="button"
+                [routerLink]="['/register']"
+                (click)="goToRegister()"
+                class="font-semibold text-blue-600 hover:text-blue-500"
+              >
+                {{ 'AUTH.LOGIN.CREATE_ACCOUNT' | translate }}
               </button>
             </div>
           </div>
@@ -125,7 +128,7 @@
               class="w-full flex justify-center py-5 px-6 border border-transparent rounded-lg shadow-sm
                      text-xl text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              Iniciar sesión
+              {{ 'AUTH.LOGIN.SUBMIT' | translate }}
             </button>
           </div>
 

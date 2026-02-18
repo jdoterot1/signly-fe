@@ -2,9 +2,10 @@ import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationExtras } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
-import { TableComponent }       from '../../../shared/table/table.component';
-import { TableModel }           from '../../../shared/table/table.model';
+import { TableComponent } from '../../../shared/table/table.component';
+import { TableModel } from '../../../shared/table/table.model';
 import { RoleService } from '../../../core/services/roles/roles.service';
 import { Role } from '../../../core/models/roles/roles.model';
 import { AlertService } from '../../../shared/alert/alert.service';
@@ -19,13 +20,13 @@ interface RoleRow {
 @Component({
   selector: 'app-roles-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, TableComponent],
+  imports: [CommonModule, RouterModule, FormsModule, TableComponent, TranslateModule],
   templateUrl: './roles-list.component.html'
 })
 export class RolesListComponent implements OnInit {
   @Input() returnTo: string | null = null;
   tableModel: TableModel<RoleRow> = {
-    entityName: 'Lista de Roles',
+    entityName: 'ROLES.LIST_TITLE',
     tableConfig: {
       pageSize: 10,
       enableFiltering: true,
@@ -33,30 +34,30 @@ export class RolesListComponent implements OnInit {
       showPagination: true,
       showRowSelection: false,
       showIndexColumn: false,
-      emptyMessage: 'No se encontraron roles.',
+      emptyMessage: 'ROLES.EMPTY',
       trackByField: 'roleId'
     },
     columns: [
-      { key: 'roleName',        header: 'Nombre del Rol', columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'description', header: 'Descripción',     columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'version', header: 'Versión', columnType: 'text', sortable: true, filterable: false, visible: true },
+      { key: 'roleName', header: 'ROLES.NAME', columnType: 'text', sortable: true, filterable: true, visible: true },
+      { key: 'description', header: 'ROLES.DESCRIPTION', columnType: 'text', sortable: true, filterable: true, visible: true },
+      { key: 'version', header: 'ROLES.VERSION', columnType: 'text', sortable: true, filterable: false, visible: true },
       {
         key: 'actions',
-        header: 'Acciones',
+        header: 'ROLES.ACTIONS',
         columnType: 'action',
         visible: true,
         actions: [
           {
             label: '',
             icon: 'edit',
-            tooltip: 'Editar',
-          handler: row => this.onEdit(row)
+            tooltip: 'ROLES.EDIT',
+            handler: row => this.onEdit(row)
           },
           {
             label: '',
             icon: 'delete',
-            tooltip: 'Eliminar',
-          handler: row => this.onDelete(row)
+            tooltip: 'ROLES.DELETE',
+            handler: row => this.onDelete(row)
           }
         ]
       }
@@ -64,8 +65,13 @@ export class RolesListComponent implements OnInit {
     data: []
   };
 
-  constructor(private roleService: RoleService, private router: Router, private alertService: AlertService) {}
-  
+  constructor(
+    private roleService: RoleService,
+    private router: Router,
+    private alertService: AlertService,
+    private translate: TranslateService
+  ) { }
+
 
   ngOnInit(): void {
     this.loadRoles();
@@ -83,24 +89,31 @@ export class RolesListComponent implements OnInit {
         this.tableModel = { ...this.tableModel, data: rows };
       },
       error: err => {
-        this.alertService.showError('No se pudieron cargar los roles.', 'Error');
+        this.alertService.showError(
+          this.translate.instant('ROLES.ERROR_LOAD'),
+          this.translate.instant('ALERTS.ERROR_TITLE')
+        );
         console.error('Error al cargar roles', err);
       }
     });
   }
 
-  
+
   onEdit(row: RoleRow): void {
     this.router.navigate(['/roles', row.roleId, 'update'], this.navigationExtras());
   }
 
   onDelete(row: RoleRow): void {
-    if (confirm(`¿Seguro que deseas eliminar el rol "${row.roleName}"?`)) {
+    const message = this.translate.instant('ROLES.CONFIRM_DELETE', { name: row.roleName });
+    if (confirm(message)) {
       this.roleService.deleteRole(row.roleId)
         .subscribe({
           next: () => this.loadRoles(),
           error: err => {
-            this.alertService.showError('No se pudo eliminar el rol.', 'Error');
+            this.alertService.showError(
+              this.translate.instant('ROLES.ERROR_DELETE'),
+              this.translate.instant('ALERTS.ERROR_TITLE')
+            );
             console.error('Error al eliminar rol', err);
           }
         });

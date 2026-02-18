@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
 
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+
 import { CompanyService } from '../../core/services/company/company.service';
 import {
   CompanyBillingPreferences,
@@ -13,7 +15,7 @@ import { AlertService } from '../../shared/alert/alert.service';
 @Component({
   selector: 'app-company-billing',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslateModule],
   templateUrl: './company-billing.component.html'
 })
 export class CompanyBillingComponent implements OnInit {
@@ -22,23 +24,28 @@ export class CompanyBillingComponent implements OnInit {
   isLoadingBilling = false;
   isSavingBilling = false;
 
-  readonly billingModelOptions = [
-    { label: 'Postpago', value: 'postpaid' },
-    { label: 'Prepago', value: 'prepaid' }
-  ];
+  get billingModelOptions() {
+    return [
+      { label: this.translate.instant('COMPANY.BILLING.MODEL_POSTPAID'), value: 'postpaid' },
+      { label: this.translate.instant('COMPANY.BILLING.MODEL_PREPAID'), value: 'prepaid' }
+    ];
+  }
 
-  readonly paymentProviderOptions = [
-    { label: 'Manual', value: 'manual' },
-    { label: 'Stripe', value: 'stripe' },
-    { label: 'Oferta privada', value: 'private_offer' }
-  ];
+  get paymentProviderOptions() {
+    return [
+      { label: this.translate.instant('COMPANY.BILLING.PROVIDER_MANUAL'), value: 'manual' },
+      { label: this.translate.instant('COMPANY.BILLING.PROVIDER_STRIPE'), value: 'stripe' },
+      { label: this.translate.instant('COMPANY.BILLING.PROVIDER_PRIVATE_OFFER'), value: 'private_offer' }
+    ];
+  }
 
   readonly currencyOptions = ['COP', 'USD', 'EUR'];
 
   constructor(
     private fb: FormBuilder,
     private companyService: CompanyService,
-    private alertService: AlertService
+    private alertService: AlertService,
+    private translate: TranslateService
   ) {
     this.billingForm = this.fb.group({
       billing_email: ['', [Validators.required, Validators.email]],
@@ -65,8 +72,8 @@ export class CompanyBillingComponent implements OnInit {
       .subscribe({
         next: data => this.billingForm.patchValue(this.toBillingForm(data)),
         error: err => {
-          const message = err instanceof Error ? err.message : 'No se pudo cargar la facturación.';
-          this.alertService.showError(message, 'Error al cargar facturación');
+          const message = err instanceof Error ? err.message : this.translate.instant('COMPANY.BILLING.ERROR_LOAD');
+          this.alertService.showError(message, this.translate.instant('COMPANY.BILLING.ERROR_LOAD_TITLE'));
         }
       });
   }
@@ -96,11 +103,11 @@ export class CompanyBillingComponent implements OnInit {
       .subscribe({
         next: data => {
           this.billingForm.patchValue(this.toBillingForm(data));
-          this.alertService.showSuccess('Preferencias de facturación actualizadas.', 'Facturación guardada');
+          this.alertService.showSuccess(this.translate.instant('COMPANY.BILLING.SUCCESS_UPDATE'), this.translate.instant('COMPANY.BILLING.SUCCESS_UPDATE_TITLE'));
         },
         error: err => {
-          const message = err instanceof Error ? err.message : 'No se pudo actualizar la facturación.';
-          this.alertService.showError(message, 'Error al guardar');
+          const message = err instanceof Error ? err.message : this.translate.instant('COMPANY.BILLING.ERROR_UPDATE');
+          this.alertService.showError(message, this.translate.instant('COMPANY.BILLING.ERROR_UPDATE_TITLE'));
         }
       });
   }

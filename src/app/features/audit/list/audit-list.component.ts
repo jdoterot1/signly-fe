@@ -30,7 +30,7 @@ export class AuditListComponent implements OnInit {
   errorMessage?: string;
 
   tableModel: TableModel<AuditRow> = {
-    entityName: 'Auditorías registradas',
+    entityName: 'AUDIT.LIST_TITLE',
     tableConfig: {
       pageSize: 10,
       enableFiltering: true,

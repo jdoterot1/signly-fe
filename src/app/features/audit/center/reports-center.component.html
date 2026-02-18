@@ -1,22 +1,18 @@
 <div class="min-h-[calc(100vh-8rem)] py-10 px-4 lg:px-10">
   <div class="flex flex-col lg:flex-row gap-8 items-start">
-    <app-admin-sidebar
-      class="w-full lg:w-auto"
-      [ownerName]="ownerName"
-      [accountId]="accountId"
-      [sections]="sidebarSections"
-      [selectedOption]="selectedOption"
-      (optionSelected)="onOptionSelected($event)"
-    ></app-admin-sidebar>
+    <app-admin-sidebar class="w-full lg:w-auto" [ownerName]="ownerName | translate" [accountId]="accountId"
+      [sections]="sidebarSections" [selectedOption]="selectedOption"
+      (optionSelected)="onOptionSelected($event)"></app-admin-sidebar>
 
     <section class="flex-1 space-y-6 w-full">
       <div class="bg-brand-surface-card rounded-3xl border border-brand-subtle shadow-xl p-8">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">Centro de reportes</p>
-            <h1 class="text-3xl font-semibold heading-brand mt-3">{{ selectedOption }}</h1>
+            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">{{ 'REPORTS.CENTER_TITLE' |
+              translate }}</p>
+            <h1 class="text-3xl font-semibold heading-brand mt-3">{{ selectedOption | translate }}</h1>
             <p class="text-gray-600 mt-3 leading-relaxed max-w-2xl">
-              {{ currentDescription }}
+              {{ currentDescription | translate }}
             </p>
           </div>
         </div>
@@ -28,7 +24,7 @@
         </ng-container>
         <ng-template #noContent>
           <p class="text-sm text-gray-600 p-6">
-            Selecciona un módulo del panel lateral para ver los reportes disponibles.
+            {{ 'REPORTS.NO_CONTENT' | translate }}
           </p>
         </ng-template>
       </div>

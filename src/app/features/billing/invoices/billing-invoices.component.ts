@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+
 import { BillingService } from '../../../core/services/billing/billing.service';
 import { BillingInvoiceSummary } from '../../../core/models/billing/billing.model';
 import { AlertService } from '../../../shared/alert/alert.service';
@@ -12,54 +14,59 @@ import { TableModel } from '../../../shared/table/table.model';
 @Component({
   selector: 'app-billing-invoices',
   standalone: true,
-  imports: [CommonModule, TableComponent],
+  imports: [CommonModule, TableComponent, TranslateModule],
   templateUrl: './billing-invoices.component.html'
 })
 export class BillingInvoicesComponent implements OnInit {
   isLoading = false;
   invoices: BillingInvoiceSummary[] = [];
 
-  tableModel: TableModel<InvoiceRow> = {
-    entityName: 'Facturas',
-    tableConfig: {
-      pageSize: 10,
-      enableFiltering: true,
-      enableSorting: true,
-      showPagination: true,
-      showRowSelection: false,
-      showIndexColumn: false,
-      emptyMessage: 'No se encontraron facturas.',
-      trackByField: 'invoiceId',
-      showCreateButton: false
-    },
-    columns: [
-      { key: 'number', header: 'Número', columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'status', header: 'Estado', columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'total', header: 'Total', columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'issueDate', header: 'Emisión', columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'orderId', header: 'Orden', columnType: 'text', sortable: true, filterable: true, visible: true },
-      {
-        key: 'actions',
-        header: 'Acciones',
-        columnType: 'action',
-        visible: true,
-        actions: [
-          {
-            label: '',
-            icon: 'view',
-            tooltip: 'Ver detalle',
-            handler: row => this.onView(row)
-          }
-        ]
-      }
-    ],
-    data: []
-  };
+  get tableModel(): TableModel<InvoiceRow> {
+    return {
+      entityName: this.translate.instant('BILLING.INVOICES.TITLE'),
+      tableConfig: {
+        pageSize: 10,
+        enableFiltering: true,
+        enableSorting: true,
+        showPagination: true,
+        showRowSelection: false,
+        showIndexColumn: false,
+        emptyMessage: this.translate.instant('BILLING.INVOICES.EMPTY'),
+        trackByField: 'invoiceId',
+        showCreateButton: false
+      },
+      columns: [
+        { key: 'number', header: this.translate.instant('BILLING.INVOICES.HEADER_NUMBER'), columnType: 'text', sortable: true, filterable: true, visible: true },
+        { key: 'status', header: this.translate.instant('BILLING.INVOICES.HEADER_STATUS'), columnType: 'text', sortable: true, filterable: true, visible: true },
+        { key: 'total', header: this.translate.instant('BILLING.INVOICES.HEADER_TOTAL'), columnType: 'text', sortable: true, filterable: true, visible: true },
+        { key: 'issueDate', header: this.translate.instant('BILLING.INVOICES.HEADER_ISSUE_DATE'), columnType: 'text', sortable: true, filterable: true, visible: true },
+        { key: 'orderId', header: this.translate.instant('BILLING.INVOICES.HEADER_ORDER'), columnType: 'text', sortable: true, filterable: true, visible: true },
+        {
+          key: 'actions',
+          header: this.translate.instant('BILLING.INVOICES.HEADER_ACTIONS'),
+          columnType: 'action',
+          visible: true,
+          actions: [
+            {
+              label: '',
+              icon: 'view',
+              tooltip: this.translate.instant('BILLING.INVOICES.VIEW_DETAIL'),
+              handler: row => this.onView(row)
+            }
+          ]
+        }
+      ],
+      data: this._tableData
+    };
+  }
+
+  private _tableData: InvoiceRow[] = [];
 
   constructor(
     private billingService: BillingService,
     private alertService: AlertService,
-    private router: Router
+    private router: Router,
+    private translate: TranslateService
   ) {}
 
   ngOnInit(): void {
@@ -74,11 +81,11 @@ export class BillingInvoicesComponent implements OnInit {
       .subscribe({
         next: invoices => {
           this.invoices = Array.isArray(invoices) ? invoices : [];
-          this.tableModel = { ...this.tableModel, data: this.mapInvoicesToRows(this.invoices) };
+          this._tableData = this.mapInvoicesToRows(this.invoices);
         },
         error: err => {
-          const message = err instanceof Error ? err.message : 'No se pudieron cargar las facturas.';
-          this.alertService.showError(message, 'Error al cargar facturas');
+          const message = err instanceof Error ? err.message : this.translate.instant('BILLING.INVOICES.ERROR_LOAD');
+          this.alertService.showError(message, this.translate.instant('BILLING.INVOICES.ERROR_LOAD_TITLE'));
         }
       });
   }
@@ -108,11 +115,11 @@ export class BillingInvoicesComponent implements OnInit {
       return '—';
     }
     const map: Record<string, string> = {
-      issued: 'Emitida',
-      paid: 'Pagada',
-      void: 'Anulada',
-      canceled: 'Anulada',
-      cancelled: 'Anulada'
+      issued: this.translate.instant('BILLING.INVOICES.STATUS_ISSUED'),
+      paid: this.translate.instant('BILLING.INVOICES.STATUS_PAID'),
+      void: this.translate.instant('BILLING.INVOICES.STATUS_VOID'),
+      canceled: this.translate.instant('BILLING.INVOICES.STATUS_VOID'),
+      cancelled: this.translate.instant('BILLING.INVOICES.STATUS_VOID')
     };
     return map[normalized] ?? normalized;
   }

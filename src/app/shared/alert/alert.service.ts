@@ -1,21 +1,24 @@
 // src/app/shared/alert/alert.service.ts
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
 import Swal, { SweetAlertIcon } from 'sweetalert2';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AlertService {
-  showSuccess(message: string, title: string = '¡Bien hecho!') {
-    this.showAlert('success', title, message);
+  private translate = inject(TranslateService);
+
+  showSuccess(message: string, title?: string) {
+    this.showAlert('success', title ?? this.translate.instant('ALERTS.SUCCESS_TITLE'), message);
   }
 
-  showError(message: string, title: string = '¡Error!') {
-    this.showAlert('error', title, message);
+  showError(message: string, title?: string) {
+    this.showAlert('error', title ?? this.translate.instant('ALERTS.ERROR_TITLE'), message);
   }
 
-  showInfo(message: string, title: string = 'Información') {
-    this.showAlert('info', title, message);
+  showInfo(message: string, title?: string) {
+    this.showAlert('info', title ?? this.translate.instant('ALERTS.INFO_TITLE'), message);
   }
 
   private showAlert(icon: SweetAlertIcon, title: string, text: string) {

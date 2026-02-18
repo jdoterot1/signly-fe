@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { TranslateModule } from '@ngx-translate/core';
 
 import { GuideStep } from '../../services/guide-flow/guide-flow.service';
 
 @Component({
   selector: 'app-guide-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslateModule],
   templateUrl: './guide-modal.component.html'
 })
 export class GuideModalComponent {

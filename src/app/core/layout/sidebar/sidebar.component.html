@@ -29,7 +29,7 @@
     <button
       (click)="toggle()"
       class="rounded-full h-8 w-8 shrink-0 grid place-content-center text-brand-muted transition hover:bg-brand-surface-raised hover:text-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
-      aria-label="Contraer o expandir menú"
+      [attr.aria-label]="'SIDEBAR.COLLAPSE_MENU' | translate"
     >
       <svg
         *ngIf="!isCollapsed"
@@ -58,7 +58,7 @@
 
     <div class="space-y-1">
       <p *ngIf="!isCollapsed" class="px-3 text-[10px] uppercase tracking-[0.14em] text-brand-muted-light font-semibold">
-        Inicio
+        {{ 'SIDEBAR.HOME' | translate }}
       </p>
       <a
         *ngFor="let item of mainSingles"
@@ -90,13 +90,13 @@
           <img [src]="item.icon" [alt]="item.label" class="h-5 w-5 opacity-70 group-hover:opacity-100 transition-opacity" />
         </span>
 
-        <span *ngIf="!isCollapsed" class="truncate">{{ item.label }}</span>
+        <span *ngIf="!isCollapsed" class="truncate">{{ item.label | translate }}</span>
       </a>
     </div>
 
     <div class="space-y-4">
       <p *ngIf="!isCollapsed" class="px-3 text-[10px] uppercase tracking-[0.14em] text-brand-muted-light font-semibold">
-        Navegación Principal
+        {{ 'SIDEBAR.MAIN_NAV' | translate }}
       </p>
 
       <div *ngFor="let group of mainGroups" class="rounded-lg">
@@ -128,7 +128,7 @@
             <img [src]="group.icon" [alt]="group.label" class="h-5 w-5 opacity-70 group-hover:opacity-100 transition-opacity" />
           </span>
 
-          <span *ngIf="!isCollapsed" class="flex-1 truncate text-left">{{ group.label }}</span>
+          <span *ngIf="!isCollapsed" class="flex-1 truncate text-left">{{ group.label | translate }}</span>
           <svg
             *ngIf="!isCollapsed"
             class="h-4 w-4 text-brand-muted-light transition-transform duration-300 shrink-0"
@@ -162,7 +162,7 @@
             <span class="flex h-5 w-5 shrink-0 items-center justify-center mr-2">
               <img [src]="item.icon" [alt]="item.label" class="h-4 w-4 opacity-70" />
             </span>
-            <span class="truncate">{{ item.label }}</span>
+            <span class="truncate">{{ item.label | translate }}</span>
           </a>
         </div>
       </div>
@@ -170,7 +170,7 @@
 
     <div class="space-y-4 pt-4 border-t border-brand-subtle">
       <p *ngIf="!isCollapsed" class="px-3 text-[10px] uppercase tracking-[0.14em] text-brand-muted-light font-semibold">
-        Sistema y Preferencias
+        {{ 'SIDEBAR.SYSTEM_PREFERENCES' | translate }}
       </p>
 
       <div *ngFor="let group of secondaryGroups" class="rounded-lg">
@@ -200,7 +200,7 @@
           >
             <img [src]="group.icon" [alt]="group.label" class="h-5 w-5 opacity-70 group-hover:opacity-100 transition-opacity" />
           </span>
-          <span *ngIf="!isCollapsed" class="flex-1 truncate text-left">{{ group.label }}</span>
+          <span *ngIf="!isCollapsed" class="flex-1 truncate text-left">{{ group.label | translate }}</span>
           <svg
             *ngIf="!isCollapsed"
             class="h-4 w-4 text-brand-muted-light transition-transform duration-300 shrink-0"
@@ -233,7 +233,7 @@
             <span class="flex h-5 w-5 shrink-0 items-center justify-center mr-2">
               <img [src]="item.icon" [alt]="item.label" class="h-4 w-4 opacity-70" />
             </span>
-            <span class="truncate">{{ item.label }}</span>
+            <span class="truncate">{{ item.label | translate }}</span>
           </a>
         </div>
       </div>
@@ -250,7 +250,7 @@
         'gap-3': !isCollapsed,
         'justify-center w-full': isCollapsed
       }"
-      [attr.title]="isCollapsed ? 'Cerrar sesión' : null"
+      [attr.title]="isCollapsed ? ('SIDEBAR.LOGOUT' | translate) : null"
     >
       <span
         class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-surface-card border border-rose-200 text-rose-600 shadow-sm"
@@ -260,8 +260,8 @@
       </span>
 
       <span *ngIf="!isCollapsed" class="truncate flex-1 text-left">
-        <span *ngIf="!isLoggingOut">Cerrar sesión</span>
-        <span *ngIf="isLoggingOut">Cerrando sesión...</span>
+        <span *ngIf="!isLoggingOut">{{ 'SIDEBAR.LOGOUT' | translate }}</span>
+        <span *ngIf="isLoggingOut">{{ 'SIDEBAR.LOGGING_OUT' | translate }}</span>
       </span>
     </button>
   </div>

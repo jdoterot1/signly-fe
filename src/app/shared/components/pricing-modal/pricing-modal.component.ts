@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -8,6 +8,8 @@ import { PricingService } from '../../../core/services/pricing/pricing.service';
 import { BillingService } from '../../../core/services/billing/billing.service';
 import { PricingMeter, PricingTier } from '../../../core/models/pricing/pricing.model';
 import { AlertService } from '../../alert/alert.service';
+import { WalletService } from '../../../core/services/wallet/wallet.service';
+import { WalletInfo } from '../../../core/models/wallet/wallet.model';
 
 @Component({
   selector: 'app-pricing-modal',
@@ -17,8 +19,10 @@ import { AlertService } from '../../alert/alert.service';
 })
 export class PricingModalComponent implements OnInit {
   @Output() closed = new EventEmitter<void>();
+  @Input() initialMeters: PricingMeter[] | null = null;
+  @Input() initialWallet: WalletInfo | null = null;
 
-  viewMode: 'credits' | 'ondemand' = 'credits';
+  viewMode: 'credits' | 'ondemand' | 'balance' = 'credits';
 
   region = 'CO';
   currency = 'COP';
@@ -34,15 +38,31 @@ export class PricingModalComponent implements OnInit {
 
   isLoading = false;
   isProcessingPayment = false;
+  isLoadingWallet = false;
+  walletError: string | null = null;
+  walletInfo: WalletInfo | null = null;
 
   constructor(
     private pricingService: PricingService,
     private billingService: BillingService,
-    private alertService: AlertService
+    private alertService: AlertService,
+    private walletService: WalletService
   ) {}
 
   ngOnInit(): void {
-    this.loadMeters();
+    if (this.initialMeters !== null) {
+      this.meters = Array.isArray(this.initialMeters) ? this.initialMeters : [];
+      this.hydrateMeters();
+      this.hydrateCreditsBounds();
+    } else {
+      this.loadMeters();
+    }
+
+    if (this.initialWallet !== null) {
+      this.walletInfo = this.initialWallet;
+    } else {
+      this.loadWallet();
+    }
   }
 
   closeModal(): void {
@@ -91,8 +111,25 @@ export class PricingModalComponent implements OnInit {
       });
   }
 
-  setViewMode(mode: 'credits' | 'ondemand'): void {
+  setViewMode(mode: 'credits' | 'ondemand' | 'balance'): void {
     this.viewMode = mode;
+  }
+
+  loadWallet(): void {
+    this.isLoadingWallet = true;
+    this.walletError = null;
+    this.walletService
+      .getWallet()
+      .pipe(finalize(() => (this.isLoadingWallet = false)))
+      .subscribe({
+        next: wallet => {
+          this.walletInfo = wallet;
+        },
+        error: err => {
+          this.walletInfo = null;
+          this.walletError = err instanceof Error ? err.message : 'No se pudo cargar el saldo.';
+        }
+      });
   }
 
   loadMeters(): void {

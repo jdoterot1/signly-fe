@@ -2,11 +2,13 @@
 
 export type DocumentLanguage = 'Español' | 'Inglés' | string;
 export type DocumentStatus =
-  | 'Pendiente'
-  | 'En Proceso'
-  | 'Completado'
-  | 'Cancelada'
-  | 'Fallida'
+  | 'PENDING'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'CREATED'
+  | 'CANCELLED'
+  | 'FAILED'
+  | 'UNKNOWN'
   | string;
 
 export type DocumentOrderMode = 'SEQUENTIAL' | 'PARALLEL' | string;
@@ -16,13 +18,6 @@ export type DocumentSignatureMode =
   | 'SIGNATURE_WHATSAPP'
   | 'SIGNATURE_BIOMETRIC'
   | 'SIGNATURE_BIOMETRIC_PLUS'
-  | string;
-export type DocumentApiStatus =
-  | 'CREATED'
-  | 'IN_PROGRESS'
-  | 'COMPLETED'
-  | 'CANCELLED'
-  | 'EXPIRED'
   | string;
 
 export interface DocumentParticipantIdentity {
@@ -58,7 +53,7 @@ export interface DocumentApi {
   orderMode?: DocumentOrderMode;
   participants?: DocumentParticipant[];
   startAt?: string | null;
-  status: DocumentApiStatus;
+  status: DocumentStatus;
   tags?: string[];
   templateId: string;
   templateVersion?: string;
@@ -120,7 +115,6 @@ export interface Document {
   /** Idioma del documento */
   language: DocumentLanguage;
 
-  /** status actual (Pendiente, En Proceso, Completado…) */
   status: DocumentStatus;
 
   /** Auditoría */

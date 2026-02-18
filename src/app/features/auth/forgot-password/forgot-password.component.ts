@@ -5,12 +5,13 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { RouterModule, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
+import { TranslateModule } from '@ngx-translate/core';
 import { AuthService } from '../../../core/services/auth/auth.service';
 
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, HttpClientModule, TranslateModule],
   templateUrl: './forgot-password.component.html',
   styleUrls: []
 })
@@ -25,7 +26,7 @@ export class ForgotPasswordComponent implements OnInit {
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.forgotForm = this.fb.group({
@@ -55,7 +56,7 @@ export class ForgotPasswordComponent implements OnInit {
         this.router.navigate(['/otp'], { state: { email } });
       },
       error: (err) => {
-        this.errorMessage = err.message || 'Error al procesar la solicitud';
+        this.errorMessage = err.message || 'AUTH.FORGOT_PASSWORD.ERROR_DEFAULT';
         this.loading = false;
       }
     });

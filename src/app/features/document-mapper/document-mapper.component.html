@@ -1,4 +1,4 @@
-<section class="h-[calc(100vh-6rem)] bg-brand-surface flex flex-col">
+<section class="h-[calc(100vh-6rem)] bg-brand-surface flex flex-col overflow-hidden">
   <header class="flex items-center justify-between px-6 py-3 bg-white border-b border-slate-200 shadow-sm">
     <div class="flex items-center gap-3">
       <div
@@ -65,7 +65,7 @@
     </div>
   </header>
 
-  <div class="flex-1 flex overflow-hidden px-4 pb-4 pt-3 gap-4">
+  <div class="flex-1 min-h-0 flex overflow-hidden px-4 pb-4 pt-3 gap-4">
     <aside
       class="bg-white rounded-3xl shadow-md flex flex-col w-72 shrink-0 p-4 border border-slate-100 overflow-hidden"
     >
@@ -323,39 +323,46 @@
         </button>
       </div>
 
-      <div class="flex-1 overflow-y-auto pr-1 custom-scroll space-y-4 mt-4">
-        <div *ngIf="mappedFields.length === 0" class="text-xs text-gray-400">
-          Arrastra un componente para empezar a configurar campos.
-        </div>
-
-        <div class="space-y-2" *ngIf="mappedFields.length > 0">
-          <button
-            *ngFor="let field of mappedFields"
-            type="button"
-            class="w-full text-left px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-brand-surface-raised hover:border-brand shadow-[0_1px_0_#edeef2] transition"
-            [class.border-brand-primary]="field.id === selectedFieldId"
-            [class.bg-brand-surface-raised]="field.id === selectedFieldId"
-            (click)="selectField(field.id)"
-          >
-            <div class="flex items-center justify-between gap-2">
-              <div class="min-w-0">
-                <p class="text-sm font-semibold text-gray-900 truncate">
-                  {{ field.label || 'Campo sin nombre' }}
-                </p>
-                <p class="text-[11px] text-gray-500 truncate">
-                  {{ field.name }}
-                </p>
-              </div>
-              <span class="text-[10px] uppercase tracking-wide text-gray-400">
-                {{ field.type }}
-              </span>
+      <div class="mt-4 flex-1 min-h-0 flex flex-col gap-3">
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-3 flex-1 min-h-0 flex flex-col">
+          <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold mb-2">
+            Lista de campos
+          </p>
+          <div class="flex-1 min-h-0 overflow-y-auto pr-1 custom-scroll space-y-2">
+            <div *ngIf="mappedFields.length === 0" class="text-xs text-gray-400">
+              Arrastra un componente para empezar a configurar campos.
             </div>
-          </button>
+
+            <div class="space-y-2" *ngIf="mappedFields.length > 0">
+              <button
+                *ngFor="let field of mappedFields"
+                type="button"
+                class="w-full text-left px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-brand-surface-raised hover:border-brand shadow-[0_1px_0_#edeef2] transition"
+                [class.border-brand-primary]="field.id === selectedFieldId"
+                [class.bg-brand-surface-raised]="field.id === selectedFieldId"
+                (click)="selectField(field.id)"
+              >
+                <div class="flex items-center justify-between gap-2">
+                  <div class="min-w-0">
+                    <p class="text-sm font-semibold text-gray-900 truncate">
+                      {{ field.label || 'Campo sin nombre' }}
+                    </p>
+                    <p class="text-[11px] text-gray-500 truncate">
+                      {{ field.name }}
+                    </p>
+                  </div>
+                  <span class="text-[10px] uppercase tracking-wide text-gray-400">
+                    {{ field.type }}
+                  </span>
+                </div>
+              </button>
+            </div>
+          </div>
         </div>
 
         <div
           *ngIf="selectedField"
-          class="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm space-y-3"
+          class="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm flex-1 min-h-0 flex flex-col"
         >
           <div class="flex items-center justify-between">
             <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">
@@ -370,7 +377,7 @@
             </button>
           </div>
 
-          <div *ngIf="isConfigOpen" class="space-y-3">
+          <div *ngIf="isConfigOpen" class="mt-3 flex-1 min-h-0 overflow-y-auto pr-1 custom-scroll space-y-3">
             <div>
               <label class="text-[11px] uppercase text-gray-400 font-semibold">
                 Nombre visible

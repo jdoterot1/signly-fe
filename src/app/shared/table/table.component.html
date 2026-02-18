@@ -4,7 +4,7 @@
 >
   <!-- HEADER: título, filtros, búsqueda y sort -->
   <div class="flex justify-between items-center mb-4">
-    <h2 class="text-2xl font-bold">{{ model.entityName }}</h2>
+    <h2 class="text-2xl font-bold">{{ model.entityName | translate }}</h2>
     <div class="flex space-x-3">
       <!-- Toggle fila de filtros -->
       <button
@@ -30,7 +30,7 @@
         />
         <input
           type="text"
-          placeholder="Buscar"
+          [placeholder]="'TABLE.SEARCH_PLACEHOLDER' | translate"
           [(ngModel)]="searchTerm"
           (ngModelChange)="onSearchTermChange()"
           class="bg-brand-surface placeholder-brand-muted-light text-sm rounded-full pl-10 pr-3 py-2 focus:outline-none"
@@ -42,7 +42,8 @@
         class="flex items-center bg-brand-surface rounded-full px-4 py-2 cursor-pointer select-none"
       >
         <span class="text-sm text-gray-700">
-          Ordenar por: <span class="font-bold">{{ sortLabel }}</span>
+          {{ "TABLE.SORT_BY" | translate }}:
+          <span class="font-bold">{{ sortLabel | translate }}</span>
         </span>
         <img
           src="assets/icons/tables/ChevronDown.svg"
@@ -56,7 +57,7 @@
         (click)="onCreate()"
         class="bg-brand-primary text-white px-4 py-2 rounded hover:bg-brand-primary-hover"
       >
-        Crear
+        {{ "TABLE.CREATE" | translate }}
       </button>
     </div>
   </div>
@@ -81,7 +82,7 @@
               class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer select-none"
             >
               <div class="inline-flex items-center space-x-1">
-                <span>{{ col.header }}</span>
+                <span>{{ col.header | translate }}</span>
                 <img
                   *ngIf="col.sortable"
                   src="assets/icons/tables/ChevronDown.svg"
@@ -115,7 +116,15 @@
                   class="inline-flex justify-center items-center w-24 px-2 py-1 rounded-full text-sm font-medium"
                   [ngClass]="statusClasses[getCellValue(row, col.key)]"
                 >
-                  {{ getCellValue(row, col.key) }}
+                  <ng-container
+                    *ngIf="col.statusTranslationPrefix; else normalCell"
+                  >
+                    {{
+                      col.statusTranslationPrefix +
+                        "." +
+                        getCellValue(row, col.key) | translate
+                    }}
+                  </ng-container>
                 </span>
               </ng-container>
               <ng-template #normalCell>
@@ -129,7 +138,7 @@
                           type="button"
                           class="p-0 bg-transparent border-none cursor-pointer"
                           (click)="onActionClick(action, row, $event)"
-                          [title]="action.tooltip"
+                          [title]="action.tooltip | translate"
                         >
                           <app-icon
                             [name]="action.icon"
@@ -173,7 +182,12 @@
                       </span>
                     </ng-container>
                     <ng-template #defaultCell>
-                      {{ getCellValue(row, col.key) }}
+                      <ng-container *ngIf="col.translate; else plainText">
+                        {{ getCellValue(row, col.key) | translate }}
+                      </ng-container>
+                      <ng-template #plainText>
+                        {{ getCellValue(row, col.key) }}
+                      </ng-template>
                     </ng-template>
                   </ng-container>
                 </ng-container>
@@ -188,7 +202,7 @@
             "
             class="px-4 py-4 text-center text-gray-500"
           >
-            {{ config.emptyMessage || "No hay datos para mostrar" }}
+            {{ "TABLE.NO_DATA" | translate }}
           </td>
         </tr>
       </tbody>
@@ -198,17 +212,19 @@
   <!-- PAGINACIÓN -->
   <div class="flex items-center justify-between mt-4 text-sm">
     <div class="text-brand-muted-light">
-      Showing
-      <strong>{{ (state.data.currentPage - 1) * config.pageSize + 1 }}</strong>
-      to
-      <strong>{{
-        (state.data.currentPage - 1) * config.pageSize +
-          state.data.filteredData.length
-      }}</strong>
-      of
-      <strong>{{ state.data.totalItems }}</strong>
-      entries
+      {{
+        "TABLE.PAGINATION"
+          | translate
+            : {
+                from: (state.data.currentPage - 1) * config.pageSize + 1,
+                to:
+                  (state.data.currentPage - 1) * config.pageSize +
+                  state.data.filteredData.length,
+                total: state.data.totalItems,
+              }
+      }}
     </div>
+
     <div class="inline-flex items-center">
       <img
         src="assets/icons/tables/MoveLeft.svg"

@@ -3,11 +3,13 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { TableColumn } from './table.model';
+import { TranslateModule } from '@ngx-translate/core';
+
 
 @Component({
   selector: 'app-table-filters-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule,TranslateModule],
   templateUrl: './table-filters-modal.component.html'
 })
 export class TableFiltersModalComponent {

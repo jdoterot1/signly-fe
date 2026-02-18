@@ -256,30 +256,7 @@ export class DocumentService {
   }
 
   private mapStatus(status?: string): DocumentStatus {
-    if (!status) {
-      return 'N/A';
-    }
-    const normalized = status.toUpperCase();
-    switch (normalized) {
-      case 'CREATED':
-      case 'PENDING':
-      case 'DRAFT':
-        return 'Creado';
-      case 'IN_PROGRESS':
-      case 'IN_PROGRESS_SIGNING':
-      case 'STARTED':
-        return 'En proceso';
-      case 'COMPLETED':
-      case 'SIGNED':
-      case 'FINISHED':
-        return 'Completado';
-      case 'CANCELLED':
-      case 'CANCELED':
-        return 'Cancelado';
-      case 'EXPIRED':
-        return 'Expirado';
-      default:
-        return normalized;
-    }
-  }
+  return (status?.toUpperCase() ?? 'UNKNOWN') as DocumentStatus;
+}
+
 }

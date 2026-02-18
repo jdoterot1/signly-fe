@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+
 import { WalletService } from '../../core/services/wallet/wallet.service';
 import { LedgerEntry, WalletInfo } from '../../core/models/wallet/wallet.model';
 import { TableComponent } from '../../shared/table/table.component';
@@ -19,7 +21,7 @@ interface LedgerRow {
 @Component({
   selector: 'app-wallet',
   standalone: true,
-  imports: [CommonModule, TableComponent],
+  imports: [CommonModule, TableComponent, TranslateModule],
   templateUrl: './wallet.component.html'
 })
 export class WalletComponent implements OnInit {
@@ -29,29 +31,36 @@ export class WalletComponent implements OnInit {
   loadingInfo = false;
   loadingLedger = false;
 
-  ledgerTable: TableModel<LedgerRow> = {
-    entityName: 'Movimientos',
-    tableConfig: {
-      pageSize: 10,
-      enableFiltering: true,
-      enableSorting: true,
-      showPagination: true,
-      showRowSelection: false,
-      emptyMessage: 'No hay movimientos registrados.',
-      trackByField: 'id'
-    },
-    columns: [
-      { key: 'entryType', header: 'Tipo', columnType: 'text', visible: true, sortable: true, filterable: true },
-      { key: 'notes', header: 'Descripción', columnType: 'text', visible: true, sortable: true, filterable: true },
-      { key: 'credits', header: 'Créditos', columnType: 'text', visible: true, sortable: true, filterable: true },
-      { key: 'balanceAfter', header: 'Saldo luego', columnType: 'text', visible: true, sortable: true },
-      { key: 'source', header: 'Origen', columnType: 'text', visible: true, sortable: true, filterable: true },
-      { key: 'occurredAt', header: 'Fecha', columnType: 'text', visible: true, sortable: true }
-    ],
-    data: []
-  };
+  get ledgerTable(): TableModel<LedgerRow> {
+    return {
+      entityName: this.translate.instant('WALLET.MOVEMENTS'),
+      tableConfig: {
+        pageSize: 10,
+        enableFiltering: true,
+        enableSorting: true,
+        showPagination: true,
+        showRowSelection: false,
+        emptyMessage: this.translate.instant('WALLET.EMPTY_MOVEMENTS'),
+        trackByField: 'id'
+      },
+      columns: [
+        { key: 'entryType', header: this.translate.instant('WALLET.HEADER_TYPE'), columnType: 'text', visible: true, sortable: true, filterable: true },
+        { key: 'notes', header: this.translate.instant('WALLET.HEADER_DESCRIPTION'), columnType: 'text', visible: true, sortable: true, filterable: true },
+        { key: 'credits', header: this.translate.instant('WALLET.HEADER_CREDITS'), columnType: 'text', visible: true, sortable: true, filterable: true },
+        { key: 'balanceAfter', header: this.translate.instant('WALLET.HEADER_BALANCE_AFTER'), columnType: 'text', visible: true, sortable: true },
+        { key: 'source', header: this.translate.instant('WALLET.HEADER_SOURCE'), columnType: 'text', visible: true, sortable: true, filterable: true },
+        { key: 'occurredAt', header: this.translate.instant('WALLET.HEADER_DATE'), columnType: 'text', visible: true, sortable: true }
+      ],
+      data: this._tableData
+    };
+  }
 
-  constructor(private walletService: WalletService) {}
+  private _tableData: LedgerRow[] = [];
+
+  constructor(
+    private walletService: WalletService,
+    private translate: TranslateService
+  ) {}
 
   ngOnInit(): void {
     this.fetchWallet();
@@ -66,7 +75,7 @@ export class WalletComponent implements OnInit {
         this.loadingInfo = false;
       },
       error: err => {
-        this.infoError = err?.message || 'No pudimos obtener el saldo actual.';
+        this.infoError = err?.message || this.translate.instant('WALLET.ERROR_LOAD_BALANCE');
         this.loadingInfo = false;
       }
     });
@@ -76,11 +85,11 @@ export class WalletComponent implements OnInit {
     this.loadingLedger = true;
     this.walletService.getLedger().subscribe({
       next: entries => {
-        this.ledgerTable = { ...this.ledgerTable, data: this.mapLedger(entries) };
+        this._tableData = this.mapLedger(entries);
         this.loadingLedger = false;
       },
       error: err => {
-        this.ledgerError = err?.message || 'No pudimos obtener los movimientos.';
+        this.ledgerError = err?.message || this.translate.instant('WALLET.ERROR_LOAD_MOVEMENTS');
         this.loadingLedger = false;
       }
     });
@@ -99,7 +108,7 @@ export class WalletComponent implements OnInit {
   }
 
   formatCredits(value: number): string {
-    return `${value > 0 ? '+' : ''}${value} créditos`;
+    return `${value > 0 ? '+' : ''}${value} ${this.translate.instant('WALLET.CREDITS_FORMAT')}`;
   }
 
   formatDate(value: string): string {

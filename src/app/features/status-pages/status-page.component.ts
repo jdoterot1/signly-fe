@@ -440,7 +440,7 @@ export class StatusPageComponent {
       "404": {
         eyebrow: "Error 404",
         title: "No encontramos esta página",
-        description: "Puede que el enlace esté mal, la página se haya movido o ya no exista.",
+        description: "Puede que el enlace esté mal",
         tone: "info",
         primaryCtaLabel: "Ir al inicio",
         primaryCtaLink: "/home",

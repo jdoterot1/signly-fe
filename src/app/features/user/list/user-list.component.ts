@@ -2,6 +2,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationExtras } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { TableComponent } from '../../../shared/table/table.component';
 import { TableModel } from '../../../shared/table/table.model';
@@ -22,14 +23,14 @@ interface UserRow {
 @Component({
   selector: 'app-users-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, TableComponent],
+  imports: [CommonModule, RouterModule, FormsModule, TableComponent, TranslateModule],
   templateUrl: './user-list.component.html'
 })
 export class UsersListComponent implements OnInit {
   @Input() returnTo: string | null = null;
 
   tableModel: TableModel<UserRow> = {
-    entityName: 'Lista de Usuarios',
+    entityName: 'USERS.LIST_TITLE',
     tableConfig: {
       pageSize: 10,
       enableFiltering: true,
@@ -37,36 +38,36 @@ export class UsersListComponent implements OnInit {
       showPagination: true,
       showRowSelection: false,
       showIndexColumn: false,
-      emptyMessage: 'No se encontraron usuarios.',
+      emptyMessage: 'USERS.EMPTY',
       trackByField: 'sub'
     },
     columns: [
-      { key: 'name',   header: 'Nombre',  columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'email',  header: 'Correo',  columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'enabled', header: 'Habilitado', columnType: 'text', sortable: true, filterable: true, visible: true },
-      { key: 'status', header: 'Estado',  columnType: 'text', sortable: true, filterable: true, visible: true },
+      { key: 'name', header: 'USERS.NAME', columnType: 'text', sortable: true, filterable: true, visible: true },
+      { key: 'email', header: 'USERS.EMAIL', columnType: 'text', sortable: true, filterable: true, visible: true },
+      { key: 'enabled', header: 'USERS.ENABLED', columnType: 'text', sortable: true, filterable: true, visible: true },
+      { key: 'status', header: 'USERS.STATUS', columnType: 'text', sortable: true, filterable: true, visible: true },
       {
         key: 'actions',
-        header: 'Acciones',
+        header: 'USERS.ACTIONS',
         columnType: 'action',
         visible: true,
         actions: [
           {
             label: '',
             icon: 'view',
-            tooltip: 'Ver',
+            tooltip: 'USERS.VIEW',
             handler: row => this.onView(row)
           },
           {
             label: '',
             icon: 'edit',
-            tooltip: 'Editar',
+            tooltip: 'USERS.EDIT',
             handler: row => this.onEdit(row)
           },
           {
             label: '',
             icon: 'delete',
-            tooltip: 'Eliminar',
+            tooltip: 'USERS.DELETE',
             handler: row => this.onDelete(row)
           }
         ]
@@ -75,7 +76,12 @@ export class UsersListComponent implements OnInit {
     data: []
   };
 
-  constructor(private userService: UserService, private router: Router, private alertService: AlertService) {}
+  constructor(
+    private userService: UserService,
+    private router: Router,
+    private alertService: AlertService,
+    private translate: TranslateService
+  ) { }
 
   ngOnInit(): void {
     this.loadUsers();
@@ -110,7 +116,10 @@ export class UsersListComponent implements OnInit {
 
   onView(row: UserRow): void {
     if (!row.sub) {
-      this.alertService.showError('No se pudo determinar el identificador del usuario.', 'Error');
+      this.alertService.showError(
+        this.translate.instant('USERS.ERROR_NO_ID'),
+        this.translate.instant('ALERTS.ERROR_TITLE')
+      );
       return;
     }
     this.router.navigate(['/users', row.sub, 'view'], this.navigationExtras());
@@ -118,7 +127,10 @@ export class UsersListComponent implements OnInit {
 
   onEdit(row: UserRow): void {
     if (!row.sub) {
-      this.alertService.showError('No se pudo determinar el identificador del usuario.', 'Error');
+      this.alertService.showError(
+        this.translate.instant('USERS.ERROR_NO_ID'),
+        this.translate.instant('ALERTS.ERROR_TITLE')
+      );
       return;
     }
     this.router.navigate(['/users', row.sub, 'update'], this.navigationExtras());
@@ -126,15 +138,22 @@ export class UsersListComponent implements OnInit {
 
 
   onDelete(row: UserRow): void {
-    if (confirm(`¿Seguro que deseas eliminar al usuario "${row.name}"?`)) {
+    const message = this.translate.instant('USERS.CONFIRM_DELETE', { name: row.name });
+    if (confirm(message)) {
       this.userService.deleteUser(row.sub)
         .subscribe({
           next: () => {
-            this.alertService.showSuccess('El usuario fue eliminado correctamente.', 'Usuario eliminado');
+            this.alertService.showSuccess(
+              this.translate.instant('USERS.DELETE_SUCCESS'),
+              this.translate.instant('USERS.DELETE_SUCCESS_TITLE')
+            );
             this.loadUsers();
           },
-          error: err => {
-            this.alertService.showError('No se pudo eliminar el usuario.', 'Error');
+          error: (err: any) => {
+            this.alertService.showError(
+              this.translate.instant('USERS.ERROR_DELETE'),
+              this.translate.instant('ALERTS.ERROR_TITLE')
+            );
             console.error('Error al eliminar usuario', err);
           }
         });
