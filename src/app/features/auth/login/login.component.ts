@@ -1,6 +1,6 @@
 // src/app/features/auth/login/login.component.ts
 
-import { Component, OnInit } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -8,7 +8,7 @@ import {
   ReactiveFormsModule
 } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -34,7 +34,8 @@ export class LoginComponent implements OnInit {
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private translate: TranslateService
+    private translate: TranslateService,
+    @Inject(DOCUMENT) private document: Document
   ) {}
 
   ngOnInit(): void {
@@ -98,6 +99,8 @@ export class LoginComponent implements OnInit {
   }
 
   goToRegister(): void {
-    this.router.navigate(['/register']);
+    this.router.navigateByUrl('/register').catch(() => {
+      this.document.defaultView?.location.assign('/register');
+    });
   }
 }

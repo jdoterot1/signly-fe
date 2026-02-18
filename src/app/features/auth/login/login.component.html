@@ -109,7 +109,12 @@
               {{ 'AUTH.LOGIN.FORGOT_PASSWORD' | translate }}
             </button>
             <div class="flex items-center gap-2 text-gray-500 text-base">
-              <button type="button" (click)="goToRegister()" class="font-semibold text-blue-600 hover:text-blue-500">
+              <button
+                type="button"
+                [routerLink]="['/register']"
+                (click)="goToRegister()"
+                class="font-semibold text-blue-600 hover:text-blue-500"
+              >
                 {{ 'AUTH.LOGIN.CREATE_ACCOUNT' | translate }}
               </button>
             </div>

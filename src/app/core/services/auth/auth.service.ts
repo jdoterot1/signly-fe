@@ -14,22 +14,27 @@ import {
   RefreshTokenPayload
 } from '../../models/auth/auth-session.model';
 
-export interface RegistrationRequest {
-  user: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    password: string;
-    locale?: string;
-    timezone?: string;
-  };
+export interface RegisterRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  password: string;
+  locale?: string;
+  timezone?: string;
+}
+
+export interface RegisterConfirmRequest {
+  email: string;
+  code: string;
   company: {
     displayName: string;
     legalName: string;
     industry: string;
     country: string;
     city: string;
+    website?: string;
+    subdomain: string;
     size: number;
     billingEmail: string;
     about?: string;
@@ -46,6 +51,8 @@ export interface RegistrationRequest {
     referralCode?: string | null;
   };
 }
+
+export type PendingRegisterConfirmRequest = Omit<RegisterConfirmRequest, 'code'>;
 
 interface PasswordSuccessPayload {
   status: string;
@@ -73,6 +80,8 @@ export class AuthService {
   private recoveryEmail: string | null = null;
   private recoveryOtp: string | null = null;
   private passwordChallenge: PasswordChallenge | null = null;
+  private pendingRegisterRequest: RegisterRequest | null = null;
+  private pendingRegisterConfirmRequest: PendingRegisterConfirmRequest | null = null;
 
   constructor(private http: HttpClient, @Inject(DOCUMENT) private document: Document) {
     this.session = this.loadSession();
@@ -89,11 +98,71 @@ export class AuthService {
       );
   }
 
-  register(payload: RegistrationRequest): Observable<ApiResponse<unknown>> {
+  register(payload: RegisterRequest): Observable<ApiResponse<unknown>> {
     const url = `${this.baseUrl}/auth/register`;
     return this.http
       .post<ApiResponse<unknown>>(url, payload)
       .pipe(catchError(err => this.handleError(err)));
+  }
+
+  confirmRegister(payload: RegisterConfirmRequest): Observable<ApiResponse<unknown>> {
+    const url = `${this.baseUrl}/auth/register/confirm`;
+    return this.http
+      .post<ApiResponse<unknown>>(url, payload)
+      .pipe(catchError(err => this.handleError(err)));
+  }
+
+  setPendingRegistration(
+    registerRequest: RegisterRequest,
+    confirmRequest: PendingRegisterConfirmRequest
+  ): void {
+    this.pendingRegisterRequest = {
+      ...registerRequest
+    };
+    this.pendingRegisterConfirmRequest = {
+      ...confirmRequest,
+      company: {
+        ...confirmRequest.company
+      },
+      security: {
+        ...confirmRequest.security
+      },
+      consents: {
+        ...confirmRequest.consents
+      },
+      metadata: confirmRequest.metadata ? { ...confirmRequest.metadata } : undefined
+    };
+  }
+
+  getPendingRegisterRequest(): RegisterRequest | null {
+    return this.pendingRegisterRequest ? { ...this.pendingRegisterRequest } : null;
+  }
+
+  getPendingRegisterConfirmRequest(): PendingRegisterConfirmRequest | null {
+    if (!this.pendingRegisterConfirmRequest) {
+      return null;
+    }
+
+    return {
+      ...this.pendingRegisterConfirmRequest,
+      company: {
+        ...this.pendingRegisterConfirmRequest.company
+      },
+      security: {
+        ...this.pendingRegisterConfirmRequest.security
+      },
+      consents: {
+        ...this.pendingRegisterConfirmRequest.consents
+      },
+      metadata: this.pendingRegisterConfirmRequest.metadata
+        ? { ...this.pendingRegisterConfirmRequest.metadata }
+        : undefined
+    };
+  }
+
+  clearPendingRegistration(): void {
+    this.pendingRegisterRequest = null;
+    this.pendingRegisterConfirmRequest = null;
   }
 
   logout(): Observable<void> {
@@ -340,6 +409,7 @@ export class AuthService {
     this.clearRecoveryEmail();
     this.clearRecoveryOtp();
     this.clearPasswordChallenge();
+    this.clearPendingRegistration();
   }
 
   private setCookie(key: string, value: string, ttlSeconds?: number): void {
