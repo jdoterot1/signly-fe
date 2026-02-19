@@ -4,47 +4,51 @@
     [primaryLabel]="'DASHBOARD.GUIDE_PRIMARY' | translate" [secondaryLabel]="'DASHBOARD.GUIDE_SECONDARY' | translate"
     (primary)="beginGuideFlow()" (closed)="closeGuideModal()"></app-guide-modal>
 
+  <!-- Hero Section -->
   <section class="bg-brand-accent text-white">
-    <div class="max-w-6xl mx-auto px-6 lg:px-10 py-10">
-      <div class="flex flex-col md:flex-row items-center md:items-center justify-between gap-6">
-        <div class="flex items-center gap-4 text-white">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <!-- User Welcome -->
+        <div class="flex items-center gap-3 sm:gap-4 text-white">
           <div
-            class="w-12 h-12 rounded-full bg-white text-brand-accent flex items-center justify-center text-2xl font-semibold shadow">
+            class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white text-brand-accent flex items-center justify-center text-xl sm:text-2xl font-semibold shadow">
             {{ getInitials() }}
           </div>
           <div>
-            <h1 class="text-3xl font-semibold">{{ 'DASHBOARD.WELCOME' | translate }}</h1>
+            <h1 class="text-2xl sm:text-3xl font-semibold">{{ 'DASHBOARD.WELCOME' | translate }}</h1>
             <p class="text-sm text-white/80 tracking-wide">{{ displayName }}</p>
           </div>
         </div>
 
+        <!-- Onboarding Guide -->
         <div *ngIf="shouldShowGuideSection" class="w-full md:max-w-xl md:ml-auto">
           <p class="text-xs uppercase tracking-[0.3em] text-white/70 mb-2">{{ 'DASHBOARD.FIRST_STEPS' | translate }}</p>
-          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div class="text-left">
-              <h3 class="text-xl font-semibold text-white">{{ 'DASHBOARD.ONBOARDING_TITLE' | translate }}</h3>
+              <h3 class="text-lg sm:text-xl font-semibold text-white">{{ 'DASHBOARD.ONBOARDING_TITLE' | translate }}</h3>
               <p class="text-sm text-white/80 mt-1">{{ 'DASHBOARD.PROGRESS' | translate: {current: completedSteps,
                 total: onboardingProgress.total} }}</p>
             </div>
             <button type="button"
-              class="inline-flex items-center justify-center px-4 py-2 bg-white text-brand-accent rounded-full text-sm font-semibold hover:bg-blue-50 transition"
+              class="inline-flex items-center justify-center px-4 py-2 bg-white text-brand-accent rounded-full text-sm font-semibold hover:bg-blue-50 transition whitespace-nowrap"
               (click)="startGuide()">
               {{ 'DASHBOARD.GUIDE_ME' | translate }}
             </button>
           </div>
           <div class="mt-3 h-2 rounded-full bg-white/20">
-            <div class="h-full rounded-full bg-white"
+            <div class="h-full rounded-full bg-white transition-all duration-300"
               [style.width]="(completedSteps / onboardingProgress.total) * 100 + '%'"></div>
           </div>
         </div>
 
+        <!-- Day Summary -->
         <div *ngIf="!shouldShowGuideSection" class="w-full md:max-w-xl md:ml-auto">
           <p class="text-xs uppercase tracking-[0.3em] text-white/70 mb-2">{{ 'DASHBOARD.DAY_SUMMARY' | translate }}</p>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-2 gap-2 sm:gap-3">
             <article *ngFor="let item of daySummaryItems"
-              class="rounded-xl bg-white/15 px-4 py-3 border border-white/20">
+              class="rounded-xl bg-white/15 px-3 sm:px-4 py-3 border border-white/20">
               <p class="text-xs text-white/80">{{ item.label | translate }}</p>
-              <p class="text-2xl font-semibold text-white mt-1">{{ item.value }}</p>
+              <p class="text-xl sm:text-2xl font-semibold text-white mt-1">{{ item.value }}</p>
             </article>
           </div>
         </div>
@@ -52,22 +56,25 @@
     </div>
   </section>
 
+  <!-- Main Content -->
   <section class="flex-1 bg-brand-surface">
-    <div class="max-w-7xl mx-auto px-6 lg:px-10 py-6 mt-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-6 mt-4 sm:mt-8">
+      <!-- Shortcuts Header -->
       <div class="mb-5">
-        <h2 class="text-2xl font-semibold text-brand-ink">{{ 'DASHBOARD.SHORTCUTS_TITLE' | translate }}</h2>
+        <h2 class="text-xl sm:text-2xl font-semibold text-brand-ink">{{ 'DASHBOARD.SHORTCUTS_TITLE' | translate }}</h2>
         <p class="text-sm text-brand-muted mt-1">
           {{ 'DASHBOARD.SHORTCUTS_DESC' | translate }}
         </p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Shortcuts Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <a *ngFor="let shortcut of homeShortcuts" [routerLink]="shortcut.path"
-          class="rounded-2xl border p-5 transition hover:shadow-md" [ngClass]="getShortcutCardClasses(shortcut.tone)">
+          class="rounded-2xl border p-4 sm:p-5 transition hover:shadow-md active:scale-[0.98]" [ngClass]="getShortcutCardClasses(shortcut.tone)">
           <div class="flex items-start justify-between gap-3">
-            <div>
+            <div class="flex-1 min-w-0">
               <h3 class="text-base font-semibold text-brand-ink">{{ shortcut.title | translate }}</h3>
-              <p class="text-sm text-brand-muted mt-2">{{ shortcut.description | translate }}</p>
+              <p class="text-sm text-brand-muted mt-2 line-clamp-2">{{ shortcut.description | translate }}</p>
             </div>
             <span
               class="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full bg-white/90 text-brand-accent">
@@ -79,10 +86,11 @@
         </a>
       </div>
 
-      <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <article *ngFor="let kpi of homeKpis" class="rounded-2xl border border-brand bg-brand-surface-card p-5">
+      <!-- KPI Cards -->
+      <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        <article *ngFor="let kpi of homeKpis" class="rounded-2xl border border-brand bg-brand-surface-card p-4 sm:p-5">
           <p class="text-xs uppercase tracking-[0.2em] text-brand-muted-light">{{ kpi.title | translate }}</p>
-          <p class="mt-2 text-3xl font-semibold text-brand-ink">{{ kpi.value }}</p>
+          <p class="mt-2 text-2xl sm:text-3xl font-semibold text-brand-ink">{{ kpi.value }}</p>
           <p class="mt-1 text-sm text-brand-muted">{{ kpi.helper | translate }}</p>
         </article>
       </div>

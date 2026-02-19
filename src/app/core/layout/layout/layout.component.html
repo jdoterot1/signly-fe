@@ -1,12 +1,18 @@
 <div class="min-h-screen flex flex-col bg-brand-surface text-brand-ink">
+  <!-- Fixed Header -->
   <header class="fixed top-0 left-0 right-0 z-40 shadow-sm bg-brand-surface-card">
     <app-header (pricingModalRequested)="openPricingModal()"></app-header>
   </header>
-  <main class="flex-1 overflow-x-hidden overflow-y-hidden pt-16 pb-8">
+
+  <!-- Main Content with proper spacing -->
+  <main class="flex-1 overflow-x-hidden pt-16 pb-20 sm:pb-16">
     <router-outlet></router-outlet>
   </main>
+
+  <!-- Fixed Footer -->
   <app-footer></app-footer>
 
+  <!-- Loading Overlay for Pricing Modal -->
   <div *ngIf="isPreparingPricingModal" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center px-4">
     <div class="bg-white rounded-2xl shadow-xl border border-gray-100 px-6 py-5 flex items-center gap-3">
       <span class="h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></span>
@@ -14,6 +20,7 @@
     </div>
   </div>
 
+  <!-- Pricing Modal -->
   <app-pricing-modal
     *ngIf="showPricingModal"
     [initialMeters]="prefetchedMeters"

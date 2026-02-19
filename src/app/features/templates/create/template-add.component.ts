@@ -12,7 +12,8 @@ import { AlertService } from '../../../shared/alert/alert.service';
 import {
   DocumentMappedField,
   DocumentMapperComponent,
-  DocumentPdfTextEdit
+  DocumentPdfTextEdit,
+  DocumentMapperValidationResult
 } from '../../document-mapper/document-mapper.component';
 import { GuideModalComponent } from '../../../shared/components/guide-modal/guide-modal.component';
 import { GuideFlowService, GuideStep, GuideStepKey } from '../../../shared/services/guide-flow/guide-flow.service';
@@ -191,6 +192,14 @@ export class TemplateCreateComponent {
     }
 
     const mappedFields = this.mapperComponent?.getMappedFields() ?? [];
+    const validations = this.mapperComponent?.validateMappedFields();
+    if (validations?.hasIssues) {
+      const shouldContinue = window.confirm(this.buildValidationConfirmMessage(validations));
+      if (!shouldContinue) {
+        this.isSaving = false;
+        return;
+      }
+    }
     const editedTextItems = this.mapperComponent?.getEditedPdfTextItems() ?? [];
     const fields = this.buildTemplateFields(mappedFields);
     let fileToUpload = file;
@@ -351,6 +360,26 @@ export class TemplateCreateComponent {
 
   private clamp(value: number, min: number, max: number): number {
     return Math.min(Math.max(value, min), max);
+  }
+
+  private buildValidationConfirmMessage(result: DocumentMapperValidationResult): string {
+    const lines: string[] = [
+      'Se detectaron advertencias en los campos:',
+      `- Fuera de página: ${result.summary.outOfBounds}`,
+      `- Superpuestos: ${result.summary.overlaps}`,
+      `- Nombres repetidos: ${result.summary.duplicateNames}`
+    ];
+
+    const firstIssues = result.issues.slice(0, 5).map(issue => `- ${issue.message}`);
+    if (firstIssues.length) {
+      lines.push('', 'Detalle:', ...firstIssues);
+      if (result.issues.length > firstIssues.length) {
+        lines.push(`- ... y ${result.issues.length - firstIssues.length} mas`);
+      }
+    }
+
+    lines.push('', '¿Deseas continuar y guardar de todas formas?');
+    return lines.join('\n');
   }
 
   private getNextVersionCode(): string {

@@ -98,7 +98,8 @@
     "PRIVACY": "Privacidad",
     "INTELLECTUAL_PROPERTY": "Propiedad Intelectual",
     "TRUST": "Confianza",
-    "COPYRIGHT": "Copyright © {{year}} Apolo Systems. Todos los derechos reservados."
+    "COPYRIGHT": "Copyright © {{year}} Apolo Systems. Todos los derechos reservados.",
+    "SELECT_LANGUAGE": "Seleccionar idioma"
   },
   "AUTH": {
     "HERO_TITLE": "Protege tu Firma Hoy",
@@ -989,6 +990,7 @@
       "OLDEST": "Más antiguo"
     },
     "CREATE": "Crear",
+    "SELECT": "Seleccionar",
     "NO_DATA": "No hay datos para mostrar",
     "FILTERS": {
       "LABEL": "Filtros",

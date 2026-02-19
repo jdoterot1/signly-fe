@@ -60,6 +60,25 @@ export interface DocumentPdfTextEdit {
   text: string;
 }
 
+export type DocumentMapperValidationType = 'out_of_bounds' | 'overlap' | 'duplicate_name';
+
+export interface DocumentMapperValidationIssue {
+  type: DocumentMapperValidationType;
+  message: string;
+  fieldIds: string[];
+  page: number | null;
+}
+
+export interface DocumentMapperValidationResult {
+  hasIssues: boolean;
+  issues: DocumentMapperValidationIssue[];
+  summary: {
+    outOfBounds: number;
+    overlaps: number;
+    duplicateNames: number;
+  };
+}
+
 interface ApiTemplateFieldLike {
   page: number | string;
   x: number | string;
@@ -147,6 +166,7 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
   readonly fieldPalette = FIELD_TYPES;
   mappedFields: DocumentMappedField[] = [];
   selectedFieldId: string | null = null;
+  selectedFieldIds = new Set<string>();
   isConfigOpen = true;
   pdfPages: PdfPageView[] = [];
   pdfTextItems: PdfEditableTextItem[] = [];
@@ -154,6 +174,7 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
 
   private draggedFieldType?: FormFieldType;
   private draggedFieldId: string | null = null;
+  private draggedFieldIds: string[] = [];
   private fieldCounter = 0;
   private pdfDocument: any | null = null;
   private renderSession = 0;
@@ -214,7 +235,7 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
     }
     this.redoStack.push([...this.mappedFields]);
     this.mappedFields = this.undoStack.pop()!;
-    this.selectedFieldId = this.mappedFields.find(f => f.id === this.selectedFieldId)?.id ?? this.mappedFields[0]?.id ?? null;
+    this.syncSelectionAfterFieldsChange();
   }
 
   redo(): void {
@@ -223,7 +244,7 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
     }
     this.undoStack.push([...this.mappedFields]);
     this.mappedFields = this.redoStack.pop()!;
-    this.selectedFieldId = this.mappedFields.find(f => f.id === this.selectedFieldId)?.id ?? this.mappedFields[0]?.id ?? null;
+    this.syncSelectionAfterFieldsChange();
   }
 
   private pushHistory(): void {
@@ -236,6 +257,29 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
 
   getMappedFields(): DocumentMappedField[] {
     return [...this.mappedFields];
+  }
+
+  get selectedFields(): DocumentMappedField[] {
+    if (!this.selectedFieldIds.size) {
+      return [];
+    }
+    return this.mappedFields.filter(field => this.selectedFieldIds.has(field.id));
+  }
+
+  get hasSelection(): boolean {
+    return this.selectedFieldIds.size > 0;
+  }
+
+  get hasMultiSelection(): boolean {
+    return this.selectedFieldIds.size > 1;
+  }
+
+  get canAlignSelection(): boolean {
+    return this.groupSelectedFieldsByPage(2).length > 0;
+  }
+
+  get canDistributeSelection(): boolean {
+    return this.groupSelectedFieldsByPage(3).length > 0;
   }
 
   getEditedPdfTextItems(): DocumentPdfTextEdit[] {
@@ -258,10 +302,79 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
       }));
   }
 
+  validateMappedFields(): DocumentMapperValidationResult {
+    const issues: DocumentMapperValidationIssue[] = [];
+    let outOfBounds = 0;
+    let overlaps = 0;
+    let duplicateNames = 0;
+
+    for (const field of this.mappedFields) {
+      if (this.isOutOfBounds(field)) {
+        outOfBounds += 1;
+        issues.push({
+          type: 'out_of_bounds',
+          message: `Campo "${field.label || field.name}" fuera del área válida en página ${field.page}.`,
+          fieldIds: [field.id],
+          page: field.page
+        });
+      }
+    }
+
+    const groupedByName = new Map<string, DocumentMappedField[]>();
+    for (const field of this.mappedFields) {
+      const key = this.normalizeFieldName(field.name || field.label || 'CAMPO') || 'CAMPO';
+      const list = groupedByName.get(key) ?? [];
+      list.push(field);
+      groupedByName.set(key, list);
+    }
+    for (const [key, group] of groupedByName.entries()) {
+      if (group.length < 2) {
+        continue;
+      }
+      duplicateNames += 1;
+      issues.push({
+        type: 'duplicate_name',
+        message: `Código de campo repetido: "${key}" (${group.length} veces).`,
+        fieldIds: group.map(field => field.id),
+        page: null
+      });
+    }
+
+    for (let i = 0; i < this.mappedFields.length; i++) {
+      const a = this.mappedFields[i];
+      for (let j = i + 1; j < this.mappedFields.length; j++) {
+        const b = this.mappedFields[j];
+        if (a.page !== b.page) {
+          continue;
+        }
+        if (!this.hasOverlap(a, b)) {
+          continue;
+        }
+        overlaps += 1;
+        issues.push({
+          type: 'overlap',
+          message: `Campos superpuestos en página ${a.page}: "${a.label || a.name}" y "${b.label || b.name}".`,
+          fieldIds: [a.id, b.id],
+          page: a.page
+        });
+      }
+    }
+
+    return {
+      hasIssues: issues.length > 0,
+      issues,
+      summary: {
+        outOfBounds,
+        overlaps,
+        duplicateNames
+      }
+    };
+  }
+
   loadMappedFieldsFromApi(fields: ApiTemplateFieldLike[]): void {
     if (!fields.length) {
       this.mappedFields = [];
-      this.selectedFieldId = null;
+      this.setSelection([]);
       this.fieldCounter = 0;
       this.undoStack = [];
       this.redoStack = [];
@@ -311,7 +424,7 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
     });
 
     this.mappedFields = next;
-    this.selectedFieldId = next[0]?.id ?? null;
+    this.setSelection(next[0] ? [next[0].id] : []);
     this.fieldCounter = next.length;
     this.undoStack = [];
     this.redoStack = [];
@@ -321,6 +434,7 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
   onPaletteDragStart(event: DragEvent, type: FormFieldType): void {
     this.draggedFieldType = type;
     this.draggedFieldId = null;
+    this.draggedFieldIds = [];
     if (event.dataTransfer) {
       event.dataTransfer.setData('text/plain', type);
       event.dataTransfer.setData('application/x-signly-field', type);
@@ -331,25 +445,33 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
   onPaletteDragEnd(): void {
     this.draggedFieldType = undefined;
     this.draggedFieldId = null;
+    this.draggedFieldIds = [];
   }
 
   onChipDragStart(event: DragEvent, field: DocumentMappedField): void {
     event.stopPropagation();
+    if (!this.isFieldSelected(field.id)) {
+      this.setSelection([field.id]);
+    }
+    const selectedIds = this.selectedFields.map(item => item.id);
     this.draggedFieldId = field.id;
+    this.draggedFieldIds = selectedIds.length ? selectedIds : [field.id];
     this.draggedFieldType = undefined;
     if (event.dataTransfer) {
       event.dataTransfer.setData('application/x-signly-move', field.id);
+      event.dataTransfer.setData('application/x-signly-move-group', JSON.stringify(this.draggedFieldIds));
       event.dataTransfer.effectAllowed = 'move';
     }
   }
 
   onChipDragEnd(): void {
     this.draggedFieldId = null;
+    this.draggedFieldIds = [];
     this.draggedFieldType = undefined;
   }
 
   onPdfPageDragOver(event: DragEvent, pageNumber: number): void {
-    if (this.draggedFieldId || this.getDragType(event)) {
+    if (this.draggedFieldId || this.draggedFieldIds.length || this.getDragType(event)) {
       event.preventDefault();
       this.dropTargetPage = pageNumber;
     }
@@ -375,10 +497,16 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
     }
 
     const moveId = this.draggedFieldId || event.dataTransfer?.getData('application/x-signly-move');
+    const moveGroup = this.getDraggedFieldIds(event);
     if (moveId) {
       const point = this.getNormalizedPoint(event.clientX, event.clientY, pageElement);
-      this.moveFieldToPage(moveId, pageNumber, point.x, point.y);
+      if (moveGroup.length > 1) {
+        this.moveFieldGroupToPage(moveGroup, moveId, pageNumber, point.x, point.y);
+      } else {
+        this.moveFieldToPage(moveId, pageNumber, point.x, point.y);
+      }
       this.draggedFieldId = null;
+      this.draggedFieldIds = [];
       return;
     }
 
@@ -411,7 +539,7 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
 
   onFieldChipClick(event: MouseEvent, fieldId: string): void {
     event.stopPropagation();
-    this.selectField(fieldId);
+    this.selectField(fieldId, event);
   }
 
   onResizeHandleMouseDown(event: MouseEvent, field: DocumentMappedField, handle: ResizeHandle): void {
@@ -440,7 +568,7 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
       anchorX,
       anchorY
     };
-    this.selectedFieldId = field.id;
+    this.setSelection([field.id]);
   }
 
   @HostListener('document:mousemove', ['$event'])
@@ -546,7 +674,7 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
       this.pdfTextItems = [];
       this.docxHtml = '<p></p>';
       this.mappedFields = [];
-      this.selectedFieldId = null;
+      this.setSelection([]);
       this.pdfDocument = null;
     } finally {
       this.loading = false;
@@ -566,7 +694,7 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
     this.docxHtml = '<p></p>';
     this.pdfDocument = null;
     this.mappedFields = [];
-    this.selectedFieldId = null;
+    this.setSelection([]);
     this.dropTargetPage = null;
     this.activePageNumber = 1;
     this.undoStack = [];
@@ -660,12 +788,25 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
     return `{{${slug || 'CAMPO'}}}`;
   }
 
-  selectField(fieldId: string): void {
-    this.selectedFieldId = fieldId;
+  selectField(fieldId: string, event?: MouseEvent): void {
+    const isToggle = !!event && (event.ctrlKey || event.metaKey);
+    if (isToggle) {
+      if (this.selectedFieldIds.has(fieldId)) {
+        this.setSelection(this.selectedFields.map(field => field.id).filter(id => id !== fieldId));
+      } else {
+        this.setSelection([...this.selectedFields.map(field => field.id), fieldId]);
+      }
+      return;
+    }
+    this.setSelection([fieldId]);
+  }
+
+  isFieldSelected(fieldId: string): boolean {
+    return this.selectedFieldIds.has(fieldId);
   }
 
   get selectedField(): DocumentMappedField | undefined {
-    return this.mappedFields.find(field => field.id === this.selectedFieldId);
+    return this.selectedFields[0];
   }
 
   updateSelectedFieldLabel(event: Event): void {
@@ -740,11 +881,168 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
   }
 
   removeField(fieldId: string): void {
-    this.pushHistory();
-    this.mappedFields = this.mappedFields.filter(field => field.id !== fieldId);
-    if (this.selectedFieldId === fieldId) {
-      this.selectedFieldId = this.mappedFields[0]?.id ?? null;
+    this.removeFieldsByIds([fieldId]);
+  }
+
+  removeSelectedFields(): void {
+    this.removeFieldsByIds(this.selectedFields.map(field => field.id));
+  }
+
+  private removeFieldsByIds(fieldIds: string[]): void {
+    const toRemove = new Set(fieldIds.filter(Boolean));
+    if (!toRemove.size) {
+      return;
     }
+
+    this.pushHistory();
+    this.mappedFields = this.mappedFields.filter(field => !toRemove.has(field.id));
+    this.syncSelectionAfterFieldsChange();
+  }
+
+  duplicateField(fieldId: string): void {
+    if (this.hasMultiSelection && this.selectedFieldIds.has(fieldId)) {
+      this.duplicateSelectedFields();
+      return;
+    }
+
+    const original = this.mappedFields.find(field => field.id === fieldId);
+    if (!original) {
+      return;
+    }
+
+    const suffix = ++this.fieldCounter;
+    const copyName = this.buildDuplicateFieldName(original.name, suffix);
+    const copyLabel = this.buildDuplicateFieldLabel(original.label, suffix);
+    const copyId = `field_${Date.now()}_${suffix}`;
+
+    const copy: DocumentMappedField = {
+      ...original,
+      id: copyId,
+      label: copyLabel,
+      name: copyName,
+      x: this.clamp(original.x + 0.02, 0, 1 - original.width),
+      y: this.clamp(original.y + 0.02, 0, 1 - original.height)
+    };
+
+    this.pushHistory();
+    this.mappedFields = [...this.mappedFields, copy];
+    this.setSelection([copy.id]);
+    this.activePageNumber = copy.page;
+  }
+
+  duplicateSelectedFields(): void {
+    const originals = this.selectedFields;
+    if (!originals.length) {
+      return;
+    }
+
+    this.pushHistory();
+    const scopeFields: DocumentMappedField[] = [...this.mappedFields];
+    const copies: DocumentMappedField[] = originals.map(original => {
+      const suffix = ++this.fieldCounter;
+      const copyName = this.buildDuplicateFieldName(original.name, suffix, scopeFields);
+      const copyLabel = this.buildDuplicateFieldLabel(original.label, suffix, scopeFields);
+      const copy: DocumentMappedField = {
+        ...original,
+        id: `field_${Date.now()}_${suffix}`,
+        label: copyLabel,
+        name: copyName,
+        x: this.clamp(original.x + 0.02, 0, 1 - original.width),
+        y: this.clamp(original.y + 0.02, 0, 1 - original.height)
+      };
+      scopeFields.push(copy);
+      return copy;
+    });
+
+    this.mappedFields = [...this.mappedFields, ...copies];
+    this.setSelection(copies.map(field => field.id));
+    this.activePageNumber = copies[0]?.page ?? this.activePageNumber;
+  }
+
+  setRequiredForSelected(required: boolean): void {
+    const selected = this.selectedFields;
+    if (!selected.length) {
+      return;
+    }
+    this.pushHistory();
+    const selectedIds = new Set(selected.map(field => field.id));
+    this.mappedFields = this.mappedFields.map(field =>
+      selectedIds.has(field.id) ? { ...field, required } : field
+    );
+  }
+
+  alignSelected(mode: 'left' | 'center' | 'right' | 'top'): void {
+    const groups = this.groupSelectedFieldsByPage(2);
+    if (!groups.length) {
+      return;
+    }
+
+    const patches = new Map<string, Partial<DocumentMappedField>>();
+    for (const group of groups) {
+      if (mode === 'left') {
+        const left = Math.min(...group.map(field => field.x));
+        group.forEach(field => patches.set(field.id, { x: this.clamp(left, 0, 1 - field.width) }));
+        continue;
+      }
+
+      if (mode === 'center') {
+        const minLeft = Math.min(...group.map(field => field.x));
+        const maxRight = Math.max(...group.map(field => field.x + field.width));
+        const center = (minLeft + maxRight) / 2;
+        group.forEach(field => patches.set(field.id, { x: this.clamp(center - field.width / 2, 0, 1 - field.width) }));
+        continue;
+      }
+
+      if (mode === 'right') {
+        const right = Math.max(...group.map(field => field.x + field.width));
+        group.forEach(field => patches.set(field.id, { x: this.clamp(right - field.width, 0, 1 - field.width) }));
+        continue;
+      }
+
+      const top = Math.min(...group.map(field => field.y));
+      group.forEach(field => patches.set(field.id, { y: this.clamp(top, 0, 1 - field.height) }));
+    }
+
+    this.applyFieldPatches(patches);
+  }
+
+  distributeSelected(direction: 'horizontal' | 'vertical'): void {
+    const groups = this.groupSelectedFieldsByPage(3);
+    if (!groups.length) {
+      return;
+    }
+
+    const patches = new Map<string, Partial<DocumentMappedField>>();
+    for (const group of groups) {
+      if (direction === 'horizontal') {
+        const sorted = [...group].sort((a, b) => a.x - b.x);
+        const start = sorted[0].x;
+        const end = sorted[sorted.length - 1].x + sorted[sorted.length - 1].width;
+        const totalSize = sorted.reduce((sum, field) => sum + field.width, 0);
+        const gap = Math.max((end - start - totalSize) / (sorted.length - 1), 0);
+
+        let cursor = start;
+        for (const field of sorted) {
+          patches.set(field.id, { x: this.clamp(cursor, 0, 1 - field.width) });
+          cursor += field.width + gap;
+        }
+        continue;
+      }
+
+      const sorted = [...group].sort((a, b) => a.y - b.y);
+      const start = sorted[0].y;
+      const end = sorted[sorted.length - 1].y + sorted[sorted.length - 1].height;
+      const totalSize = sorted.reduce((sum, field) => sum + field.height, 0);
+      const gap = Math.max((end - start - totalSize) / (sorted.length - 1), 0);
+
+      let cursor = start;
+      for (const field of sorted) {
+        patches.set(field.id, { y: this.clamp(cursor, 0, 1 - field.height) });
+        cursor += field.height + gap;
+      }
+    }
+
+    this.applyFieldPatches(patches);
   }
 
   supportsOptions(type: FormFieldType): boolean {
@@ -753,6 +1051,86 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
 
   getOptionsText(field: DocumentMappedField): string {
     return field.options.join(', ');
+  }
+
+  private setSelection(fieldIds: string[]): void {
+    const ids = new Set(fieldIds.filter(Boolean));
+    const ordered = this.mappedFields.filter(field => ids.has(field.id)).map(field => field.id);
+    this.selectedFieldIds = new Set(ordered);
+    this.selectedFieldId = ordered[0] ?? null;
+  }
+
+  private syncSelectionAfterFieldsChange(): void {
+    const currentIds = this.selectedFields.map(field => field.id);
+    if (currentIds.length) {
+      this.setSelection(currentIds);
+      return;
+    }
+
+    if (this.selectedFieldId && this.mappedFields.some(field => field.id === this.selectedFieldId)) {
+      this.setSelection([this.selectedFieldId]);
+      return;
+    }
+
+    this.setSelection(this.mappedFields[0] ? [this.mappedFields[0].id] : []);
+  }
+
+  private groupSelectedFieldsByPage(minCount = 1): DocumentMappedField[][] {
+    const grouped = new Map<number, DocumentMappedField[]>();
+    for (const field of this.selectedFields) {
+      const list = grouped.get(field.page) ?? [];
+      list.push(field);
+      grouped.set(field.page, list);
+    }
+    return Array.from(grouped.values()).filter(group => group.length >= minCount);
+  }
+
+  private applyFieldPatches(patches: Map<string, Partial<DocumentMappedField>>): void {
+    if (!patches.size) {
+      return;
+    }
+    this.pushHistory();
+    this.mappedFields = this.mappedFields.map(field => {
+      const patch = patches.get(field.id);
+      return patch ? { ...field, ...patch } : field;
+    });
+    this.syncSelectionAfterFieldsChange();
+  }
+
+  private getDraggedFieldIds(event?: DragEvent): string[] {
+    if (this.draggedFieldIds.length) {
+      return [...this.draggedFieldIds];
+    }
+    const raw = event?.dataTransfer?.getData('application/x-signly-move-group');
+    if (!raw) {
+      return [];
+    }
+    try {
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+      return parsed.filter(item => typeof item === 'string');
+    } catch {
+      return [];
+    }
+  }
+
+  private isOutOfBounds(field: DocumentMappedField): boolean {
+    return (
+      field.width <= 0 ||
+      field.height <= 0 ||
+      field.x < 0 ||
+      field.y < 0 ||
+      field.x + field.width > 1 ||
+      field.y + field.height > 1
+    );
+  }
+
+  private hasOverlap(a: DocumentMappedField, b: DocumentMappedField): boolean {
+    const xOverlap = Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x));
+    const yOverlap = Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
+    return xOverlap > 0 && yOverlap > 0;
   }
 
   private getDragType(event: DragEvent): FormFieldType | undefined {
@@ -777,6 +1155,66 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
       .toUpperCase()
       .replace(/[^A-Z0-9]+/g, '_')
       .replace(/^_+|_+$/g, '');
+  }
+
+  private buildDuplicateFieldName(
+    baseName: string,
+    fallbackSuffix: number,
+    scopeFields: DocumentMappedField[] = this.mappedFields
+  ): string {
+    const normalized = this.normalizeFieldName(baseName) || `CAMPO_${fallbackSuffix}`;
+    const match = normalized.match(/^(.*?)(?:_(\d+))?$/);
+    const base = (match?.[1] || normalized).trim() || `CAMPO_${fallbackSuffix}`;
+    const escapedBase = this.escapeRegExp(base);
+    const pattern = new RegExp(`^${escapedBase}(?:_(\\d+))?$`);
+
+    let max = 1;
+    for (const field of scopeFields) {
+      const current = this.normalizeFieldName(field.name);
+      const currentMatch = current.match(pattern);
+      if (!currentMatch) {
+        continue;
+      }
+
+      const num = Number(currentMatch[1] ?? 1);
+      if (Number.isFinite(num) && num > max) {
+        max = num;
+      }
+    }
+
+    return `${base}_${max + 1}`;
+  }
+
+  private buildDuplicateFieldLabel(
+    baseLabel: string,
+    fallbackSuffix: number,
+    scopeFields: DocumentMappedField[] = this.mappedFields
+  ): string {
+    const normalized = (baseLabel || '').trim() || `Campo ${fallbackSuffix}`;
+    const match = normalized.match(/^(.*?)(?:\s+(\d+))?$/);
+    const base = (match?.[1] || normalized).trim() || `Campo`;
+    const escapedBase = this.escapeRegExp(base);
+    const pattern = new RegExp(`^${escapedBase}(?:\\s+(\\d+))?$`, 'i');
+
+    let max = 1;
+    for (const field of scopeFields) {
+      const label = (field.label || '').trim();
+      const labelMatch = label.match(pattern);
+      if (!labelMatch) {
+        continue;
+      }
+
+      const num = Number(labelMatch[1] ?? 1);
+      if (Number.isFinite(num) && num > max) {
+        max = num;
+      }
+    }
+
+    return `${base} ${max + 1}`;
+  }
+
+  private escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   private createMappedField(
@@ -837,7 +1275,7 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
     );
     this.pushHistory();
     this.mappedFields = [...this.mappedFields, field];
-    this.selectedFieldId = field.id;
+    this.setSelection([field.id]);
     this.activePageNumber = pageNumber;
   }
 
@@ -867,7 +1305,50 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
           }
         : f
     );
-    this.selectedFieldId = fieldId;
+    this.setSelection([fieldId]);
+    this.activePageNumber = pageNumber;
+  }
+
+  private moveFieldGroupToPage(
+    fieldIds: string[],
+    anchorFieldId: string,
+    pageNumber: number,
+    x: number,
+    y: number
+  ): void {
+    const ids = new Set(fieldIds);
+    const group = this.mappedFields.filter(field => ids.has(field.id));
+    if (group.length < 2) {
+      this.moveFieldToPage(anchorFieldId, pageNumber, x, y);
+      return;
+    }
+
+    const anchor = group.find(field => field.id === anchorFieldId) ?? group[0];
+    const page = this.pdfPages.find(item => item.pageNumber === pageNumber);
+    if (!anchor || !page) {
+      return;
+    }
+
+    const anchorX = this.clamp(x - anchor.width / 2, 0, 1 - anchor.width);
+    const anchorY = this.clamp(y - anchor.height / 2, 0, 1 - anchor.height);
+
+    const patches = new Map<string, Partial<DocumentMappedField>>();
+    for (const field of group) {
+      const deltaX = field.x - anchor.x;
+      const deltaY = field.y - anchor.y;
+      patches.set(field.id, {
+        page: pageNumber,
+        x: this.clamp(anchorX + deltaX, 0, 1 - field.width),
+        y: this.clamp(anchorY + deltaY, 0, 1 - field.height),
+        pageWidth: page.width,
+        pageHeight: page.height,
+        pdfPageWidth: page.pdfWidth,
+        pdfPageHeight: page.pdfHeight
+      });
+    }
+
+    this.applyFieldPatches(patches);
+    this.setSelection(group.map(field => field.id));
     this.activePageNumber = pageNumber;
   }
 
@@ -878,7 +1359,7 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
     const field = this.createMappedField(type, 1, 0.08, y, size.width, size.height, 1000, 1400, 1000, 1400);
     this.pushHistory();
     this.mappedFields = [...this.mappedFields, field];
-    this.selectedFieldId = field.id;
+    this.setSelection([field.id]);
     this.insertDocxPlaceholder(this.buildPlaceholderFromName(field.name));
   }
 
@@ -983,7 +1464,7 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
     this.activePageNumber = 1;
     this.dropTargetPage = null;
     this.mappedFields = [];
-    this.selectedFieldId = null;
+    this.setSelection([]);
     this.fieldCounter = 0;
     this.undoStack = [];
     this.redoStack = [];
@@ -1043,7 +1524,7 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
     this.activePageNumber = pages[0]?.pageNumber ?? 1;
     this.dropTargetPage = null;
     this.mappedFields = [];
-    this.selectedFieldId = null;
+    this.setSelection([]);
     this.fieldCounter = 0;
     this.undoStack = [];
     this.redoStack = [];

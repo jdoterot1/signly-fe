@@ -5,6 +5,7 @@ import { catchError, map, tap } from 'rxjs/operators';
 
 import { environment } from '../../../../environments/environment';
 import { ApiResponse } from '../../models/auth/auth-session.model';
+import { type BiometricStep } from './flow-help.service';
 import {
   FlowInitiateData,
   FlowState,
@@ -47,6 +48,10 @@ export class FlowService {
   private flowStateSubject = new BehaviorSubject<FlowState | null>(null);
   flowState$ = this.flowStateSubject.asObservable();
   private templateSnapshot: FlowTemplateSnapshot | null = null;
+
+  // Biometric sub-step tracking for help system
+  private biometricSubStepSubject = new BehaviorSubject<BiometricStep | null>(null);
+  biometricSubStep$ = this.biometricSubStepSubject.asObservable();
 
   constructor(private http: HttpClient) {
     this.loadFlowState();
@@ -415,6 +420,30 @@ export class FlowService {
       }
     }
   }
+
+  // ========================================
+  // BIOMETRIC SUB-STEP TRACKING (for help system)
+  // ========================================
+
+  /**
+   * Set the current biometric sub-step.
+   * Used by BiometricComponent to share its state with the help system.
+   */
+  setBiometricSubStep(step: BiometricStep | null): void {
+    this.biometricSubStepSubject.next(step);
+  }
+
+  /**
+   * Get the current biometric sub-step.
+   * Used by FlowProgressComponent to provide context to help modal.
+   */
+  getBiometricSubStep(): BiometricStep | null {
+    return this.biometricSubStepSubject.value;
+  }
+
+  // ========================================
+  // ERROR HANDLING
+  // ========================================
 
   private handleError(error: unknown) {
     const httpError = error as HttpErrorResponse;
