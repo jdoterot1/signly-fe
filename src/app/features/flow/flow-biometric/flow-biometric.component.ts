@@ -70,10 +70,17 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
   private stableFrames = 0;
   private readonly requiredStableFrames = 8;
   private autoCaptureLocked = false;
+  // Time-based delay for selfie capture
+  private alignmentStartTime: number | null = null;
+  private readonly requiredAlignmentDuration = 3000; // 3 seconds in milliseconds
   private documentCaptureActive = false;
   documentHint = 'Mantén el documento dentro del recuadro';
   private documentHintTimeout?: ReturnType<typeof setTimeout>;
   private documentCaptureTimeout?: ReturnType<typeof setTimeout>;
+  // Time-based delay for document capture
+  private documentAlignmentStartTime: number | null = null;
+  private readonly requiredDocumentAlignmentDuration = 3000; // 3 seconds
+  private documentCountdownInterval?: ReturnType<typeof setInterval>;
 
   // Captured images
   capturedImages: Partial<Record<BiometricRequirement, CapturedImage>> = {};
@@ -250,6 +257,7 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
 
     if (!video || !canvas) return;
     this.autoCaptureLocked = true;
+    this.alignmentStartTime = null; // Reset timer
 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
@@ -531,6 +539,7 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
   private stopFaceDetection(): void {
     this.faceDetecting = false;
     this.stableFrames = 0;
+    this.alignmentStartTime = null; // Reset timer
     this.faceAligned = false;
     this.faceHint = 'Alinea tu rostro dentro del óvalo';
   }
@@ -548,6 +557,7 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
       this.faceAligned = false;
       // Degrade gradually instead of hard reset so brief detection gaps don't restart progress
       this.stableFrames = Math.max(this.stableFrames - 2, 0);
+      this.alignmentStartTime = null; // Reset timer when face lost
       this.faceHint = 'Alinea tu rostro dentro del óvalo';
       this.cdr.detectChanges();
       return;
@@ -586,7 +596,8 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
     if (!centreInsideOval) {
       this.faceAligned = false;
       this.stableFrames = Math.max(this.stableFrames - 2, 0);
-      this.faceHint = 'Centra tu rostro dentro del óvalo';
+      this.alignmentStartTime = null; // Reset timer
+      this.faceHint = 'Centra tu rostro dentro del recuadro';
       this.cdr.detectChanges();
       return;
     }
@@ -594,6 +605,7 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
     if (boxHeight < 0.22) {
       this.faceAligned = false;
       this.stableFrames = Math.max(this.stableFrames - 1, 0);
+      this.alignmentStartTime = null; // Reset timer
       this.faceHint = 'Acércate un poco';
       this.cdr.detectChanges();
       return;
@@ -602,16 +614,30 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
     if (boxHeight > 0.85) {
       this.faceAligned = false;
       this.stableFrames = Math.max(this.stableFrames - 1, 0);
+      this.alignmentStartTime = null; // Reset timer
       this.faceHint = 'Aléjate un poco';
       this.cdr.detectChanges();
       return;
     }
 
+    // All validations passed
     this.faceAligned = true;
     this.stableFrames += 1;
 
+    // Start timer on first aligned frame
+    if (this.alignmentStartTime === null) {
+      this.alignmentStartTime = Date.now();
+    }
+
+    // Calculate elapsed time since alignment started
+    const elapsedTime = Date.now() - this.alignmentStartTime;
+    const remainingTime = Math.max(0, this.requiredAlignmentDuration - elapsedTime);
+    const secondsRemaining = Math.ceil(remainingTime / 1000);
+
+    // Check both frame stability AND time duration
     if (
       this.stableFrames >= this.requiredStableFrames &&
+      elapsedTime >= this.requiredAlignmentDuration &&
       !this.autoCaptureLocked
     ) {
       this.faceHint = 'Capturando...';
@@ -621,10 +647,17 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.faceHint =
-      this.stableFrames >= 3
-        ? 'Perfecto, no te muevas...'
-        : 'Bien, mantén la posición';
+    // Progressive hints with countdown
+    if (this.stableFrames >= 3) {
+      if (secondsRemaining > 0) {
+        this.faceHint = `Perfecto, no te muevas... ${secondsRemaining}`;
+      } else {
+        this.faceHint = 'Perfecto, no te muevas...';
+      }
+    } else {
+      this.faceHint = 'Bien, mantén la posición';
+    }
+
     this.cdr.detectChanges();
   }
 
@@ -634,40 +667,58 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
     }
     this.documentCaptureActive = true;
     this.stableFrames = 0;
-    this.documentHint = 'Alinea el documento dentro del recuadro';
+    this.documentAlignmentStartTime = Date.now();
+    this.documentHint = 'Mantén el documento dentro del recuadro';
 
-    this.documentHintTimeout = setTimeout(() => {
+    // Update countdown every 100ms for smooth display
+    this.documentCountdownInterval = setInterval(() => {
       if (
         !this.documentCaptureActive ||
         !this.cameraActive ||
         this.hasCurrentCapture()
       ) {
+        this.stopDocumentAutoCapture();
         return;
       }
-      this.documentHint = 'Mantén el documento fijo...';
-    }, 1200);
 
-    this.documentCaptureTimeout = setTimeout(() => {
-      if (
-        !this.documentCaptureActive ||
-        !this.cameraActive ||
-        this.hasCurrentCapture()
-      ) {
+      if (!this.documentAlignmentStartTime) {
         return;
       }
-      if (this.autoCaptureLocked) {
+
+      const elapsedTime = Date.now() - this.documentAlignmentStartTime;
+      const remainingTime = Math.max(0, this.requiredDocumentAlignmentDuration - elapsedTime);
+      const secondsRemaining = Math.ceil(remainingTime / 1000);
+
+      // Check if 3 seconds have elapsed
+      if (elapsedTime >= this.requiredDocumentAlignmentDuration) {
+        if (this.autoCaptureLocked) {
+          return;
+        }
+        this.autoCaptureLocked = true;
+        this.documentHint = 'Capturando...';
+        this.cdr.detectChanges();
+
+        // Small delay to show "Capturando..." message
+        setTimeout(() => {
+          this.capturePhoto();
+          this.documentCaptureActive = false;
+          this.stopDocumentAutoCapture();
+        }, 300);
         return;
       }
-      this.autoCaptureLocked = true;
-      this.documentHint = 'Capturando...';
-      this.capturePhoto();
-      this.documentCaptureActive = false;
-    }, 5000);
+
+      // Show countdown
+      if (secondsRemaining > 0) {
+        this.documentHint = `Mantén el documento fijo... ${secondsRemaining}`;
+      }
+      this.cdr.detectChanges();
+    }, 100); // Update every 100ms
   }
 
   private stopDocumentAutoCapture(): void {
     this.documentCaptureActive = false;
     this.stableFrames = 0;
+    this.documentAlignmentStartTime = null;
     if (this.documentHintTimeout) {
       clearTimeout(this.documentHintTimeout);
       this.documentHintTimeout = undefined;
@@ -675,6 +726,10 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
     if (this.documentCaptureTimeout) {
       clearTimeout(this.documentCaptureTimeout);
       this.documentCaptureTimeout = undefined;
+    }
+    if (this.documentCountdownInterval) {
+      clearInterval(this.documentCountdownInterval);
+      this.documentCountdownInterval = undefined;
     }
   }
 
