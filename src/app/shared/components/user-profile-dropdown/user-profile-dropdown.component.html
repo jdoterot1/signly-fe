@@ -2,13 +2,18 @@
   class="w-64 rounded-2xl border border-brand bg-brand-surface-card shadow-xl overflow-hidden"
 >
   <div class="px-4 py-4 border-b border-brand-subtle">
-    <h3 class="text-base font-semibold text-brand-ink">{{ userName }}</h3>
-    <p class="text-sm text-brand-muted mt-1">{{ userEmail }}</p>
-    <p class="text-xs text-brand-muted-light mt-2">{{ accountInfo }}</p>
-    <p class="text-sm text-brand-ink-secondary font-medium mt-3">
+    <h3 *ngIf="hasRealUserName()" class="text-base font-semibold text-brand-ink">
+      {{ userName }}
+    </h3>
+    <p *ngIf="hasEmail()" class="text-sm text-brand-muted mt-1">
+      {{ userEmail }}
+    </p>
+    <p *ngIf="hasAccountInfo()" class="text-xs text-brand-muted-light mt-2">
+      {{ accountInfo }}
+    </p>
+    <p *ngIf="hasRealDisplayName()" class="text-sm text-brand-ink-secondary font-medium mt-3">
       {{ displayName }}
     </p>
-   
   </div>
   <div class="px-4 py-3 space-y-2">
      <button

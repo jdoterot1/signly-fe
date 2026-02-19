@@ -226,9 +226,9 @@ export class HeaderComponent implements OnInit {
         next: payload => {
           const meAttributes = (payload.attributes ?? {}) as Record<string, string | undefined>
           const attributeName = meAttributes['name'] || meAttributes['given_name']
-          const resolvedName = attributeName || this.userProfile.name || this.userProfile.displayName
           const resolvedEmail = payload.attributes?.email || this.userProfile.email
-          const fallbackDisplay = resolvedName || resolvedEmail || this.userProfile.displayName
+          const resolvedName = attributeName || ''
+          const fallbackDisplay = resolvedName || resolvedEmail
 
           this.userProfile = {
             ...this.userProfile,
