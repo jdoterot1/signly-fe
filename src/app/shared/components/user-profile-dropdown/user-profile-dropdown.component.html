@@ -8,23 +8,10 @@
     <p class="text-sm text-brand-ink-secondary font-medium mt-3">
       {{ displayName }}
     </p>
-    <button
-      type="button"
-      class="mt-4 w-full px-4 py-2 border border-brand rounded-lg text-sm font-medium text-brand-ink hover:bg-brand-surface-raised transition"
-      (click)="onManageProfile()"
-    >
-      {{ 'USER_PROFILE.MANAGE_PROFILE' | translate }}
-    </button>
+   
   </div>
   <div class="px-4 py-3 space-y-2">
-    <button
-      type="button"
-      class="w-full px-4 py-2.5 text-left text-sm font-medium text-brand-ink hover:bg-brand-surface-raised transition rounded-lg"
-    >
-      {{ 'USER_PROFILE.PREFERENCES' | translate }}
-    </button>
-
-    <button
+     <button
       type="button"
       (click)="onLogOut()"
       class="w-full px-4 py-3 text-sm font-semibold text-brand-danger bg-brand-danger/10 border border-brand-danger/20 rounded-xl hover:bg-brand-danger/20 cursor-pointer transition-all duration-200 flex items-center justify-between"
