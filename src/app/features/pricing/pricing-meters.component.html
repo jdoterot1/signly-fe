@@ -1,7 +1,7 @@
-<div class="min-h-full bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-  <div class="max-w-6xl mx-auto space-y-8">
-    <section class="bg-white rounded-3xl shadow px-6 py-8">
-      <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+<div class="min-h-full bg-gray-50 py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-6xl mx-auto space-y-6 sm:space-y-8">
+    <section class="bg-white rounded-2xl sm:rounded-3xl shadow px-4 sm:px-6 py-6 sm:py-8">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p class="text-xs font-semibold uppercase tracking-[0.3em] text-brand-primary">{{ 'PRICING.TITLE' | translate }}</p>
           <h2 class="text-2xl font-semibold text-gray-900 mt-2">{{ 'PRICING.SUBTITLE' | translate }}</h2>
@@ -21,48 +21,52 @@
           </div>
         </div>
 
-        <div class="flex flex-col sm:flex-row gap-3 sm:items-center">
-          <label class="inline-flex items-center gap-2 text-sm text-gray-700">
-            <input
-              type="checkbox"
-              class="h-4 w-4 rounded border-gray-300 text-brand-accent focus:ring-brand-accent"
-              [(ngModel)]="showOnlyActive"
-            />
-            {{ 'PRICING.ACTIVE_ONLY' | translate }}
-          </label>
+        <div class="flex flex-col gap-3 w-full lg:w-auto">
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                class="h-4 w-4 rounded border-gray-300 text-brand-accent focus:ring-brand-accent"
+                [(ngModel)]="showOnlyActive"
+              />
+              {{ 'PRICING.ACTIVE_ONLY' | translate }}
+            </label>
 
-          <select
-            class="w-full sm:w-56 rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent"
-            [(ngModel)]="selectedCategory"
-          >
-            <option value="all">{{ 'PRICING.ALL_CATEGORIES' | translate }}</option>
-            <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
-          </select>
+            <select
+              class="flex-1 min-w-[140px] sm:flex-none sm:w-56 rounded-xl border border-gray-300 px-3 sm:px-4 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent"
+              [(ngModel)]="selectedCategory"
+            >
+              <option value="all">{{ 'PRICING.ALL_CATEGORIES' | translate }}</option>
+              <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
+            </select>
+          </div>
 
-          <select
-            class="w-full sm:w-28 rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent"
-            [(ngModel)]="region"
-            (ngModelChange)="onRegionChanged()"
-          >
-            <option *ngFor="let r of availableRegions()" [value]="r">{{ r }}</option>
-          </select>
+          <div class="flex gap-2 sm:gap-3">
+            <select
+              class="flex-1 sm:w-24 rounded-xl border border-gray-300 px-2 sm:px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent"
+              [(ngModel)]="region"
+              (ngModelChange)="onRegionChanged()"
+            >
+              <option *ngFor="let r of availableRegions()" [value]="r">{{ r }}</option>
+            </select>
 
-          <select
-            class="w-full sm:w-28 rounded-xl border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent"
-            [(ngModel)]="currency"
-            (ngModelChange)="onCurrencyChanged()"
-          >
-            <option *ngFor="let c of availableCurrencies()" [value]="c">{{ c }}</option>
-          </select>
+            <select
+              class="flex-1 sm:w-24 rounded-xl border border-gray-300 px-2 sm:px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent"
+              [(ngModel)]="currency"
+              (ngModelChange)="onCurrencyChanged()"
+            >
+              <option *ngFor="let c of availableCurrencies()" [value]="c">{{ c }}</option>
+            </select>
 
-          <button
-            type="button"
-            class="px-4 py-2 rounded-xl border text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
-            (click)="loadMeters()"
-            [disabled]="isLoading"
-          >
-            {{ isLoading ? ('PRICING.UPDATING' | translate) : ('PRICING.UPDATE' | translate) }}
-          </button>
+            <button
+              type="button"
+              class="flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-xl border text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60 transition whitespace-nowrap"
+              (click)="loadMeters()"
+              [disabled]="isLoading"
+            >
+              {{ isLoading ? ('PRICING.UPDATING' | translate) : ('PRICING.UPDATE' | translate) }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -74,8 +78,8 @@
         {{ 'PRICING.EMPTY' | translate }}
       </div>
 
-      <div *ngIf="!isLoading && filteredMeters.length > 0" class="mt-6 grid lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2 grid md:grid-cols-2 gap-4">
+      <div *ngIf="!isLoading && filteredMeters.length > 0" class="mt-6 grid lg:grid-cols-3 gap-4 sm:gap-6">
+        <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <button
             *ngFor="let meter of filteredMeters"
             type="button"
@@ -116,34 +120,34 @@
           </button>
         </div>
 
-        <aside class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-          <div class="px-5 py-4 bg-gray-50 border-b border-gray-100">
+        <aside class="rounded-2xl border border-gray-200 bg-white overflow-hidden lg:sticky lg:top-20">
+          <div class="px-4 sm:px-5 py-4 bg-gray-50 border-b border-gray-100">
             <p class="text-xs font-semibold uppercase tracking-[0.25em] text-brand-primary">{{ 'PRICING.DETAIL' | translate }}</p>
-            <p class="text-sm font-semibold text-gray-900 mt-1">{{ selectedMeter?.display_name || ('PRICING.SELECT_CHANNEL' | translate) }}</p>
+            <p class="text-sm font-semibold text-gray-900 mt-1 truncate">{{ selectedMeter?.display_name || ('PRICING.SELECT_CHANNEL' | translate) }}</p>
             <p class="text-xs text-gray-500 mt-1">{{ 'PRICING.REGION_INFO' | translate:{ region: region, currency: currency } }}</p>
           </div>
 
-          <div class="p-5" *ngIf="!selectedMeter">
+          <div class="p-4 sm:p-5" *ngIf="!selectedMeter">
             <p class="text-sm text-gray-600">
               {{ 'PRICING.SELECT_CHANNEL_DESC' | translate }}
             </p>
           </div>
 
-          <div *ngIf="selectedMeter" class="p-5 space-y-4">
-            <p class="text-sm text-gray-600">{{ selectedMeter.description }} </p>
+          <div *ngIf="selectedMeter" class="p-4 sm:p-5 space-y-4">
+            <p class="text-sm text-gray-600 line-clamp-3">{{ selectedMeter.description }} </p>
 
-            <div class="overflow-x-auto rounded-xl border border-gray-100">
+            <div class="overflow-x-auto rounded-xl border border-gray-100 -mx-4 sm:mx-0">
               <table class="min-w-full text-sm">
                 <thead class="bg-gray-50 text-gray-600">
                   <tr>
-                    <th class="text-left font-semibold px-4 py-3">{{ 'PRICING.RANGE' | translate }}</th>
-                    <th class="text-right font-semibold px-4 py-3">{{ 'PRICING.UNIT_PRICE' | translate }}</th>
+                    <th class="text-left font-semibold px-3 sm:px-4 py-3">{{ 'PRICING.RANGE' | translate }}</th>
+                    <th class="text-right font-semibold px-3 sm:px-4 py-3">{{ 'PRICING.UNIT_PRICE' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                   <tr *ngFor="let tier of tiersFor(selectedMeter)" class="text-gray-700">
-                    <td class="px-4 py-3">{{ formatQtyRange(tier) }}</td>
-                    <td class="px-4 py-3 text-right">{{ formatMoney(tier.unit_price, tier.currency) }}</td>
+                    <td class="px-3 sm:px-4 py-3 whitespace-nowrap">{{ formatQtyRange(tier) }}</td>
+                    <td class="px-3 sm:px-4 py-3 text-right whitespace-nowrap">{{ formatMoney(tier.unit_price, tier.currency) }}</td>
                   </tr>
                 </tbody>
               </table>

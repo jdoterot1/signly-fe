@@ -1,11 +1,15 @@
 <div class="relative z-40 bg-brand-surface-card">
-  <div class="w-full h-16 flex items-center justify-between px-8 lg:px-16 text-base text-brand-ink-secondary">
-    <div class="flex items-center gap-7">
-      <a routerLink="/home" class="flex items-center gap-2 text-xl font-semibold text-brand-ink">
-        <img src="assets/icons/sidebar/ApoloLogo.svg" alt="Signly" class="w-9 h-9" />
-        <span>Signly</span>
+  <!-- Main Header -->
+  <div class="w-full h-16 flex items-center justify-between px-4 sm:px-6 lg:px-16 text-base text-brand-ink-secondary">
+    <!-- Left: Logo and Desktop Nav -->
+    <div class="flex items-center gap-4 lg:gap-7">
+      <a routerLink="/home" class="flex items-center gap-2 text-lg sm:text-xl font-semibold text-brand-ink">
+        <img src="assets/icons/sidebar/ApoloLogo.svg" alt="Signly" class="w-8 h-8 sm:w-9 sm:h-9" />
+        <span class="hidden sm:inline">Signly</span>
       </a>
-      <nav class="hidden md:flex items-center gap-4 text-[15px]">
+
+      <!-- Desktop Navigation -->
+      <nav class="hidden lg:flex items-center gap-4 text-[15px]">
         <a
           *ngFor="let link of navLinks"
           [routerLink]="link.path"
@@ -22,21 +26,25 @@
       </nav>
     </div>
 
-    <div class="flex items-center gap-5">
+    <!-- Right: Actions -->
+    <div class="flex items-center gap-2 sm:gap-3 lg:gap-5">
+      <!-- Credits Button - Hidden on mobile -->
       <button
         type="button"
-        class="inline-flex items-center gap-2 rounded-full border border-brand-primary-medium px-4 py-1.5 text-brand-primary-medium text-xs font-semibold hover:bg-brand-surface-raised hover:text-brand-primary-medium transition shadow-sm"
+        class="hidden sm:inline-flex items-center gap-2 rounded-full border border-brand-primary-medium px-3 sm:px-4 py-1.5 text-brand-primary-medium text-xs font-semibold hover:bg-brand-surface-raised hover:text-brand-primary-medium transition shadow-sm"
         (click)="openPricingModal()"
       >
-        {{ 'HEADER.CREDITS' | translate }}
+        <span class="hidden sm:inline">{{ 'HEADER.CREDITS' | translate }}</span>
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7 7 7-7 7" />
         </svg>
       </button>
 
-      <app-theme-toggle></app-theme-toggle>
+      <!-- Theme Toggle -->
+      <app-theme-toggle class="hidden sm:block"></app-theme-toggle>
 
-      <div class="relative">
+      <!-- Notifications -->
+      <div class="relative hidden sm:block">
         <button
           type="button"
           (click)="toggleNotifications($event)"
@@ -47,7 +55,8 @@
           <span class="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-brand-notification ring-2 ring-white"></span>
         </button>
 
-        <div *ngIf="isNotificationsOpen" class="absolute right-0 mt-3 w-80 rounded-3xl border border-brand-subtle bg-brand-surface-card shadow-2xl">
+        <!-- Notifications Dropdown -->
+        <div *ngIf="isNotificationsOpen" class="absolute right-0 mt-3 w-80 max-w-[calc(100vw-2rem)] rounded-3xl border border-brand-subtle bg-brand-surface-card shadow-2xl">
           <div class="px-5 py-4 border-b border-brand-subtle">
             <p class="text-sm font-semibold text-brand-ink">{{ 'HEADER.NOTIFICATIONS.TITLE' | translate }}</p>
             <p class="text-xs text-brand-muted">{{ 'HEADER.NOTIFICATIONS.NEW_COUNT' | translate: { count: notifications.length } }}</p>
@@ -69,19 +78,20 @@
         </div>
       </div>
 
+      <!-- User Profile -->
       <div class="relative">
         <button
           type="button"
           (click)="toggleUserMenu($event)"
-          class="flex items-center gap-3 rounded-full border border-brand bg-brand-surface-card px-3 py-1.5 transition hover:border-brand-primary-medium"
+          class="flex items-center gap-2 sm:gap-3 rounded-full border border-brand bg-brand-surface-card px-2 sm:px-3 py-1.5 transition hover:border-brand-primary-medium"
           [attr.aria-expanded]="isUserMenuOpen"
         >
-          <div class="w-9 h-9 rounded-full bg-brand-avatar flex items-center justify-center text-brand-ink font-semibold">
+          <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-brand-avatar flex items-center justify-center text-brand-ink font-semibold text-sm">
             {{ userInitials }}
           </div>
           <div class="hidden md:flex flex-col leading-tight text-left">
             <span class="text-xs text-brand-muted-light uppercase tracking-wide">{{ 'HEADER.ACCOUNT' | translate }}</span>
-            <span class="text-sm font-semibold text-brand-ink">{{ dropdownDisplayName }}</span>
+            <span class="text-sm font-semibold text-brand-ink truncate max-w-[120px]">{{ dropdownDisplayName }}</span>
           </div>
           <svg
             class="w-4 h-4 text-brand-muted transition-transform duration-200"
@@ -96,7 +106,7 @@
 
         <app-user-profile-dropdown
           *ngIf="isUserMenuOpen"
-          class="absolute right-0 mt-3"
+          class="absolute right-0 mt-3 z-50"
           [userName]="dropdownUserName"
           [userEmail]="dropdownUserEmail"
           [accountInfo]="dropdownAccountInfo"
@@ -105,7 +115,69 @@
           (manageProfile)="handleManageProfile()"
         ></app-user-profile-dropdown>
       </div>
+
+      <!-- Mobile Menu Button -->
+      <button
+        type="button"
+        (click)="toggleMobileMenu()"
+        class="lg:hidden flex items-center justify-center rounded-full border border-brand bg-brand-surface-card p-2 transition hover:border-brand-primary-medium"
+        [attr.aria-expanded]="isMobileMenuOpen"
+        aria-label="Menu"
+      >
+        <svg *ngIf="!isMobileMenuOpen" class="w-6 h-6 text-brand-ink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+        <svg *ngIf="isMobileMenuOpen" class="w-6 h-6 text-brand-ink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
     </div>
   </div>
 
+  <!-- Mobile Menu -->
+  <div
+    *ngIf="isMobileMenuOpen"
+    class="lg:hidden border-t border-brand-subtle bg-brand-surface-card shadow-lg"
+  >
+    <!-- Mobile Navigation Links -->
+    <nav class="px-4 py-3 space-y-1">
+      <a
+        *ngFor="let link of navLinks"
+        [routerLink]="link.path"
+        routerLinkActive="bg-brand-surface-raised text-brand-primary-medium font-semibold"
+        (click)="closeMenus()"
+        class="block px-4 py-3 rounded-xl text-sm text-brand-ink hover:bg-brand-surface-raised transition"
+      >
+        {{ link.label | translate }}
+      </a>
+    </nav>
+
+    <!-- Mobile Actions -->
+    <div class="px-4 py-3 border-t border-brand-subtle space-y-3">
+      <!-- Credits Button Mobile -->
+      <button
+        type="button"
+        class="w-full flex items-center justify-between gap-2 rounded-xl border border-brand-primary-medium px-4 py-3 text-brand-primary-medium text-sm font-semibold hover:bg-brand-surface-raised transition"
+        (click)="openPricingModal(); closeMenus()"
+      >
+        <span>{{ 'HEADER.CREDITS' | translate }}</span>
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7 7 7-7 7" />
+        </svg>
+      </button>
+
+      <!-- Theme and Notifications for Mobile -->
+      <div class="flex items-center gap-3 sm:hidden">
+        <app-theme-toggle class="flex-1"></app-theme-toggle>
+        <button
+          type="button"
+          (click)="toggleNotifications($event)"
+          class="relative flex items-center justify-center rounded-xl border border-brand bg-brand-surface-card px-4 py-3 flex-1 transition hover:border-brand-primary-medium"
+        >
+          <img src="assets/icons/header/Notification.svg" alt="Notificaciones" class="w-5 h-5" />
+          <span class="absolute top-2 right-3 h-2.5 w-2.5 rounded-full bg-brand-notification ring-2 ring-white"></span>
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

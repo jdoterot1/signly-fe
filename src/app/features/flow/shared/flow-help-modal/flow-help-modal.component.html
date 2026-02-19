@@ -1,0 +1,210 @@
+@if (open) {
+  <!-- Backdrop -->
+  <div
+    class="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm"
+    (click)="close()"
+    (keydown)="onKeyDown($event)"
+  ></div>
+
+  <!-- Modal -->
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center p-4"
+    (keydown)="onKeyDown($event)"
+    tabindex="-1"
+  >
+    <div
+      class="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-labelledby="help-modal-title"
+      aria-modal="true"
+    >
+      <!-- Header -->
+      <div
+        class="flex items-center justify-between gap-4 px-6 py-4 border-b border-slate-200"
+      >
+        <h2
+          id="help-modal-title"
+          class="text-xl font-semibold text-slate-900 flex items-center"
+        >
+          <i class="pi pi-question-circle mr-2"></i>
+          Centro de ayuda
+        </h2>
+        <button
+          (click)="close()"
+          class="p-2 hover:bg-slate-100 rounded-lg transition cursor-pointer flex-shrink-0 z-10 text-slate-900 text-3xl leading-none font-light"
+          aria-label="Cerrar ayuda"
+          type="button"
+        >
+          ×
+        </button>
+      </div>
+
+      <!-- Card Carousel Container -->
+      <div class="flex-1 overflow-hidden relative">
+        <!-- Cards Wrapper with horizontal scroll -->
+        <div class="h-full overflow-x-hidden">
+          <div
+            class="flex h-full transition-transform duration-500 ease-out"
+            [style.transform]="'translateX(-' + currentCardIndex * 100 + '%)'"
+          >
+            @for (tab of tabs; track tab.category; let i = $index) {
+              <!-- Card -->
+              <div class="w-full flex-shrink-0 h-full flex flex-col px-6 py-4">
+                <!-- Card Header with gradient and icon -->
+                <div
+                  class="mb-4 p-4 rounded-xl bg-gradient-to-br from-brand-primary-medium/10 to-brand-accent/5 border border-brand-primary-medium/20"
+                >
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="w-12 h-12 rounded-full bg-brand-primary-medium/20 flex items-center justify-center"
+                    >
+                      <div
+                        class="w-6 h-6 flex items-center justify-center text-brand-primary-medium"
+                        [innerHTML]="getIcon(tab.category)"
+                      ></div>
+                    </div>
+                    <div>
+                      <h3 class="text-lg font-semibold text-slate-900">
+                        {{ tab.label }}
+                      </h3>
+                      <p class="text-xs text-slate-500">
+                        {{ tab.sections.length }} secciones disponibles
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Scrollable Content -->
+                <div class="flex-1 overflow-y-auto pr-2">
+                  @for (section of tab.sections; track section.key) {
+                    <!-- Accordion Section -->
+                    <div class="mb-3">
+                      <!-- Section Header -->
+                      <button
+                        (click)="toggleSection(section.key)"
+                        class="w-full flex items-center justify-between px-4 py-3 bg-slate-50 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-100 transition shadow-sm hover:shadow"
+                        [attr.aria-expanded]="isSectionExpanded(section.key)"
+                        type="button"
+                      >
+                        <div class="flex items-center gap-3">
+                          <i
+                            [class]="
+                              'pi ' +
+                              section.icon +
+                              ' text-brand-primary-medium text-lg'
+                            "
+                          ></i>
+                          <span class="font-medium text-slate-900">{{
+                            section.title
+                          }}</span>
+                          <span
+                            class="bg-slate-200 text-slate-600 text-xs px-2 py-0.5 rounded-full"
+                          >
+                            {{ section.tips.length }}
+                          </span>
+                        </div>
+                        <i
+                          class="pi pi-chevron-down text-slate-400 transition-transform duration-200"
+                          [class.rotate-180]="isSectionExpanded(section.key)"
+                        ></i>
+                      </button>
+
+                      <!-- Section Content (expanded) -->
+                      @if (isSectionExpanded(section.key)) {
+                        <div class="mt-2 px-4 space-y-2 animate-fadeIn">
+                          @for (tip of section.tips; track $index) {
+                            <div [class]="getTipClasses(tip.priority)">
+                              <div class="flex items-start gap-2">
+                                <i
+                                  [class]="
+                                    'pi ' +
+                                    tip.icon +
+                                    ' text-current mt-0.5 flex-shrink-0'
+                                  "
+                                ></i>
+                                <span class="text-sm">{{ tip.text }}</span>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  @if (tab.sections.length === 0) {
+                    <!-- No content fallback -->
+                    <div class="text-center py-8 text-slate-500">
+                      <i class="pi pi-info-circle text-4xl mb-2"></i>
+                      <p>
+                        No hay contenido de ayuda disponible para esta sección.
+                      </p>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Navigation Arrows -->
+        <!-- Left Arrow -->
+        <button
+          (click)="prevCard()"
+          [disabled]="currentCardIndex === 0"
+          class="absolute left-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white shadow-lg border border-slate-200 flex items-center justify-center transition-all z-50 hover:shadow-xl disabled:opacity-30 disabled:cursor-not-allowed"
+          type="button"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            class="w-5 h-5 text-slate-700"
+            fill="currentColor"
+          >
+            <path
+              d="M17 11H5.41l2.3-2.29a1 1 0 1 0-1.42-1.42l-4 4a1 1 0 0 0-.21.33a1 1 0 0 0 0 .76a1 1 0 0 0 .21.33l4 4a1 1 0 0 0 1.42 0a1 1 0 0 0 0-1.42L5.41 13H17a1 1 0 0 0 0-2m4-7a1 1 0 0 0-1 1v14a1 1 0 0 0 2 0V5a1 1 0 0 0-1-1"
+            />
+          </svg>
+        </button>
+
+        <button
+          (click)="nextCard()"
+          [disabled]="currentCardIndex === tabs.length - 1"
+          class="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white shadow-lg border border-slate-200 flex items-center justify-center transition-all z-50 hover:shadow-xl disabled:opacity-30 disabled:cursor-not-allowed"
+          type="button"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            class="w-5 h-5 text-slate-700"
+            fill="currentColor"
+          >
+            <path
+              d="m17.71 11.29l-4-4a1 1 0 1 0-1.42 1.42l2.3 2.29H3a1 1 0 0 0 0 2h11.59l-2.3 2.29a1 1 0 0 0 0 1.42a1 1 0 0 0 1.42 0l4-4a1 1 0 0 0 .21-.33a1 1 0 0 0 0-.76a1 1 0 0 0-.21-.33M21 4a1 1 0 0 0-1 1v14a1 1 0 0 0 2 0V5a1 1 0 0 0-1-1"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Dots Navigation -->
+      @if (tabs.length > 1) {
+        <div
+          class="flex justify-center items-center gap-2 py-4 border-t border-slate-200"
+        >
+          @for (tab of tabs; track tab.category; let i = $index) {
+            <button
+              (click)="goToCard(i)"
+              [class.bg-brand-primary-medium]="i === currentCardIndex"
+              [class.w-8]="i === currentCardIndex"
+              [class.bg-slate-300]="i !== currentCardIndex"
+              [class.w-2]="i !== currentCardIndex"
+              class="h-2 rounded-full transition-all duration-300 cursor-pointer"
+              [attr.aria-label]="'Ir a ' + tab.label"
+              type="button"
+            ></button>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}

@@ -38,7 +38,7 @@ export class AuditListComponent implements OnInit {
       showPagination: true,
       showRowSelection: false,
       showIndexColumn: false,
-      emptyMessage: 'No se encontraron auditorías.',
+      emptyMessage: 'AUDIT.EMPTY',
       trackByField: 'id',
       showCreateButton: false
     },

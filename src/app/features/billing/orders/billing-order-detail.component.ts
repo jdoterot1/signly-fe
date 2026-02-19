@@ -85,7 +85,11 @@ export class BillingOrderDetailComponent implements OnInit, OnChanges {
   formatMoney(amount: number, currency: string): string {
     const normalized = String(currency || '').toUpperCase();
     try {
-      return new Intl.NumberFormat('es-CO', { style: 'currency', currency: normalized }).format(amount ?? 0);
+      return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: normalized,
+        maximumFractionDigits: 0
+      }).format(amount ?? 0);
     } catch {
       return `${amount ?? 0} ${normalized}`.trim();
     }

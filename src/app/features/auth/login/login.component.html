@@ -1,142 +1,198 @@
-<div class="min-h-screen w-full flex flex-col lg:flex-row bg-gradient-to-br from-white via-[#eaf1ff] to-[#f5f8ff]">
-    <!-- Sección Izquierda -->
+<div
+  class="min-h-screen w-full flex flex-col lg:flex-row bg-gradient-to-br from-white via-[#eaf1ff] to-[#f5f8ff]"
+>
+  <!-- Sección Izquierda -->
+  <div
+    class="relative w-full lg:w-1/2 h-[320px] lg:h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_#3366FF_0%,_#16173A_70%,_#16173A_100%)]"
+  >
     <div
-      class="relative w-full lg:w-1/2 h-[320px] lg:h-screen overflow-hidden
-             bg-[radial-gradient(circle_at_top_left,_#3366FF_0%,_#16173A_70%,_#16173A_100%)]"
+      class="absolute -top-12 -left-24 h-64 w-64 bg-blue-400/30 blur-[120px]"
+    ></div>
+    <div
+      class="absolute bottom-0 -right-16 h-72 w-72 bg-indigo-900/40 blur-[140px]"
+    ></div>
+
+    <!-- Texto -->
+    <div
+      class="relative z-10 p-8 lg:p-12 flex flex-col items-start h-full justify-center"
     >
-      <div class="absolute -top-12 -left-24 h-64 w-64 bg-blue-400/30 blur-[120px]"></div>
-      <div class="absolute bottom-0 -right-16 h-72 w-72 bg-indigo-900/40 blur-[140px]"></div>
-
-      <div class="relative z-10 p-8 lg:p-12 flex flex-col items-start h-full justify-center">
-        <h1 class="text-white font-bold leading-tight text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl">
-          {{ 'AUTH.HERO_TITLE' | translate }}
-        </h1>
-      </div>
-
-      <img
-        src="/assets/icons/Apolo.svg"
-        alt="Logo Apolo"
-        class="absolute bottom-[10%] right-[-35%]
-            w-[250%] sm:w-[250%] md:w-[200%] lg:w-[166%] xl:w-[125%]
-            filter brightness-0 invert pointer-events-none"
-      />
+      <h1
+        class="text-white font-bold leading-tight text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl max-w-[50%] lg:max-w-[60%]"
+      >
+        {{ "AUTH.HERO_TITLE" | translate }}
+      </h1>
     </div>
 
-    <!-- Sección Derecha -->
+    <!-- Imagen decorativa — siempre contenida por overflow-hidden del padre -->
+    <img
+      src="/assets/icons/Apolo.svg"
+      alt="Logo Apolo"
+      class="absolute bottom-0 right-0 translate-x-1/6 translate-y-1/100 w-[160%] sm:w-[140%] md:w-[120%] lg:w-[85%] xl:w-[75%] filter brightness-0 invert pointer-events-none z-0"
+    />
+  </div>
+
+  <!-- Sección Derecha -->
+  <div
+    class="relative w-full lg:w-1/2 h-auto lg:h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-white via-[#eef3ff] to-[#dce8ff]"
+  >
     <div
-      class="relative w-full lg:w-1/2 h-auto lg:h-screen flex items-center justify-center overflow-hidden
-             bg-gradient-to-br from-white via-[#eef3ff] to-[#dce8ff]"
-    >
-      <div class="absolute -top-10 -left-12 h-44 w-44 bg-blue-200/50 blur-[110px]"></div>
-      <div class="absolute bottom-[-30px] right-[-40px] h-60 w-60 bg-blue-400/30 blur-[140px]"></div>
-      <div class="w-full max-w-xl px-12 py-16">
-        <h2 class="text-5xl font-bold text-gray-800 mb-4">{{ 'AUTH.LOGIN.WELCOME' | translate }}</h2>
-        <p class="text-lg text-gray-600 mb-12">{{ 'AUTH.LOGIN.SUBTITLE' | translate }}</p>
+      class="absolute -top-10 -left-12 h-44 w-44 bg-blue-200/50 blur-[110px]"
+    ></div>
+    <div
+      class="absolute bottom-[-30px] right-[-40px] h-60 w-60 bg-blue-400/30 blur-[140px]"
+    ></div>
+    <div class="w-full max-w-xl px-12 py-16">
+      <h2 class="text-5xl font-bold text-gray-800 mb-4">
+        {{ "AUTH.LOGIN.WELCOME" | translate }}
+      </h2>
+      <p class="text-lg text-gray-600 mb-12">
+        {{ "AUTH.LOGIN.SUBTITLE" | translate }}
+      </p>
 
-        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-10">
-
-          <div>
-            <label for="email" class="block text-lg font-medium text-gray-700 mb-2 required-marker">{{ 'AUTH.LOGIN.EMAIL_LABEL' | translate }}</label>
-            <div class="relative">
-              <input
-                id="email"
-                type="email"
-                formControlName="email"
-                autocomplete="email"
-                required
-                class="block w-full pl-14 pr-4 py-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
-                [placeholder]="'AUTH.LOGIN.EMAIL_PLACEHOLDER' | translate"
-              />
-              <div class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none">
-                <svg class="h-6 w-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v.217l-8 4.8-8-4.8V5z" />
-                  <path d="M2 7.383l8 4.8 8-4.8V15a2 2 0 01-2 2H4a2 2 0 01-2-2V7.383z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label for="hs-toggle-password" class="block text-lg font-medium text-gray-700 mb-2 required-marker">{{ 'AUTH.LOGIN.PASSWORD_LABEL' | translate }}</label>
-            <div class="relative">
-              <input
-                id="hs-toggle-password"
-                [type]="showPassword ? 'text' : 'password'"
-                formControlName="password"
-                autocomplete="current-password"
-                required
-                class="py-4 ps-14 pe-14 block w-full border border-gray-300 rounded-lg text-lg focus:border-blue-500 focus:ring-blue-500"
-                [placeholder]="'AUTH.LOGIN.PASSWORD_PLACEHOLDER' | translate"
-              />
-              <div class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none">
-                <svg class="h-6 w-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd"
-                    d="M10 2a4 4 0 00-4 4v2H5a1 1 0 00-1 1v8a1 1 0 001 1h10a1 1 0 001-1v-8a1 1 0 00-1-1h-1V6a4 4 0 00-4-4zm-2 6V6a2 2 0 114 0v2H8z"
-                    clip-rule="evenodd" />
-                </svg>
-              </div>
-              <button
-                type="button"
-                (click)="togglePassword()"
-                class="absolute inset-y-0 right-0 flex items-center z-20 px-4 text-gray-400 hover:text-blue-600"
-                [attr.aria-label]="(showPassword ? 'AUTH.RESET_PASSWORD.HIDE_PASSWORD' : 'AUTH.RESET_PASSWORD.SHOW_PASSWORD') | translate"
-              >
-                <svg class="shrink-0 w-5 h-5" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <ng-container *ngIf="showPassword; else eyeClosed">
-                    <path
-                      d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"
-                    />
-                    <circle cx="12" cy="12" r="3" />
-                  </ng-container>
-                  <ng-template #eyeClosed>
-                    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-                    <path
-                      d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"
-                    />
-                    <path
-                      d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"
-                    />
-                    <line x1="2" x2="22" y1="2" y2="22" />
-                  </ng-template>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-lg">
-            <button type="button" (click)="goToForgotPassword()" class="font-medium text-blue-600 hover:text-blue-500">
-              {{ 'AUTH.LOGIN.FORGOT_PASSWORD' | translate }}
-            </button>
-            <div class="flex items-center gap-2 text-gray-500 text-base">
-              <button
-                type="button"
-                [routerLink]="['/register']"
-                (click)="goToRegister()"
-                class="font-semibold text-blue-600 hover:text-blue-500"
-              >
-                {{ 'AUTH.LOGIN.CREATE_ACCOUNT' | translate }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Submit -->
-          <div>
-            <button
-              type="submit"
-              [disabled]="loading"
-              class="w-full flex justify-center py-5 px-6 border border-transparent rounded-lg shadow-sm
-                     text-xl text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-10">
+        <div>
+          <label
+            for="email"
+            class="block text-lg font-medium text-gray-700 mb-2 required-marker"
+            >{{ "AUTH.LOGIN.EMAIL_LABEL" | translate }}</label
+          >
+          <div class="relative">
+            <input
+              id="email"
+              type="email"
+              formControlName="email"
+              autocomplete="email"
+              required
+              class="block w-full pl-14 pr-4 py-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+              [placeholder]="'AUTH.LOGIN.EMAIL_PLACEHOLDER' | translate"
+            />
+            <div
+              class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none"
             >
-              {{ 'AUTH.LOGIN.SUBMIT' | translate }}
+              <svg
+                class="h-6 w-6 text-gray-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  d="M2 5a2 2 0 012-2h12a2 2 0 012 2v.217l-8 4.8-8-4.8V5z"
+                />
+                <path
+                  d="M2 7.383l8 4.8 8-4.8V15a2 2 0 01-2 2H4a2 2 0 01-2-2V7.383z"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label
+            for="hs-toggle-password"
+            class="block text-lg font-medium text-gray-700 mb-2 required-marker"
+            >{{ "AUTH.LOGIN.PASSWORD_LABEL" | translate }}</label
+          >
+          <div class="relative">
+            <input
+              id="hs-toggle-password"
+              [type]="showPassword ? 'text' : 'password'"
+              formControlName="password"
+              autocomplete="current-password"
+              required
+              class="py-4 ps-14 pe-14 block w-full border border-gray-300 rounded-lg text-lg focus:border-blue-500 focus:ring-blue-500"
+              [placeholder]="'AUTH.LOGIN.PASSWORD_PLACEHOLDER' | translate"
+            />
+            <div
+              class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none"
+            >
+              <svg
+                class="h-6 w-6 text-gray-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 2a4 4 0 00-4 4v2H5a1 1 0 00-1 1v8a1 1 0 001 1h10a1 1 0 001-1v-8a1 1 0 00-1-1h-1V6a4 4 0 00-4-4zm-2 6V6a2 2 0 114 0v2H8z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </div>
+            <button
+              type="button"
+              (click)="togglePassword()"
+              class="absolute inset-y-0 right-0 flex items-center z-20 px-4 text-gray-400 hover:text-blue-600"
+              [attr.aria-label]="
+                (showPassword
+                  ? 'AUTH.RESET_PASSWORD.HIDE_PASSWORD'
+                  : 'AUTH.RESET_PASSWORD.SHOW_PASSWORD'
+                ) | translate
+              "
+            >
+              <svg
+                class="shrink-0 w-5 h-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <ng-container *ngIf="showPassword; else eyeClosed">
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </ng-container>
+                <ng-template #eyeClosed>
+                  <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                  <path
+                    d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"
+                  />
+                  <path
+                    d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"
+                  />
+                  <line x1="2" x2="22" y1="2" y2="22" />
+                </ng-template>
+              </svg>
             </button>
           </div>
+        </div>
 
-          <!-- Error -->
-          <div *ngIf="errorMessage" class="text-red-600 text-center text-lg">
-            {{ errorMessage }}
+        <div
+          class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-lg"
+        >
+          <button
+            type="button"
+            (click)="goToForgotPassword()"
+            class="font-medium text-blue-600 hover:text-blue-500"
+          >
+            {{ "AUTH.LOGIN.FORGOT_PASSWORD" | translate }}
+          </button>
+          <div class="flex items-center gap-2 text-gray-500 text-base">
+            <button
+              type="button"
+              [routerLink]="['/register']"
+              (click)="goToRegister()"
+              class="font-semibold text-blue-600 hover:text-blue-500"
+            >
+              {{ "AUTH.LOGIN.CREATE_ACCOUNT" | translate }}
+            </button>
           </div>
-        </form>
+        </div>
+
+        <!-- Submit -->
+        <div>
+          <button
+            type="submit"
+            [disabled]="loading"
+            class="w-full flex justify-center py-5 px-6 border border-transparent rounded-lg shadow-sm text-xl text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {{ "AUTH.LOGIN.SUBMIT" | translate }}
+          </button>
+        </div>
+
+        <!-- Error -->
+        <div *ngIf="errorMessage" class="text-red-600 text-center text-lg">
+          {{ errorMessage }}
+        </div>
+      </form>
     </div>
   </div>
 </div>
