@@ -55,9 +55,20 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
   flowState: FlowState | null = null;
   biometricData: BiometricStartData | null = null;
 
-  currentStep: BiometricStep = 'intro';
+  private _currentStep: BiometricStep = 'intro';
   loading = false;
   error: string | null = null;
+
+  // Getter and setter for currentStep to track changes for help system
+  get currentStep(): BiometricStep {
+    return this._currentStep;
+  }
+
+  set currentStep(value: BiometricStep) {
+    this._currentStep = value;
+    // Report current step to FlowService for help system context
+    this.flowService.setBiometricSubStep(value);
+  }
 
   // Camera state
   cameraActive = false;
@@ -115,6 +126,8 @@ export class FlowBiometricComponent implements OnInit, OnDestroy {
     this.subscriptions.forEach((sub) => sub.unsubscribe());
     this.stopFaceDetection();
     this.stopCamera();
+    // Clear biometric sub-step from FlowService
+    this.flowService.setBiometricSubStep(null);
   }
 
   startBiometric(): void {

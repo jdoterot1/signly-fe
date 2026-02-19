@@ -19,7 +19,7 @@
       <button
         type="button"
         class="inline-flex items-center gap-1.5 md:gap-2 rounded-full border border-slate-200 bg-white px-2.5 md:px-4 py-1.5 md:py-2 text-[10px] md:text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shrink-0"
-        (click)="helpOpen = true"
+        (click)="openHelp()"
       >
         <i class="pi pi-question-circle"></i>
         Ayuda
@@ -45,27 +45,9 @@
   </div>
 </header>
 
-<div *ngIf="helpOpen" class="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-slate-900/45 p-3 md:p-6">
-  <section class="w-full max-w-lg rounded-2xl border border-slate-100 bg-white shadow-2xl p-5 md:p-6">
-    <div class="flex items-start justify-between gap-4">
-      <div>
-        <p class="text-[10px] uppercase tracking-[0.22em] text-slate-500 font-semibold">Centro de ayuda</p>
-        <h3 class="mt-1 text-lg font-semibold text-slate-900">Como completar el flujo</h3>
-      </div>
-      <button
-        type="button"
-        class="h-8 w-8 rounded-full border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-        (click)="helpOpen = false"
-        aria-label="Cerrar ayuda"
-      >
-        <i class="pi pi-times text-xs"></i>
-      </button>
-    </div>
-
-    <div class="mt-4 space-y-2">
-      <div *ngFor="let tip of helpChecklist; let i = index" class="rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5">
-        <p class="text-xs md:text-sm text-slate-700"><span class="font-semibold text-slate-900">{{ i + 1 }}.</span> {{ tip }}</p>
-      </div>
-    </div>
-  </section>
-</div>
+<!-- Context-aware help modal -->
+<app-flow-help-modal
+  [open]="helpOpen"
+  [context]="helpContext"
+  (closed)="helpOpen = false"
+></app-flow-help-modal>

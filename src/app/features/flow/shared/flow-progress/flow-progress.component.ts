@@ -4,6 +4,8 @@ import { Subscription } from 'rxjs';
 
 import { FlowService } from '../../../../core/services/flow/flow.service';
 import { FlowChallengeType } from '../../../../core/models/flow/flow.model';
+import { FlowHelpModalComponent } from '../flow-help-modal/flow-help-modal.component';
+import { type HelpContext, type OtpChannel } from '../../../../core/services/flow/flow-help.service';
 
 export type FlowProgressStep = 'inicio' | 'biometria' | 'otp' | 'liveness' | 'firma' | 'completado';
 
@@ -16,7 +18,7 @@ interface FlowProgressItem {
 @Component({
   selector: 'app-flow-progress',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FlowHelpModalComponent],
   templateUrl: './flow-progress.component.html'
 })
 export class FlowProgressComponent implements OnInit, OnChanges, OnDestroy {
@@ -26,6 +28,10 @@ export class FlowProgressComponent implements OnInit, OnChanges, OnDestroy {
 
   helpOpen = false;
   steps: FlowProgressItem[] = [];
+  helpContext: HelpContext = {
+    currentFlowStep: null,
+    pipeline: []
+  };
   private readonly subs = new Subscription();
 
   private readonly stepMap: Record<FlowProgressStep, Omit<FlowProgressItem, 'key'>> = {
@@ -63,13 +69,27 @@ export class FlowProgressComponent implements OnInit, OnChanges, OnDestroy {
     this.subs.unsubscribe();
   }
 
-  readonly helpChecklist: string[] = [
-    'Usa buena iluminacion y evita contraluz.',
-    'Ten tu documento a la mano antes de iniciar.',
-    'Si no llega el codigo OTP, valida correo o celular y solicita reenvio.',
-    'Permite acceso a camara cuando el navegador lo solicite.',
-    'No cierres la pagina hasta ver el estado completado.'
-  ];
+  openHelp(): void {
+    const flowState = this.flowService.getFlowState();
+
+    this.helpContext = {
+      currentFlowStep: flowState?.currentStep || null,
+      pipeline: flowState?.pipeline || [],
+      // Optional: get biometric sub-step if implemented
+      currentBiometricStep: this.flowService.getBiometricSubStep?.() || undefined,
+      // Infer OTP channel from currentStep
+      otpChannel: this.getOtpChannel(flowState?.currentStep || null)
+    };
+
+    this.helpOpen = true;
+  }
+
+  private getOtpChannel(step: FlowChallengeType | null): OtpChannel | undefined {
+    if (step === 'otp_email') return 'email';
+    if (step === 'otp_sms') return 'sms';
+    if (step === 'otp_whatsapp') return 'whatsapp';
+    return undefined;
+  }
 
   isActive(step: FlowProgressStep): boolean {
     return this.currentStep === step;
