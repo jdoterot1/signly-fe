@@ -34,7 +34,7 @@ export class WebhookListComponent implements OnInit {
       showPagination: true,
       showRowSelection: false,
       showIndexColumn: false,
-      emptyMessage: 'No se encontraron webhooks registrados.',
+      emptyMessage: 'WEBHOOKS.EMPTY',
       trackByField: 'id'
     },
     columns: [

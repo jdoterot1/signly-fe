@@ -443,6 +443,11 @@
   background-color: transparent;
 }
 
+.mapper-chip--selected {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.18);
+  border-color: rgba(59, 130, 246, 0.45);
+}
+
 .mapper-chip[draggable='true'] {
   cursor: grab;
 }

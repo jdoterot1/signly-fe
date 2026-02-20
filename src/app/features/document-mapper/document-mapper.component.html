@@ -211,6 +211,7 @@
                       class="placeholder-chip mapper-chip"
                       *ngFor="let field of getFieldsForPage(page.pageNumber)"
                       [class.mapper-chip--active]="field.id === selectedFieldId"
+                      [class.mapper-chip--selected]="isFieldSelected(field.id)"
                       [ngStyle]="getFieldStyle(field)"
                       [attr.title]="field.label"
                       draggable="true"
@@ -311,7 +312,7 @@
             Campos agregados
           </p>
           <p class="text-base font-semibold text-gray-900">
-            {{ selectedField?.label || 'Configuración' }}
+            {{ hasMultiSelection ? (selectedFields.length + ' seleccionados') : (selectedField?.label || 'Configuración') }}
           </p>
         </div>
         <button
@@ -328,6 +329,89 @@
           <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold mb-2">
             Lista de campos
           </p>
+          <div *ngIf="hasSelection" class="mb-3 space-y-2">
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                class="rounded-lg border border-gray-200 px-2 py-1.5 text-[11px] font-semibold text-gray-700 hover:bg-gray-50"
+                (click)="duplicateSelectedFields()"
+              >
+                Duplicar
+              </button>
+              <button
+                type="button"
+                class="rounded-lg border border-red-200 px-2 py-1.5 text-[11px] font-semibold text-red-600 hover:bg-red-50"
+                (click)="removeSelectedFields()"
+              >
+                Eliminar
+              </button>
+              <button
+                type="button"
+                class="rounded-lg border border-gray-200 px-2 py-1.5 text-[11px] font-semibold text-gray-700 hover:bg-gray-50"
+                (click)="setRequiredForSelected(true)"
+              >
+                Requerido: Si
+              </button>
+              <button
+                type="button"
+                class="rounded-lg border border-gray-200 px-2 py-1.5 text-[11px] font-semibold text-gray-700 hover:bg-gray-50"
+                (click)="setRequiredForSelected(false)"
+              >
+                Requerido: No
+              </button>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                class="rounded-lg border border-gray-200 px-2 py-1 text-[11px] font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                [disabled]="!canAlignSelection"
+                (click)="alignSelected('left')"
+              >
+                Alinear izquierda
+              </button>
+              <button
+                type="button"
+                class="rounded-lg border border-gray-200 px-2 py-1 text-[11px] font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                [disabled]="!canAlignSelection"
+                (click)="alignSelected('center')"
+              >
+                Alinear centro
+              </button>
+              <button
+                type="button"
+                class="rounded-lg border border-gray-200 px-2 py-1 text-[11px] font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                [disabled]="!canAlignSelection"
+                (click)="alignSelected('right')"
+              >
+                Alinear derecha
+              </button>
+              <button
+                type="button"
+                class="rounded-lg border border-gray-200 px-2 py-1 text-[11px] font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                [disabled]="!canAlignSelection"
+                (click)="alignSelected('top')"
+              >
+                Alinear arriba
+              </button>
+              <button
+                type="button"
+                class="rounded-lg border border-gray-200 px-2 py-1 text-[11px] font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                [disabled]="!canDistributeSelection"
+                (click)="distributeSelected('horizontal')"
+              >
+                Distribuir horizontal
+              </button>
+              <button
+                type="button"
+                class="rounded-lg border border-gray-200 px-2 py-1 text-[11px] font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                [disabled]="!canDistributeSelection"
+                (click)="distributeSelected('vertical')"
+              >
+                Distribuir vertical
+              </button>
+            </div>
+          </div>
           <div class="flex-1 min-h-0 overflow-y-auto pr-1 custom-scroll space-y-2">
             <div *ngIf="mappedFields.length === 0" class="text-xs text-gray-400">
               Arrastra un componente para empezar a configurar campos.
@@ -338,9 +422,9 @@
                 *ngFor="let field of mappedFields"
                 type="button"
                 class="w-full text-left px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-brand-surface-raised hover:border-brand shadow-[0_1px_0_#edeef2] transition"
-                [class.border-brand-primary]="field.id === selectedFieldId"
-                [class.bg-brand-surface-raised]="field.id === selectedFieldId"
-                (click)="selectField(field.id)"
+                [class.border-brand-primary]="isFieldSelected(field.id)"
+                [class.bg-brand-surface-raised]="isFieldSelected(field.id)"
+                (click)="selectField(field.id, $event)"
               >
                 <div class="flex items-center justify-between gap-2">
                   <div class="min-w-0">
@@ -351,6 +435,15 @@
                       {{ field.name }}
                     </p>
                   </div>
+                  <span
+                    class="h-4 w-4 rounded border text-[10px] leading-4 text-center"
+                    [class.border-brand-primary]="isFieldSelected(field.id)"
+                    [class.text-brand-primary]="isFieldSelected(field.id)"
+                    [class.border-gray-300]="!isFieldSelected(field.id)"
+                    [class.text-transparent]="!isFieldSelected(field.id)"
+                  >
+                    ✓
+                  </span>
                   <span class="text-[10px] uppercase tracking-wide text-gray-400">
                     {{ field.type }}
                   </span>
@@ -361,20 +454,29 @@
         </div>
 
         <div
-          *ngIf="selectedField"
+          *ngIf="selectedField && !hasMultiSelection"
           class="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm flex-1 min-h-0 flex flex-col"
         >
           <div class="flex items-center justify-between">
             <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">
               Configurar campo
             </p>
-            <button
-              type="button"
-              class="text-xs font-semibold text-red-500 hover:text-red-600"
-              (click)="removeField(selectedField.id)"
-            >
-              Eliminar
-            </button>
+            <div class="flex items-center gap-3">
+              <button
+                type="button"
+                class="text-xs font-semibold text-brand-primary hover:text-brand-primary/80"
+                (click)="duplicateField(selectedField.id)"
+              >
+                Duplicar
+              </button>
+              <button
+                type="button"
+                class="text-xs font-semibold text-red-500 hover:text-red-600"
+                (click)="removeField(selectedField.id)"
+              >
+                Eliminar
+              </button>
+            </div>
           </div>
 
           <div *ngIf="isConfigOpen" class="mt-3 flex-1 min-h-0 overflow-y-auto pr-1 custom-scroll space-y-3">
@@ -497,6 +599,18 @@
               />
             </div>
           </div>
+        </div>
+
+        <div
+          *ngIf="hasMultiSelection"
+          class="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm"
+        >
+          <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">
+            Edición múltiple
+          </p>
+          <p class="mt-1 text-xs text-gray-500">
+            Usa las acciones de arriba para mover, duplicar, alinear, distribuir o eliminar los campos seleccionados.
+          </p>
         </div>
       </div>
     </aside>

@@ -213,7 +213,7 @@
             "
             class="px-4 py-4 text-center text-gray-500"
           >
-            {{ config.emptyMessage || ("TABLE.NO_DATA" | translate) }}
+            {{ (config.emptyMessage || "TABLE.NO_DATA") | translate }}
           </td>
         </tr>
       </tbody>
@@ -311,7 +311,7 @@
 
     <!-- Empty state for mobile -->
     <div *ngIf="!state.data.filteredData.length" class="text-center py-8 text-gray-500">
-      {{ config.emptyMessage || ("TABLE.NO_DATA" | translate) }}
+      {{ (config.emptyMessage || "TABLE.NO_DATA") | translate }}
     </div>
   </div>
 
