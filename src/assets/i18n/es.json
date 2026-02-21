@@ -332,8 +332,16 @@
     },
     "VIEW": "Visualizar",
     "EDIT": "Editar documento",
-    "DELETE": "Eliminar documento",
-    "CONFIRM_DELETE": "¿Seguro que deseas eliminar \"{{name}}\"?",
+    "DELETE": "Cancelar documento",
+    "CONFIRM_DELETE": "¿Seguro que deseas cancelar \"{{name}}\"?",
+    "CANCEL_SUCCESS": "El documento fue cancelado correctamente.",
+    "CANCEL_SUCCESS_TITLE": "Documento cancelado",
+    "CANCEL_ERROR": "No se pudo cancelar el documento.",
+    "CANCEL_ERROR_TITLE": "Error al cancelar",
+    "ALREADY_CANCELLED_MSG": "Este documento ya está cancelado.",
+    "ALREADY_CANCELLED_TITLE": "Sin cambios",
+    "CANNOT_CANCEL_COMPLETED_MSG": "No puedes cancelar un documento completado.",
+    "CANNOT_CANCEL_COMPLETED_TITLE": "Acción no permitida",
     "CREATE": {
       "STEP_TITLE": "Paso 2: crea tu documento",
       "STEP_SUBTITLE": "Carga el archivo y completa los datos para dejarlo listo para firma.",
@@ -1073,6 +1081,14 @@
     "HELP_CENTER": "Centro de ayuda",
     "HOW_TO_COMPLETE": "Como completar el flujo",
     "CLOSE_HELP": "Cerrar ayuda",
+    "OTP": {
+      "ERROR_VERIFY_FAILED": "La verificación del código OTP falló.",
+      "ERROR_STEP_MISMATCH": "Paso incorrecto. El paso actual es: {{step}}.",
+      "ERROR_CODE_INVALID": "Código incorrecto. Por favor intenta de nuevo.",
+      "ERROR_CODE_EXPIRED": "El código de verificación expiró. Solicita uno nuevo.",
+      "ERROR_SEND_FAILED": "Error al enviar el código de verificación.",
+      "ERROR_SESSION_EXPIRED": "La sesión ha expirado. Por favor reinicia el proceso."
+    },
     "BIOMETRIC": {
       "FACE_HINT_DEFAULT": "Alinea tu rostro dentro del óvalo",
       "DOCUMENT_HINT_DEFAULT": "Mantén el documento dentro del recuadro",

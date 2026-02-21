@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subscription, interval } from 'rxjs';
+import { TranslateService } from '@ngx-translate/core';
 
 import { FlowService, FlowError } from '../../../core/services/flow/flow.service';
 import { FlowState, OtpChannel, OtpSendData } from '../../../core/models/flow/flow.model';
@@ -43,7 +44,8 @@ export class FlowOtpComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
-    private flowService: FlowService
+    private flowService: FlowService,
+    private translate: TranslateService
   ) {}
 
   ngOnInit(): void {
@@ -130,11 +132,13 @@ export class FlowOtpComponent implements OnInit, OnDestroy {
       error: (err: FlowError) => {
         // Check if it's a step mismatch error
         if (err.code === 'bad_request' && err.details?.currentStep) {
-          this.error = `Paso incorrecto. El paso actual es: ${err.details.currentStep}`;
+          this.error = this.translate.instant('FLOW.OTP.ERROR_STEP_MISMATCH', {
+            step: err.details.currentStep
+          });
         } else if (err.code === 'token_expired') {
-          this.error = 'La sesion ha expirado. Por favor reinicia el proceso.';
+          this.error = this.translate.instant('FLOW.OTP.ERROR_SESSION_EXPIRED');
         } else {
-          this.error = err.message || 'Error al enviar el codigo de verificacion.';
+          this.error = this.resolveOtpErrorMessage(err, 'FLOW.OTP.ERROR_SEND_FAILED');
         }
         this.currentStep = 'error';
       }
@@ -237,10 +241,10 @@ export class FlowOtpComponent implements OnInit, OnDestroy {
         this.currentStep = 'input';
 
         if (err.code === 'token_expired') {
-          this.error = 'La sesion ha expirado. Por favor reinicia el proceso.';
+          this.error = this.translate.instant('FLOW.OTP.ERROR_SESSION_EXPIRED');
           this.currentStep = 'error';
         } else {
-          this.error = err.message || 'Codigo incorrecto. Por favor intenta de nuevo.';
+          this.error = this.resolveOtpErrorMessage(err, 'FLOW.OTP.ERROR_CODE_INVALID');
         }
 
         // Clear form for retry
@@ -298,5 +302,20 @@ export class FlowOtpComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     this.router.navigate(['/flow', this.processId]);
+  }
+
+  private resolveOtpErrorMessage(err: FlowError, fallbackKey: string): string {
+    const rawMessage = (err?.message || '').toLowerCase();
+    const reason = (err?.details?.reason || '').toLowerCase();
+
+    if (rawMessage.includes('otp verification failed') || reason.includes('codemismatchexception')) {
+      return this.translate.instant('FLOW.OTP.ERROR_VERIFY_FAILED');
+    }
+
+    if (reason.includes('expiredcodeexception') || rawMessage.includes('expired verification code')) {
+      return this.translate.instant('FLOW.OTP.ERROR_CODE_EXPIRED');
+    }
+
+    return err?.message || this.translate.instant(fallbackKey);
   }
 }

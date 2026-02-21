@@ -98,7 +98,6 @@ export class HeaderComponent implements OnInit {
 
   ngOnInit(): void {
     this.hydrateUserFromSession()
-    this.fetchUserProfile()
     this.fetchAccountInfo()
   }
 
@@ -216,31 +215,6 @@ export class HeaderComponent implements OnInit {
       displayName: name || this.userProfile.displayName || email || '',
       email: email || this.userProfile.email
     }
-  }
-
-  private fetchUserProfile(): void {
-    this.authService
-      .me()
-      .pipe(take(1))
-      .subscribe({
-        next: payload => {
-          const meAttributes = (payload.attributes ?? {}) as Record<string, string | undefined>
-          const attributeName = meAttributes['name'] || meAttributes['given_name']
-          const resolvedEmail = payload.attributes?.email || this.userProfile.email
-          const resolvedName = attributeName || ''
-          const fallbackDisplay = resolvedName || resolvedEmail
-
-          this.userProfile = {
-            ...this.userProfile,
-            name: resolvedName,
-            displayName: fallbackDisplay,
-            email: resolvedEmail
-          }
-        },
-        error: error => {
-          console.error('No se pudo cargar la información del usuario', error)
-        }
-      })
   }
 
   private fetchAccountInfo(): void {

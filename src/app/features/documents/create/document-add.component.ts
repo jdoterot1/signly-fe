@@ -143,6 +143,7 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.submitLabel = this.translate.instant('DOCUMENTS.CREATE.CONTINUE');
     this.cancelLabel = this.translate.instant('DOCUMENTS.CREATE.CANCEL');
+    this.form.get('participantSignaturelessFlow')?.setValue(false, { emitEvent: false });
 
     const query = this.route.snapshot.queryParamMap;
     this.preselectedTemplateId = query.get('templateId') ?? undefined;
@@ -622,10 +623,10 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     const documentNumber = (formValue.participantDocumentNumber ?? '').trim();
     const selectedModes = signatureModes.length ? signatureModes : (['SIGNATURE_EMAIL'] as DocumentSignatureMode[]);
 
-    const signaturelessFlow = !!formValue.participantSignaturelessFlow;
+    const signaturelessFlow = false;
     const prefill = this.buildParticipantPrefill();
 
-    if (!name && !email && !phone && !documentNumber && !signaturelessFlow && !prefill.length) {
+    if (!name && !email && !phone && !documentNumber && !prefill.length) {
       return null;
     }
     if (!name) {
@@ -698,7 +699,6 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
       (formValue.participantEmail ?? '').toString().trim() ||
       (formValue.participantPhone ?? '').toString().trim() ||
       (formValue.participantDocumentNumber ?? '').toString().trim() ||
-      !!formValue.participantSignaturelessFlow ||
       this.buildParticipantPrefill().length > 0
     );
   }

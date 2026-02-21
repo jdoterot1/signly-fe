@@ -131,7 +131,10 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
         this.templateData = data;
         this.fields = (data.fields || []).map(f => this.normalizeDownloadField(f));
         this.activeFieldCode = this.fields[0] ? this.getFieldCode(this.fields[0]) : null;
-        this.currentStep = 'signing';
+        this.currentPage = 1;
+        this.totalPages = 1;
+        this.renderedPageWidth = 0;
+        this.renderedPageHeight = 0;
         void this.loadPdf(data.downloadUrl);
       },
       error: (err: FlowError) => {
@@ -145,11 +148,14 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
 
   private async loadPdf(url: string): Promise<void> {
     try {
+      this.currentStep = 'loading';
       const loadingTask = getDocument(url);
       this.pdfDoc = await loadingTask.promise;
       this.totalPages = this.pdfDoc.numPages;
       this.pageBaseSizeByNumber.clear();
       await this.renderPage(this.currentPage);
+      await this.waitForNextPaint();
+      this.currentStep = 'signing';
       this.schedulePdfRerender();
     } catch {
       this.error = 'Error al cargar el documento PDF.';
@@ -580,5 +586,9 @@ export class FlowTemplateSignComponent implements OnInit, OnDestroy, AfterViewIn
       x: event.clientX - rect.left,
       y: event.clientY - rect.top
     };
+  }
+
+  private waitForNextPaint(): Promise<void> {
+    return new Promise(resolve => requestAnimationFrame(() => resolve()));
   }
 }

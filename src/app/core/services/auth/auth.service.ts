@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError, map, tap } from 'rxjs/operators';
+import { Observable, of, throwError } from 'rxjs';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
 import { environment } from '../../../../environments/environment';
 import {
@@ -97,6 +97,12 @@ export class AuthService {
       .pipe(
         map(res => this.mapSession(res.data)),
         tap(session => this.persistSession(session)),
+        switchMap(session =>
+          this.me().pipe(
+            map(() => this.session ?? session),
+            catchError(() => of(this.session ?? session))
+          )
+        ),
         catchError(err => this.handleError(err))
       );
   }

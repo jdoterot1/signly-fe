@@ -332,8 +332,16 @@
     },
     "VIEW": "View",
     "EDIT": "Edit document",
-    "DELETE": "Delete document",
-    "CONFIRM_DELETE": "Are you sure you want to delete \"{{name}}\"?",
+    "DELETE": "Cancel document",
+    "CONFIRM_DELETE": "Are you sure you want to cancel \"{{name}}\"?",
+    "CANCEL_SUCCESS": "The document was cancelled successfully.",
+    "CANCEL_SUCCESS_TITLE": "Document cancelled",
+    "CANCEL_ERROR": "Could not cancel the document.",
+    "CANCEL_ERROR_TITLE": "Cancellation error",
+    "ALREADY_CANCELLED_MSG": "This document is already cancelled.",
+    "ALREADY_CANCELLED_TITLE": "No changes",
+    "CANNOT_CANCEL_COMPLETED_MSG": "You cannot cancel a completed document.",
+    "CANNOT_CANCEL_COMPLETED_TITLE": "Action not allowed",
     "CREATE": {
       "STEP_TITLE": "Step 2: create your document",
       "STEP_SUBTITLE": "Upload the file and fill in the details to get it ready for signing.",
@@ -1095,6 +1103,14 @@
     "HELP_CENTER": "Help center",
     "HOW_TO_COMPLETE": "How to complete the flow",
     "CLOSE_HELP": "Close help",
+    "OTP": {
+      "ERROR_VERIFY_FAILED": "OTP verification failed.",
+      "ERROR_STEP_MISMATCH": "Invalid step. Current step is: {{step}}.",
+      "ERROR_CODE_INVALID": "Incorrect code. Please try again.",
+      "ERROR_CODE_EXPIRED": "The verification code has expired. Request a new one.",
+      "ERROR_SEND_FAILED": "Error sending verification code.",
+      "ERROR_SESSION_EXPIRED": "Your session has expired. Please restart the process."
+    },
     "BIOMETRIC": {
       "FACE_HINT_DEFAULT": "Align your face within the oval",
       "DOCUMENT_HINT_DEFAULT": "Keep the document within the frame",

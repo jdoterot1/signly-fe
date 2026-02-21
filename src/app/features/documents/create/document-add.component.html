@@ -125,8 +125,8 @@
         <label class="inline-flex items-center gap-2 text-sm text-gray-700">
           <input
             type="checkbox"
-            [checked]="!!form.get('participantSignaturelessFlow')?.value"
-            (change)="form.get('participantSignaturelessFlow')?.setValue(!!$any($event.target).checked)"
+            [checked]="false"
+            [disabled]="true"
           />
           Flujo sin firma manuscrita
         </label>

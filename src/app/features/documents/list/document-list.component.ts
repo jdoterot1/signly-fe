@@ -7,6 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { TableComponent } from '../../../shared/table/table.component';
 import { TableModel } from '../../../shared/table/table.model';
 import { DocumentService } from '../../../core/services/documents/document.service';
+import { AlertService } from '../../../shared/alert/alert.service';
 import {
   Document,
   DocumentStatus,
@@ -127,6 +128,7 @@ export class DocumentListComponent implements OnInit {
     private documentService: DocumentService,
     private router: Router,
     private translate: TranslateService,
+    private alertService: AlertService
   ) {}
 
   ngOnInit(): void {
@@ -162,6 +164,22 @@ export class DocumentListComponent implements OnInit {
   }
 
   onDelete(row: DocumentRow) {
+    const normalizedStatus = (row.status || '').toString().toUpperCase();
+    if (normalizedStatus === 'CANCELLED' || normalizedStatus === 'CANCELED') {
+      this.alertService.showInfo(
+        this.translate.instant('DOCUMENTS.ALREADY_CANCELLED_MSG'),
+        this.translate.instant('DOCUMENTS.ALREADY_CANCELLED_TITLE')
+      );
+      return;
+    }
+    if (normalizedStatus === 'COMPLETED') {
+      this.alertService.showInfo(
+        this.translate.instant('DOCUMENTS.CANNOT_CANCEL_COMPLETED_MSG'),
+        this.translate.instant('DOCUMENTS.CANNOT_CANCEL_COMPLETED_TITLE')
+      );
+      return;
+    }
+
     const message = this.translate.instant('DOCUMENTS.CONFIRM_DELETE', {
       name: row.name,
     });
@@ -169,7 +187,21 @@ export class DocumentListComponent implements OnInit {
     if (confirm(message)) {
       this.documentService
         .deleteDocument(row.id)
-        .subscribe(() => this.loadDocuments());
+        .subscribe({
+          next: () => {
+            this.alertService.showSuccess(
+              this.translate.instant('DOCUMENTS.CANCEL_SUCCESS'),
+              this.translate.instant('DOCUMENTS.CANCEL_SUCCESS_TITLE')
+            );
+            this.loadDocuments();
+          },
+          error: (err: any) => {
+            this.alertService.showError(
+              err?.message || this.translate.instant('DOCUMENTS.CANCEL_ERROR'),
+              this.translate.instant('DOCUMENTS.CANCEL_ERROR_TITLE')
+            );
+          }
+        });
     }
   }
 
