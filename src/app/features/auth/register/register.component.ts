@@ -1,6 +1,6 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
 
@@ -35,7 +35,7 @@ interface DialCodeOption {
   templateUrl: './register.component.html',
   styleUrls: []
 })
-export class RegisterComponent implements OnDestroy {
+export class RegisterComponent implements OnInit, OnDestroy {
   readonly defaultLocale = 'es-CO';
   readonly defaultTimezone = 'America/Bogota';
 
@@ -44,6 +44,7 @@ export class RegisterComponent implements OnDestroy {
   loading = false;
   errorMessage: string | null = null;
   showPassword = false;
+  showConfirmPassword = false;
   private readonly subs = new Subscription();
 
   readonly steps: StepDefinition[] = [
@@ -105,12 +106,13 @@ export class RegisterComponent implements OnDestroy {
         phoneDialCode: ['+57', [Validators.required, Validators.pattern(REGISTER_REGEX.phoneDialCode)]],
         phone: ['', [Validators.required, Validators.pattern(REGISTER_REGEX.phoneNational)]],
         password: ['', [Validators.required, Validators.pattern(REGISTER_REGEX.strongPassword)]],
+        confirmPassword: ['', [Validators.required]],
         locale: [this.defaultLocale],
         timezone: [this.defaultTimezone]
-      }),
+      }, { validators: this.passwordMatchValidator }),
       company: this.fb.group({
         businessName: ['', [Validators.required, Validators.pattern(REGISTER_REGEX.companyName)]],
-        subdomain: ['', [Validators.required, Validators.pattern(REGISTER_REGEX.subdomain)]],
+        subdomain: ['', [Validators.pattern(REGISTER_REGEX.subdomain)]],
         website: ['', [Validators.pattern(REGISTER_REGEX.website)]],
         industry: ['', [Validators.required]],
         country: ['CO', [Validators.required]],
@@ -133,6 +135,15 @@ export class RegisterComponent implements OnDestroy {
     this.setupBillingEmailSync();
     this.setupAboutOtherBehavior();
     this.setupReferralCodeBehavior();
+  }
+
+  ngOnInit(): void {
+    const state = history.state as { email?: string };
+    const emailFromState = String(state?.email || '').trim();
+    if (emailFromState) {
+      this.userGroup.get('email')?.setValue(emailFromState);
+      this.userGroup.get('email')?.markAsTouched();
+    }
   }
 
   get userGroup(): FormGroup {
@@ -167,6 +178,10 @@ export class RegisterComponent implements OnDestroy {
     this.showPassword = !this.showPassword;
   }
 
+  toggleConfirmPassword(): void {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
+
   goNext(): void {
     const target = this.getGroupForStep(this.step.key);
     target?.markAllAsTouched();
@@ -184,6 +199,10 @@ export class RegisterComponent implements OnDestroy {
   hasError(controlPath: string, error: string): boolean {
     const control = this.registerForm.get(controlPath);
     return !!(control && control.touched && control.hasError(error));
+  }
+
+  hasPasswordMismatch(): boolean {
+    return !!(this.userGroup.touched && this.userGroup.hasError('passwordMismatch'));
   }
 
   onSubmit(): void {
@@ -444,5 +463,16 @@ export class RegisterComponent implements OnDestroy {
         applyMode(!!value);
       })
     );
+  }
+
+  private passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
+    const password = group.get('password')?.value;
+    const confirmPassword = group.get('confirmPassword')?.value;
+
+    if (!password || !confirmPassword) {
+      return null;
+    }
+
+    return password === confirmPassword ? null : { passwordMismatch: true };
   }
 }

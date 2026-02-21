@@ -21,6 +21,28 @@ export class AlertService {
     this.showAlert('info', title ?? this.translate.instant('ALERTS.INFO_TITLE'), message);
   }
 
+  async showConfirm(
+    message: string,
+    title = 'Confirmación',
+    confirmText = 'Aceptar',
+    cancelText = 'Cancelar'
+  ): Promise<boolean> {
+    const result = await Swal.fire({
+      icon: 'warning',
+      title,
+      text: message,
+      background: '#fff',
+      confirmButtonColor: '#6366f1',
+      cancelButtonColor: '#94a3b8',
+      confirmButtonText: confirmText,
+      cancelButtonText: cancelText,
+      showCancelButton: true,
+      reverseButtons: true
+    });
+
+    return result.isConfirmed;
+  }
+
   private showAlert(icon: SweetAlertIcon, title: string, text: string) {
     Swal.fire({
       icon,

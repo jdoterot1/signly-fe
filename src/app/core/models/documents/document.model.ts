@@ -38,10 +38,18 @@ export interface DocumentParticipant {
   participantId?: string;
   policy?: DocumentParticipantPolicy;
   signatureMode?: DocumentSignatureMode[];
+  prefill?: DocumentParticipantPrefillField[];
+  signaturelessFlow?: boolean;
   currentStep?: string;
   enabled?: boolean;
   processId?: string;
   status?: string;
+}
+
+export interface DocumentParticipantPrefillField {
+  value: string;
+  fieldName: string;
+  editable: boolean;
 }
 
 export interface DocumentApi {
@@ -71,6 +79,8 @@ export interface CreateDocumentParticipant {
   };
   displayName: string;
   identity: DocumentParticipantIdentity;
+  prefill?: DocumentParticipantPrefillField[];
+  signaturelessFlow?: boolean;
   order?: string;
 }
 

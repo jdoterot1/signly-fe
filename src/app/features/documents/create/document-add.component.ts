@@ -10,6 +10,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { DocumentService } from '../../../core/services/documents/document.service';
 import {
   CreateDocumentRequest,
+  DocumentParticipantPrefillField,
   DocumentParticipantIdentity,
   DocumentSignatureMode
 } from '../../../core/models/documents/document.model';
@@ -36,6 +37,8 @@ interface DraftParticipant {
     cooldownSeconds: number;
   };
   identity: DocumentParticipantIdentity;
+  prefill?: DocumentParticipantPrefillField[];
+  signaturelessFlow?: boolean;
 }
 
 const NO_DIGITS_PATTERN = /^[^\d]*$/;
@@ -71,6 +74,10 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
 
   private templatesOptions: Array<{ name: string; code: string }> = [];
   private templateVersionOptions: Array<{ name: string; code: string }> = [];
+  templateFieldNames: string[] = [];
+  participantUsePrefill = false;
+  participantPrefillValues: Record<string, string> = {};
+  participantPrefillEditable: Record<string, boolean> = {};
   private preselectedTemplateId?: string;
   private preselectedTemplateVersion?: string;
   private prefillName?: string;
@@ -90,6 +97,7 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     'participantPhoneCountry',
     'participantPhone',
     'participantDocumentNumber',
+    'participantSignaturelessFlow',
     'attemptsMax',
     'cooldownSeconds'
   ];
@@ -118,6 +126,7 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
       participantPhoneCountry: [DOCUMENT_PHONE_COUNTRY_CODES[0]],
       participantPhone: [''],
       participantDocumentNumber: [''],
+      participantSignaturelessFlow: [false],
       attemptsMax: ['3'],
       cooldownSeconds: ['60']
     });
@@ -154,9 +163,16 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
         const templateId = this.readSelectValue(value);
         if (!templateId) {
           this.setTemplateVersions([]);
+          this.templateFieldNames = [];
+          this.resetParticipantPrefillState();
           return;
         }
         this.loadTemplateVersions(templateId);
+      })
+    );
+    this.subs.add(
+      this.form.get('templateVersion')!.valueChanges.subscribe(() => {
+        this.refreshTemplateFieldNames();
       })
     );
 
@@ -301,10 +317,12 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
         participantEmail: '',
         participantPhoneCountry: DOCUMENT_PHONE_COUNTRY_CODES[0],
         participantPhone: '',
-        participantDocumentNumber: ''
+        participantDocumentNumber: '',
+        participantSignaturelessFlow: false
       },
       { emitEvent: false }
     );
+    this.resetParticipantPrefillState();
   }
 
   removeParticipant(index: number): void {
@@ -421,6 +439,7 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
       if (match) {
         this.form.get('templateVersion')!.setValue(match, { emitEvent: false });
         this.preselectedTemplateVersion = undefined;
+        this.refreshTemplateFieldNames();
         return;
       }
       this.preselectedTemplateVersion = undefined;
@@ -432,6 +451,7 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     if (!stillValid) {
       this.form.get('templateVersion')!.setValue(options[0] ?? null, { emitEvent: false });
     }
+    this.refreshTemplateFieldNames();
   }
 
   private buildVersionOptions(history: TemplateApi[]): Array<{ name: string; code: string }> {
@@ -602,7 +622,10 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
     const documentNumber = (formValue.participantDocumentNumber ?? '').trim();
     const selectedModes = signatureModes.length ? signatureModes : (['SIGNATURE_EMAIL'] as DocumentSignatureMode[]);
 
-    if (!name && !email && !phone && !documentNumber) {
+    const signaturelessFlow = !!formValue.participantSignaturelessFlow;
+    const prefill = this.buildParticipantPrefill();
+
+    if (!name && !email && !phone && !documentNumber && !signaturelessFlow && !prefill.length) {
       return null;
     }
     if (!name) {
@@ -663,7 +686,9 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
         attemptsMax,
         cooldownSeconds
       },
-      identity
+      identity,
+      prefill: prefill.length ? prefill : undefined,
+      signaturelessFlow
     };
   }
 
@@ -672,8 +697,34 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
       (formValue.participantName ?? '').toString().trim() ||
       (formValue.participantEmail ?? '').toString().trim() ||
       (formValue.participantPhone ?? '').toString().trim() ||
-      (formValue.participantDocumentNumber ?? '').toString().trim()
+      (formValue.participantDocumentNumber ?? '').toString().trim() ||
+      !!formValue.participantSignaturelessFlow ||
+      this.buildParticipantPrefill().length > 0
     );
+  }
+
+  onParticipantUsePrefillChange(enabled: boolean): void {
+    this.participantUsePrefill = enabled;
+    if (!enabled) {
+      return;
+    }
+    this.syncPrefillStateWithTemplateFields();
+  }
+
+  onParticipantPrefillValueChange(fieldName: string, value: string): void {
+    this.participantPrefillValues[fieldName] = value;
+  }
+
+  onParticipantPrefillEditableChange(fieldName: string, editable: boolean): void {
+    this.participantPrefillEditable[fieldName] = editable;
+  }
+
+  getParticipantPrefillValue(fieldName: string): string {
+    return this.participantPrefillValues[fieldName] ?? '';
+  }
+
+  getParticipantPrefillEditable(fieldName: string): boolean {
+    return !!this.participantPrefillEditable[fieldName];
   }
 
   private setFieldRequiredIndicator(fieldKey: string, required: boolean): void {
@@ -689,5 +740,100 @@ export class DocumentCreateComponent implements OnInit, OnDestroy {
       ...config,
       fields: config.fields.map((f: any) => ({ ...f, options: f.options ? [...f.options] : undefined }))
     };
+  }
+
+  private refreshTemplateFieldNames(): void {
+    const templateId = this.readSelectValue(this.form.get('templateId')?.value);
+    const templateVersion = this.readSelectValue(this.form.get('templateVersion')?.value);
+    if (!templateId || !templateVersion) {
+      this.templateFieldNames = [];
+      this.syncPrefillStateWithTemplateFields();
+      return;
+    }
+
+    this.templateService.getTemplateVersion(templateId, templateVersion).subscribe({
+      next: template => {
+        this.templateFieldNames = this.extractTemplateFieldNames(template.fields ?? []);
+        this.syncPrefillStateWithTemplateFields();
+      },
+      error: err => {
+        console.warn('No se pudieron cargar los campos del template para prefill', err);
+        this.templateFieldNames = [];
+        this.syncPrefillStateWithTemplateFields();
+      }
+    });
+  }
+
+  private extractTemplateFieldNames(fields: unknown[]): string[] {
+    const names = new Set<string>();
+
+    fields.forEach(field => {
+      if (!field || typeof field !== 'object') {
+        return;
+      }
+      const source = field as { fieldName?: unknown; fieldType?: unknown };
+      if (this.isSignTemplateFieldType(source.fieldType)) {
+        return;
+      }
+      const fieldName = source.fieldName;
+      if (typeof fieldName === 'string' && fieldName.trim()) {
+        names.add(fieldName.trim());
+      }
+    });
+
+    return Array.from(names.values());
+  }
+
+  private isSignTemplateFieldType(fieldType: unknown): boolean {
+    if (typeof fieldType !== 'string') {
+      return false;
+    }
+    const normalized = fieldType.trim().toLowerCase();
+    return normalized === 'sign' || normalized === 'signature';
+  }
+
+  private syncPrefillStateWithTemplateFields(): void {
+    const allowed = new Set(this.templateFieldNames);
+
+    Object.keys(this.participantPrefillValues).forEach(key => {
+      if (!allowed.has(key)) {
+        delete this.participantPrefillValues[key];
+      }
+    });
+
+    Object.keys(this.participantPrefillEditable).forEach(key => {
+      if (!allowed.has(key)) {
+        delete this.participantPrefillEditable[key];
+      }
+    });
+
+    this.templateFieldNames.forEach(fieldName => {
+      if (!(fieldName in this.participantPrefillValues)) {
+        this.participantPrefillValues[fieldName] = '';
+      }
+      if (!(fieldName in this.participantPrefillEditable)) {
+        this.participantPrefillEditable[fieldName] = false;
+      }
+    });
+  }
+
+  private buildParticipantPrefill(): DocumentParticipantPrefillField[] {
+    if (!this.participantUsePrefill) {
+      return [];
+    }
+
+    return this.templateFieldNames
+      .map(fieldName => ({
+        fieldName,
+        value: (this.participantPrefillValues[fieldName] ?? '').trim(),
+        editable: !!this.participantPrefillEditable[fieldName]
+      }))
+      .filter(item => item.value.length > 0);
+  }
+
+  private resetParticipantPrefillState(): void {
+    this.participantUsePrefill = false;
+    this.participantPrefillValues = {};
+    this.participantPrefillEditable = {};
   }
 }

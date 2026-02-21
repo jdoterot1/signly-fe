@@ -238,7 +238,11 @@
       "EMAIL_REQUIRED": "Email is required.",
       "EMAIL_INVALID": "Invalid email format.",
       "SUBMIT": "Send recovery link",
-      "ERROR_DEFAULT": "Error processing request"
+      "ERROR_DEFAULT": "Error processing request",
+      "SUCCESS_VERIFY_OTP_SENT": "We sent you a verification code to activate the account.",
+      "ERROR_NO_VERIFIED_CONTACT": "Password reset is not available because this account has no verified email or phone.",
+      "ERROR_USER_NOT_FOUND": "No account was found for that email.",
+      "ERROR_USER_NOT_CONFIRMED": "This account is not confirmed yet. Complete registration first."
     },
     "OTP": {
       "TITLE": "Code verification",
@@ -248,7 +252,9 @@
       "COUNTDOWN": "You can resend the code in {{time}}",
       "SUCCESS": "Code verified, continue with password change.",
       "ERROR_NO_EMAIL": "No email associated with recovery found.",
-      "ERROR_RESTART": "Please restart the recovery process."
+      "ERROR_RESTART": "Please restart the recovery process.",
+      "RESENT_SUCCESS": "Code resent. Check your inbox.",
+      "RESEND_FAILED": "We could not resend the code. Please try again."
     }
   },
   "DASHBOARD": {

@@ -14,6 +14,8 @@ import {
   TemplateApi,
   TemplateDownloadUrlResponse,
   TemplateField,
+  TemplateFieldGrouped,
+  TemplateFieldPlacement,
   TemplateLanguage,
   TemplateUploadUrlResponse,
   TemplateStatus,
@@ -78,18 +80,19 @@ export class TemplateService {
 
   getTemplateFields(templateId: string): Observable<TemplateField[]> {
     return this.withHeaders(headers =>
-      this.http.get<ApiResponse<TemplateField[]>>(`${this.baseUrl}/${templateId}/fields`, { headers }).pipe(
-        map(res => res.data ?? []),
+      this.http.get<ApiResponse<unknown>>(`${this.baseUrl}/${templateId}/fields`, { headers }).pipe(
+        map(res => this.flattenTemplateFields(this.extractTemplateFieldsData(res.data))),
         catchError(err => this.handleError(err))
       )
     );
   }
 
   updateTemplateFields(templateId: string, fields: TemplateField[]): Observable<TemplateField[]> {
+    const payload = this.groupTemplateFields(fields);
     return this.withHeaders(
       headers =>
-        this.http.put<ApiResponse<TemplateField[]>>(`${this.baseUrl}/${templateId}/fields`, fields, { headers }).pipe(
-          map(res => res.data ?? []),
+        this.http.put<ApiResponse<unknown>>(`${this.baseUrl}/${templateId}/fields`, payload, { headers }).pipe(
+          map(res => this.flattenTemplateFields(this.extractTemplateFieldsData(res.data))),
           catchError(err => this.handleError(err))
         ),
       true
@@ -198,6 +201,130 @@ export class TemplateService {
   private handleError(error: any) {
     const message = error?.error?.message || error?.message || 'Ocurrió un error al procesar la solicitud.';
     return throwError(() => new Error(message));
+  }
+
+  private extractTemplateFieldsData(data: unknown): unknown[] {
+    if (Array.isArray(data)) {
+      return data;
+    }
+    if (data && typeof data === 'object') {
+      const maybeFields = (data as { fields?: unknown }).fields;
+      if (Array.isArray(maybeFields)) {
+        return maybeFields;
+      }
+    }
+    return [];
+  }
+
+  private flattenTemplateFields(fields: unknown[]): TemplateField[] {
+    const normalized: TemplateField[] = [];
+
+    fields.forEach((field, index) => {
+      if (!field || typeof field !== 'object') {
+        return;
+      }
+
+      const source = field as {
+        fieldName?: unknown;
+        fieldType?: unknown;
+        fieldCode?: unknown;
+        page?: unknown;
+        x?: unknown;
+        y?: unknown;
+        width?: unknown;
+        height?: unknown;
+        placements?: unknown;
+      };
+
+      const fieldName = String(source.fieldName ?? `CAMPO_${index + 1}`);
+      const fieldType = String(source.fieldType ?? 'text');
+      const fieldCode = source.fieldCode ?? '1';
+      const placements = Array.isArray(source.placements) ? source.placements : null;
+
+      if (placements?.length) {
+        placements.forEach((placement, placementIndex) => {
+          if (!placement || typeof placement !== 'object') {
+            return;
+          }
+          const coords = placement as {
+            page?: unknown;
+            x?: unknown;
+            y?: unknown;
+            width?: unknown;
+            height?: unknown;
+          };
+
+          normalized.push({
+            page: this.coalesceToStringOrNumber(coords.page, 1),
+            x: this.coalesceToStringOrNumber(coords.x, 0),
+            y: this.coalesceToStringOrNumber(coords.y, 0),
+            width: this.coalesceToStringOrNumber(coords.width, 120),
+            height: this.coalesceToStringOrNumber(coords.height, 40),
+            fieldName,
+            fieldType,
+            fieldCode: this.coalesceToStringOrNumber(fieldCode, placementIndex + 1)
+          });
+        });
+        return;
+      }
+
+      normalized.push({
+        page: this.coalesceToStringOrNumber(source.page, 1),
+        x: this.coalesceToStringOrNumber(source.x, 0),
+        y: this.coalesceToStringOrNumber(source.y, 0),
+        width: this.coalesceToStringOrNumber(source.width, 120),
+        height: this.coalesceToStringOrNumber(source.height, 40),
+        fieldName,
+        fieldType,
+        fieldCode: this.coalesceToStringOrNumber(fieldCode, 1)
+      });
+    });
+
+    return normalized;
+  }
+
+  private groupTemplateFields(fields: TemplateField[]): TemplateFieldGrouped[] {
+    const grouped = new Map<string, TemplateFieldGrouped>();
+
+    fields.forEach((field, index) => {
+      const fieldName = String(field.fieldName || `CAMPO_${index + 1}`);
+      const fieldType = String(field.fieldType || 'text');
+      const fieldCode = this.coalesceToStringOrNumber(field.fieldCode, 1);
+      const key = `${fieldName}||${fieldType}||${fieldCode}`;
+
+      const placement: TemplateFieldPlacement = {
+        page: this.coalesceToStringOrNumber(field.page, 1),
+        x: this.coalesceToStringOrNumber(field.x, 0),
+        y: this.coalesceToStringOrNumber(field.y, 0),
+        width: this.coalesceToStringOrNumber(field.width, 120),
+        height: this.coalesceToStringOrNumber(field.height, 40)
+      };
+
+      const existing = grouped.get(key);
+      if (existing) {
+        existing.placements.push(placement);
+        return;
+      }
+
+      grouped.set(key, {
+        fieldName,
+        fieldType,
+        fieldCode,
+        placements: [placement]
+      });
+    });
+
+    return Array.from(grouped.values());
+  }
+
+  private coalesceToStringOrNumber(value: unknown, fallback: string | number): string | number {
+    if (value === null || value === undefined) {
+      return fallback;
+    }
+    if (typeof value === 'number' || typeof value === 'string') {
+      return value;
+    }
+    return fallback;
   }
 
   private mapToUi(template: TemplateApi): Template {

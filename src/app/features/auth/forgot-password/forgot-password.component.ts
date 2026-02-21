@@ -5,8 +5,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { RouterModule, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
-import { TranslateModule } from '@ngx-translate/core';
-import { AuthService } from '../../../core/services/auth/auth.service';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { AuthError, AuthService } from '../../../core/services/auth/auth.service';
 
 @Component({
   selector: 'app-forgot-password',
@@ -25,7 +25,8 @@ export class ForgotPasswordComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private translate: TranslateService
   ) { }
 
   ngOnInit(): void {
@@ -47,23 +48,48 @@ export class ForgotPasswordComponent implements OnInit {
       return;
     }
 
-    this.loading = true;
     const { email } = this.forgotForm.value;
-
-    this.authService.forgotPassword(email).subscribe({
-      next: () => {
-        this.loading = false;
-        this.router.navigate(['/otp'], { state: { email } });
-      },
-      error: (err) => {
-        this.errorMessage = err.message || 'AUTH.FORGOT_PASSWORD.ERROR_DEFAULT';
-        this.loading = false;
-      }
-    });
+    this.authService.setRecoveryEmail(email);
+    this.loading = false;
+    this.router.navigate(['/reset-password'], { state: { email } });
   }
 
   // Método para volver al login
   goToLogin() {
     this.router.navigate(['/login']);
+  }
+
+  private resolveForgotPasswordError(error: AuthError): string {
+    const reason = String(error?.code || (error?.details as any)?.reason || '');
+    const detailsMessage = String((error?.details as any)?.message || '').toLowerCase();
+
+    if (
+      reason === 'InvalidParameterException' ||
+      detailsMessage.includes('no registered/verified email or phone_number')
+    ) {
+      return this.translate.instant('AUTH.FORGOT_PASSWORD.ERROR_NO_VERIFIED_CONTACT');
+    }
+
+    if (reason === 'UserNotFoundException') {
+      return this.translate.instant('AUTH.FORGOT_PASSWORD.ERROR_USER_NOT_FOUND');
+    }
+
+    if (reason === 'UserNotConfirmedException') {
+      return this.translate.instant('AUTH.FORGOT_PASSWORD.ERROR_USER_NOT_CONFIRMED');
+    }
+
+    return error?.message || this.translate.instant('AUTH.FORGOT_PASSWORD.ERROR_DEFAULT');
+  }
+
+  private handleUnverifiedContactRecovery(email: string): void {
+    this.loading = false;
+    this.errorMessage = null;
+    this.successMessage = null;
+    this.router.navigate(['/register/confirm'], {
+      state: {
+        email,
+        fromForgotUnverified: true
+      }
+    });
   }
 }

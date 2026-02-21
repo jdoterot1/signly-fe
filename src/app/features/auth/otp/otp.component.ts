@@ -17,12 +17,14 @@ import { Subscription, interval } from 'rxjs';
   styleUrls: []
 })
 export class OtpComponent implements OnInit {
+  private readonly otpControlNames = ['otp1', 'otp2', 'otp3', 'otp4', 'otp5', 'otp6'] as const;
   otpForm!: FormGroup;
   submitted = false;
   successMessage: string | null = null;
   errorMessage: string | null = null;
   loading = false;
   email: string | null = null;
+  recoveryFlow = false;
 
   // Para el countdown
   countdown: number = 60;
@@ -38,7 +40,9 @@ export class OtpComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    const navigationEmail = history.state?.email as string | undefined;
+    const navigationState = history.state as { email?: string; recoveryFlow?: boolean };
+    const navigationEmail = navigationState?.email;
+    this.recoveryFlow = !!navigationState?.recoveryFlow;
     this.email = navigationEmail || this.authService.getRecoveryEmail();
 
     if (!this.email) {
@@ -63,6 +67,10 @@ export class OtpComponent implements OnInit {
         this.countdownSub.unsubscribe();
       }
     });
+
+    if (this.recoveryFlow && this.email) {
+      this.sendRecoveryCodeOnEntry();
+    }
   }
 
   get f() {
@@ -92,6 +100,33 @@ export class OtpComponent implements OnInit {
       this.f['otp5'].value +
       this.f['otp6'].value;
 
+    if (this.recoveryFlow) {
+      const pendingPassword = this.authService.getPendingRecoveryPassword();
+      if (!pendingPassword) {
+        this.errorMessage = 'AUTH.ERROR_RESET_INVALID';
+        return;
+      }
+
+      this.loading = true;
+      this.authService.verifyOtp(this.email, otpValue, pendingPassword).subscribe({
+        next: () => {
+          this.successMessage = 'AUTH.SUCCESS_PASSWORD_RESET';
+          this.loading = false;
+          setTimeout(() => {
+            this.authService.clearPendingRecoveryPassword();
+            this.authService.clearRecoveryEmail();
+            this.authService.clearRecoveryOtp();
+            this.router.navigate(['/login']);
+          }, 1200);
+        },
+        error: err => {
+          this.errorMessage = err?.message || 'AUTH.ERROR_RESET_PASSWORD';
+          this.loading = false;
+        }
+      });
+      return;
+    }
+
     this.loading = true;
     this.authService.setRecoveryOtp(otpValue);
     this.successMessage = 'AUTH.OTP.SUCCESS';
@@ -114,24 +149,109 @@ export class OtpComponent implements OnInit {
     }
   }
 
+  onOtpInput(index: number): void {
+    const controlName = this.otpControlNames[index];
+    const control = this.otpForm.get(controlName);
+    const inputElements = this.otpInputs.toArray();
+    const rawValue = String(control?.value || '');
+    const digitsOnly = rawValue.replace(/\D/g, '');
+
+    if (!control) {
+      return;
+    }
+
+    if (!digitsOnly) {
+      control.setValue('', { emitEvent: false });
+      return;
+    }
+
+    const digit = digitsOnly.slice(-1);
+    control.setValue(digit, { emitEvent: false });
+
+    if (index < inputElements.length - 1) {
+      inputElements[index + 1].nativeElement.focus();
+    }
+  }
+
+  onPasteOtp(event: ClipboardEvent, startIndex = 0): void {
+    event.preventDefault();
+
+    const clipboard = event.clipboardData?.getData('text') ?? '';
+    const digits = clipboard.replace(/\D/g, '');
+    if (!digits) {
+      return;
+    }
+
+    const inputElements = this.otpInputs.toArray();
+    let lastFilledIndex = startIndex;
+
+    for (let i = 0; i < digits.length && startIndex + i < this.otpControlNames.length; i++) {
+      const controlName = this.otpControlNames[startIndex + i];
+      this.otpForm.get(controlName)?.setValue(digits[i], { emitEvent: false });
+      lastFilledIndex = startIndex + i;
+    }
+
+    inputElements[Math.min(lastFilledIndex + 1, inputElements.length - 1)]?.nativeElement.focus();
+  }
+
   // Reenviar OTP: reiniciar countdown a 60
   resendCode() {
-    if (this.countdown === 0) {
-      this.countdown = 60;
-      this.countdownSub = interval(1000).subscribe(sec => {
-        if (this.countdown > 0) {
-          this.countdown--;
-        } else {
-          this.countdownSub.unsubscribe();
-        }
-      });
-      // Aquí podrías llamar a un método de AuthService para reenviar el código
-      // e.g. this.authService.resendOtp().subscribe();
+    if (this.countdown > 0 || this.loading) {
+      return;
     }
+
+    if (!this.email) {
+      this.errorMessage = 'AUTH.OTP.ERROR_RESTART';
+      return;
+    }
+
+    this.errorMessage = null;
+    this.successMessage = null;
+    this.loading = true;
+
+    this.authService.forgotPassword(this.email).subscribe({
+      next: () => {
+        this.loading = false;
+        this.successMessage = 'AUTH.OTP.RESENT_SUCCESS';
+        this.restartCountdown();
+      },
+      error: () => {
+        this.loading = false;
+        this.errorMessage = 'AUTH.OTP.RESEND_FAILED';
+      }
+    });
   }
 
   // Regresar a login
   goToLogin() {
     this.router.navigate(['/login']);
+  }
+
+  private restartCountdown(): void {
+    this.countdownSub?.unsubscribe();
+    this.countdown = 60;
+    this.countdownSub = interval(1000).subscribe(() => {
+      if (this.countdown > 0) {
+        this.countdown--;
+      } else {
+        this.countdownSub.unsubscribe();
+      }
+    });
+  }
+
+  private sendRecoveryCodeOnEntry(): void {
+    this.loading = true;
+    this.authService.forgotPassword(this.email as string).subscribe({
+      next: () => {
+        this.loading = false;
+        this.successMessage = 'AUTH.OTP.RESENT_SUCCESS';
+        this.errorMessage = null;
+        this.restartCountdown();
+      },
+      error: () => {
+        this.loading = false;
+        this.errorMessage = 'AUTH.OTP.RESEND_FAILED';
+      }
+    });
   }
 }

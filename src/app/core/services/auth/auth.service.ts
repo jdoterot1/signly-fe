@@ -76,9 +76,12 @@ export class AuthService {
   private readonly baseUrl = environment.apiBaseUrl;
   private readonly storageKey = 'signly.auth.session';
   private readonly cookieKey = 'signly.auth.session';
+  private readonly pendingRegisterRequestKey = 'signly.auth.pendingRegisterRequest';
+  private readonly pendingRegisterConfirmRequestKey = 'signly.auth.pendingRegisterConfirmRequest';
   private session: AuthSession | null;
   private recoveryEmail: string | null = null;
   private recoveryOtp: string | null = null;
+  private pendingRecoveryPassword: string | null = null;
   private passwordChallenge: PasswordChallenge | null = null;
   private pendingRegisterRequest: RegisterRequest | null = null;
   private pendingRegisterConfirmRequest: PendingRegisterConfirmRequest | null = null;
@@ -112,6 +115,13 @@ export class AuthService {
       .pipe(catchError(err => this.handleError(err)));
   }
 
+  resendRegisterOtp(email: string): Observable<ApiResponse<unknown>> {
+    const url = `${this.baseUrl}/auth/register/otp/resend`;
+    return this.http
+      .post<ApiResponse<unknown>>(url, { email })
+      .pipe(catchError(err => this.handleError(err)));
+  }
+
   setPendingRegistration(
     registerRequest: RegisterRequest,
     confirmRequest: PendingRegisterConfirmRequest
@@ -132,13 +142,20 @@ export class AuthService {
       },
       metadata: confirmRequest.metadata ? { ...confirmRequest.metadata } : undefined
     };
+    this.savePendingRegistrationToStorage();
   }
 
   getPendingRegisterRequest(): RegisterRequest | null {
+    if (!this.pendingRegisterRequest) {
+      this.loadPendingRegistrationFromStorage();
+    }
     return this.pendingRegisterRequest ? { ...this.pendingRegisterRequest } : null;
   }
 
   getPendingRegisterConfirmRequest(): PendingRegisterConfirmRequest | null {
+    if (!this.pendingRegisterConfirmRequest) {
+      this.loadPendingRegistrationFromStorage();
+    }
     if (!this.pendingRegisterConfirmRequest) {
       return null;
     }
@@ -163,6 +180,7 @@ export class AuthService {
   clearPendingRegistration(): void {
     this.pendingRegisterRequest = null;
     this.pendingRegisterConfirmRequest = null;
+    this.clearPendingRegistrationFromStorage();
   }
 
   logout(): Observable<void> {
@@ -273,6 +291,7 @@ export class AuthService {
   clearRecoveryEmail(): void {
     this.recoveryEmail = null;
     this.recoveryOtp = null;
+    this.pendingRecoveryPassword = null;
   }
 
   setRecoveryOtp(otp: string): void {
@@ -285,6 +304,18 @@ export class AuthService {
 
   clearRecoveryOtp(): void {
     this.recoveryOtp = null;
+  }
+
+  setPendingRecoveryPassword(password: string): void {
+    this.pendingRecoveryPassword = password;
+  }
+
+  getPendingRecoveryPassword(): string | null {
+    return this.pendingRecoveryPassword;
+  }
+
+  clearPendingRecoveryPassword(): void {
+    this.pendingRecoveryPassword = null;
   }
 
   setPasswordChallenge(challenge: PasswordChallenge): void {
@@ -520,5 +551,62 @@ export class AuthService {
     authError.details = details;
 
     return throwError(() => authError);
+  }
+
+  private savePendingRegistrationToStorage(): void {
+    if (typeof sessionStorage === 'undefined') {
+      return;
+    }
+
+    try {
+      if (this.pendingRegisterRequest) {
+        sessionStorage.setItem(this.pendingRegisterRequestKey, JSON.stringify(this.pendingRegisterRequest));
+      }
+      if (this.pendingRegisterConfirmRequest) {
+        sessionStorage.setItem(
+          this.pendingRegisterConfirmRequestKey,
+          JSON.stringify(this.pendingRegisterConfirmRequest)
+        );
+      }
+    } catch {
+      // ignore storage failures
+    }
+  }
+
+  private loadPendingRegistrationFromStorage(): void {
+    if (typeof sessionStorage === 'undefined') {
+      return;
+    }
+
+    try {
+      if (!this.pendingRegisterRequest) {
+        const rawPendingRegister = sessionStorage.getItem(this.pendingRegisterRequestKey);
+        if (rawPendingRegister) {
+          this.pendingRegisterRequest = JSON.parse(rawPendingRegister) as RegisterRequest;
+        }
+      }
+
+      if (!this.pendingRegisterConfirmRequest) {
+        const rawPendingConfirm = sessionStorage.getItem(this.pendingRegisterConfirmRequestKey);
+        if (rawPendingConfirm) {
+          this.pendingRegisterConfirmRequest = JSON.parse(rawPendingConfirm) as PendingRegisterConfirmRequest;
+        }
+      }
+    } catch {
+      // ignore malformed storage
+    }
+  }
+
+  private clearPendingRegistrationFromStorage(): void {
+    if (typeof sessionStorage === 'undefined') {
+      return;
+    }
+
+    try {
+      sessionStorage.removeItem(this.pendingRegisterRequestKey);
+      sessionStorage.removeItem(this.pendingRegisterConfirmRequestKey);
+    } catch {
+      // ignore storage failures
+    }
   }
 }

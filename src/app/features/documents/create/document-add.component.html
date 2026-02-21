@@ -97,6 +97,8 @@
             <p *ngIf="participant.identity.phone">Teléfono: {{ participant.identity.phone }}</p>
             <p *ngIf="participant.identity.documentNumber">Documento: {{ participant.identity.documentNumber }}</p>
             <p>Modos: {{ participant.signatureMode.join(', ') }}</p>
+            <p>Flujo sin firma: {{ participant.signaturelessFlow ? 'Sí' : 'No' }}</p>
+            <p *ngIf="participant.prefill?.length">Campos precompletados: {{ participant.prefill?.length }}</p>
           </div>
           <button
             type="button"
@@ -108,5 +110,70 @@
         </div>
       </article>
     </div>
+
+    <section class="space-y-3 rounded-xl border border-gray-200 bg-white p-4">
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <h4 class="text-sm font-semibold text-gray-800">Opciones del participante</h4>
+        <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            [checked]="participantUsePrefill"
+            (change)="onParticipantUsePrefillChange(!!$any($event.target).checked)"
+          />
+          Precompletar campos del template
+        </label>
+        <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            [checked]="!!form.get('participantSignaturelessFlow')?.value"
+            (change)="form.get('participantSignaturelessFlow')?.setValue(!!$any($event.target).checked)"
+          />
+          Flujo sin firma manuscrita
+        </label>
+      </div>
+
+      <div *ngIf="participantUsePrefill" class="rounded-lg border border-gray-200 bg-gray-50 p-3">
+        <p class="text-xs text-gray-600 mb-2" *ngIf="!templateFieldNames.length">
+          Esta versión del template no tiene campos disponibles para precompletar.
+        </p>
+
+        <div class="overflow-x-auto" *ngIf="templateFieldNames.length">
+          <table class="min-w-full text-xs">
+            <thead>
+              <tr class="text-left text-gray-500">
+                <th class="py-2 pr-3 font-semibold">Campo</th>
+                <th class="py-2 pr-3 font-semibold">Valor</th>
+                <th class="py-2 pr-1 font-semibold">Editable</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let fieldName of templateFieldNames" class="border-t border-gray-200">
+                <td class="py-2 pr-3 font-medium text-gray-700">{{ fieldName }}</td>
+                <td class="py-2 pr-3">
+                  <input
+                    type="text"
+                    class="w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                    [value]="getParticipantPrefillValue(fieldName)"
+                    (input)="onParticipantPrefillValueChange(fieldName, $any($event.target).value)"
+                    placeholder="Valor a precompletar"
+                  />
+                </td>
+                <td class="py-2 pr-1">
+                  <input
+                    type="checkbox"
+                    [checked]="getParticipantPrefillEditable(fieldName)"
+                    (change)="onParticipantPrefillEditableChange(fieldName, !!$any($event.target).checked)"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <p class="text-xs text-gray-500">
+        El prefill se configura aquí por participante usando la plantilla seleccionada. Los campos de firma no se pueden precompletar.
+      </p>
+    </section>
   </section>
 </ng-template>

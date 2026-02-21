@@ -80,14 +80,21 @@ export interface DocumentMapperValidationResult {
 }
 
 interface ApiTemplateFieldLike {
-  page: number | string;
-  x: number | string;
-  y: number | string;
-  width: number | string;
-  height: number | string;
+  page?: number | string;
+  x?: number | string;
+  y?: number | string;
+  width?: number | string;
+  height?: number | string;
   fieldName: string;
   fieldType: string;
   fieldCode: number | string;
+  placements?: Array<{
+    page?: number | string;
+    x?: number | string;
+    y?: number | string;
+    width?: number | string;
+    height?: number | string;
+  }>;
 }
 
 type ResizeHandle = 'nw' | 'ne' | 'sw' | 'se';
@@ -331,10 +338,14 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
       if (group.length < 2) {
         continue;
       }
+      const types = new Set(group.map(item => item.type));
+      if (types.size <= 1) {
+        continue;
+      }
       duplicateNames += 1;
       issues.push({
         type: 'duplicate_name',
-        message: `Código de campo repetido: "${key}" (${group.length} veces).`,
+        message: `Código de campo repetido con tipos distintos: "${key}" (${group.length} veces).`,
         fieldIds: group.map(field => field.id),
         page: null
       });
@@ -372,7 +383,8 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
   }
 
   loadMappedFieldsFromApi(fields: ApiTemplateFieldLike[]): void {
-    if (!fields.length) {
+    const expandedFields = this.expandApiTemplateFields(fields);
+    if (!expandedFields.length) {
       this.mappedFields = [];
       this.setSelection([]);
       this.fieldCounter = 0;
@@ -381,7 +393,7 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
       return;
     }
 
-    const next: DocumentMappedField[] = fields.map((field, index) => {
+    const next: DocumentMappedField[] = expandedFields.map((field, index) => {
       const pageNumber = this.toPositiveInt(field.page, 1);
       const pageMeta = this.pdfPages.find(page => page.pageNumber === pageNumber);
       const pageWidth = pageMeta?.width ?? 1000;
@@ -911,15 +923,11 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
     }
 
     const suffix = ++this.fieldCounter;
-    const copyName = this.buildDuplicateFieldName(original.name, suffix);
-    const copyLabel = this.buildDuplicateFieldLabel(original.label, suffix);
     const copyId = `field_${Date.now()}_${suffix}`;
 
     const copy: DocumentMappedField = {
       ...original,
       id: copyId,
-      label: copyLabel,
-      name: copyName,
       x: this.clamp(original.x + 0.02, 0, 1 - original.width),
       y: this.clamp(original.y + 0.02, 0, 1 - original.height)
     };
@@ -937,20 +945,14 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
     }
 
     this.pushHistory();
-    const scopeFields: DocumentMappedField[] = [...this.mappedFields];
     const copies: DocumentMappedField[] = originals.map(original => {
       const suffix = ++this.fieldCounter;
-      const copyName = this.buildDuplicateFieldName(original.name, suffix, scopeFields);
-      const copyLabel = this.buildDuplicateFieldLabel(original.label, suffix, scopeFields);
       const copy: DocumentMappedField = {
         ...original,
         id: `field_${Date.now()}_${suffix}`,
-        label: copyLabel,
-        name: copyName,
         x: this.clamp(original.x + 0.02, 0, 1 - original.width),
         y: this.clamp(original.y + 0.02, 0, 1 - original.height)
       };
-      scopeFields.push(copy);
       return copy;
     });
 
@@ -1157,66 +1159,6 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
       .replace(/^_+|_+$/g, '');
   }
 
-  private buildDuplicateFieldName(
-    baseName: string,
-    fallbackSuffix: number,
-    scopeFields: DocumentMappedField[] = this.mappedFields
-  ): string {
-    const normalized = this.normalizeFieldName(baseName) || `CAMPO_${fallbackSuffix}`;
-    const match = normalized.match(/^(.*?)(?:_(\d+))?$/);
-    const base = (match?.[1] || normalized).trim() || `CAMPO_${fallbackSuffix}`;
-    const escapedBase = this.escapeRegExp(base);
-    const pattern = new RegExp(`^${escapedBase}(?:_(\\d+))?$`);
-
-    let max = 1;
-    for (const field of scopeFields) {
-      const current = this.normalizeFieldName(field.name);
-      const currentMatch = current.match(pattern);
-      if (!currentMatch) {
-        continue;
-      }
-
-      const num = Number(currentMatch[1] ?? 1);
-      if (Number.isFinite(num) && num > max) {
-        max = num;
-      }
-    }
-
-    return `${base}_${max + 1}`;
-  }
-
-  private buildDuplicateFieldLabel(
-    baseLabel: string,
-    fallbackSuffix: number,
-    scopeFields: DocumentMappedField[] = this.mappedFields
-  ): string {
-    const normalized = (baseLabel || '').trim() || `Campo ${fallbackSuffix}`;
-    const match = normalized.match(/^(.*?)(?:\s+(\d+))?$/);
-    const base = (match?.[1] || normalized).trim() || `Campo`;
-    const escapedBase = this.escapeRegExp(base);
-    const pattern = new RegExp(`^${escapedBase}(?:\\s+(\\d+))?$`, 'i');
-
-    let max = 1;
-    for (const field of scopeFields) {
-      const label = (field.label || '').trim();
-      const labelMatch = label.match(pattern);
-      if (!labelMatch) {
-        continue;
-      }
-
-      const num = Number(labelMatch[1] ?? 1);
-      if (Number.isFinite(num) && num > max) {
-        max = num;
-      }
-    }
-
-    return `${base} ${max + 1}`;
-  }
-
-  private escapeRegExp(value: string): string {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  }
-
   private createMappedField(
     type: FormFieldType,
     page: number,
@@ -1231,10 +1173,11 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
   ): DocumentMappedField {
     const palette = this.fieldPalette.find(item => item.type === type);
     const base = palette?.label || type;
-    const suffix = ++this.fieldCounter;
+    const suffix = this.getNextFieldSuffixByType(type);
+    const idSuffix = ++this.fieldCounter;
     const name = this.normalizeFieldName(`${base}_${suffix}`) || `CAMPO_${suffix}`;
     return {
-      id: `field_${Date.now()}_${suffix}`,
+      id: `field_${Date.now()}_${idSuffix}`,
       type,
       label: palette?.label || 'Nuevo campo',
       name,
@@ -1251,6 +1194,11 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
       pdfPageWidth,
       pdfPageHeight
     };
+  }
+
+  private getNextFieldSuffixByType(type: FormFieldType): number {
+    const totalOfType = this.mappedFields.filter(field => field.type === type).length;
+    return totalOfType + 1;
   }
 
   private placeFieldOnPage(type: FormFieldType, pageNumber: number, x: number, y: number): void {
@@ -1766,6 +1714,33 @@ export class DocumentMapperComponent implements OnDestroy, AfterViewChecked {
 
       return !overlappingField;
     });
+  }
+
+  private expandApiTemplateFields(fields: ApiTemplateFieldLike[]): ApiTemplateFieldLike[] {
+    const normalized: ApiTemplateFieldLike[] = [];
+
+    fields.forEach((field, index) => {
+      const placements = Array.isArray(field.placements) ? field.placements : [];
+      if (!placements.length) {
+        normalized.push(field);
+        return;
+      }
+
+      placements.forEach((placement, placementIndex) => {
+        normalized.push({
+          fieldName: field.fieldName || `CAMPO_${index + 1}`,
+          fieldType: field.fieldType || 'text',
+          fieldCode: field.fieldCode ?? placementIndex + 1,
+          page: placement.page ?? 1,
+          x: placement.x ?? 0,
+          y: placement.y ?? 0,
+          width: placement.width ?? 120,
+          height: placement.height ?? 40
+        });
+      });
+    });
+
+    return normalized;
   }
 
   private rectOverlapRatio(

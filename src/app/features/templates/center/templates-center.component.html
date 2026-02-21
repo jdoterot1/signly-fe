@@ -5,7 +5,7 @@
     (primary)="goToCreateDocument()" (closed)="closeGuideModal()"></app-guide-modal>
 
   <div class="flex flex-col lg:flex-row gap-8 items-start">
-    <app-admin-sidebar class="w-full lg:w-auto" [ownerName]="ownerName | translate" [accountId]="accountId"
+    <app-admin-sidebar class="w-full lg:w-auto" [ownerName]="ownerName | translate"
       [sections]="sidebarSections" [selectedOption]="selectedOption"
       (optionSelected)="onOptionSelected($event)"></app-admin-sidebar>
 

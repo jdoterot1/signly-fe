@@ -128,6 +128,17 @@ export interface TemplateDownloadField {
   fieldCode: string;
   fieldName: string;
   fieldType: string;
+  editable?: boolean;
+  value?: string;
+  height?: string | number;
+  page?: string | number;
+  width?: string | number;
+  x?: string | number;
+  y?: string | number;
+  placements?: TemplateFieldPlacement[];
+}
+
+export interface TemplateFieldPlacement {
   height: string | number;
   page: string | number;
   width: string | number;
@@ -145,14 +156,11 @@ export interface TemplateDownloadData {
 
 // Template Submit Request (for /template/submit)
 export interface TemplateSubmitField {
+  editable: boolean;
   fieldCode: string;
   fieldName: string;
   fieldType: string;
-  height: number;
-  page: number;
-  width: number;
-  x: number;
-  y: number;
+  placements: TemplateFieldPlacement[];
   value: string;
 }
 

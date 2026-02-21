@@ -144,6 +144,12 @@ export class TemplateEditComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const fields = this.serializeFields();
+    if (!this.hasAtLeastOneSignatureField(fields)) {
+      this.alertService.showError('La plantilla debe tener al menos un campo de firma.', 'Campo de firma requerido');
+      return;
+    }
+
     const raw = this.form.getRawValue();
     const payload: UpdateTemplateRequest = {
       templateName: raw.templateName as string,
@@ -153,7 +159,6 @@ export class TemplateEditComponent implements OnInit, OnDestroy {
     this.saving = true;
     this.templateService.updateTemplate(this.templateId, payload).subscribe({
       next: () => {
-        const fields = this.serializeFields();
         this.templateService.updateTemplateFields(this.templateId, fields).subscribe({
           next: () => {
             this.alertService.showSuccess('La plantilla fue actualizada exitosamente', '¡Plantilla actualizada!');
@@ -312,6 +317,13 @@ export class TemplateEditComponent implements OnInit, OnDestroy {
       fieldType: f.fieldType,
       fieldCode: f.fieldCode
     }));
+  }
+
+  private hasAtLeastOneSignatureField(fields: TemplateField[]): boolean {
+    return fields.some(field => {
+      const type = String(field.fieldType || '').trim().toLowerCase();
+      return type === 'sign' || type === 'signature';
+    });
   }
 
   private buildVersionOptions(history: TemplateApi[]): Array<{ name: string; code: string }> {

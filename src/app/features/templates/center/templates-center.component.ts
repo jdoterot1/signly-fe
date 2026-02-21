@@ -17,7 +17,6 @@ import { GuideFlowService, GuideStep } from '../../../shared/services/guide-flow
 })
 export class TemplatesCenterComponent implements OnInit, OnDestroy {
   readonly ownerName = 'TEMPLATES.CATALOG';
-  readonly accountId = 'TPL-5011';
   readonly sidebarSections: AdminSidebarSection[] = [
     {
       label: 'TEMPLATES.ENVELOPE_TEMPLATES',

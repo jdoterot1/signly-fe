@@ -4,7 +4,24 @@ export type TemplateLanguage = 'Inglés' | 'Español' | string;
 export type TemplateStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' |  string;
 
 export interface TemplateApiField {
+  page?: number | string;
+  x?: number | string;
+  y?: number | string;
+  width?: number | string;
+  height?: number | string;
+  fieldName: string;
+  fieldType: string;
+  fieldCode: number | string;
+  placements?: TemplateFieldPlacement[];
   [key: string]: unknown;
+}
+
+export interface TemplateFieldPlacement {
+  page: number | string;
+  x: number | string;
+  y: number | string;
+  width: number | string;
+  height: number | string;
 }
 
 export interface TemplateField {
@@ -16,6 +33,13 @@ export interface TemplateField {
   fieldName: string;
   fieldType: string;
   fieldCode: number | string;
+}
+
+export interface TemplateFieldGrouped {
+  fieldName: string;
+  fieldType: string;
+  fieldCode: number | string;
+  placements: TemplateFieldPlacement[];
 }
 
 export interface TemplateUploadUrlResponse {

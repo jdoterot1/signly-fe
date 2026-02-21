@@ -94,40 +94,46 @@
                 <canvas #pdfCanvas class="block w-full rounded-xl border border-slate-100 shadow-sm"></canvas>
 
                 <!-- Field overlays for current page -->
-                <ng-container *ngFor="let field of getFieldsForPage(currentPage)">
+                <ng-container *ngFor="let placementView of getFieldPlacementsForPage(currentPage)">
                   <!-- Signature field -->
-                  <div *ngIf="isSignField(field)"
-                       [ngStyle]="getFieldStyle(field)"
+                  <div *ngIf="isSignField(placementView.field)"
+                       [ngStyle]="getFieldStyle(placementView.placement)"
                        class="absolute cursor-pointer border-2 border-dashed rounded-lg transition-all duration-150 hover:scale-[1.01]"
                        [ngClass]="{
-                         'border-indigo-400 bg-transparent': !hasFieldValue(field),
-                         'border-green-400 bg-transparent': hasFieldValue(field),
-                         'ring-2 ring-amber-300': isActiveField(field)
+                         'border-indigo-400 bg-transparent': !hasFieldValue(placementView.field),
+                         'border-green-400 bg-transparent': hasFieldValue(placementView.field),
+                         'ring-2 ring-amber-300': isActiveField(placementView.field),
+                         'opacity-70 cursor-not-allowed': !placementView.field.editable
                        }"
-                       (click)="openSignaturePad(field)">
-                    <div *ngIf="!hasFieldValue(field)" class="flex flex-col items-center justify-center h-full gap-1">
+                       (click)="openSignaturePad(placementView.field)">
+                    <div *ngIf="!hasFieldValue(placementView.field)" class="flex flex-col items-center justify-center h-full gap-1">
                       <i class="pi pi-pencil text-indigo-400 text-lg"></i>
-                      <span class="text-[10px] text-indigo-500 font-medium">Firmar aqui</span>
+                      <span class="text-[10px] text-indigo-500 font-medium">
+                        {{ placementView.field.editable ? 'Firmar aqui' : 'Bloqueado' }}
+                      </span>
                     </div>
-                    <img *ngIf="hasFieldValue(field)"
-                         [src]="'data:image/png;base64,' + field.value"
+                    <img *ngIf="hasFieldValue(placementView.field)"
+                         [src]="'data:image/png;base64,' + placementView.field.value"
                          class="w-full h-full object-contain p-1"
                          alt="Firma" />
                   </div>
 
                   <!-- Text field -->
-                  <div *ngIf="!isSignField(field)"
-                       [ngStyle]="getFieldStyle(field)"
+                  <div *ngIf="!isSignField(placementView.field)"
+                       [ngStyle]="getFieldStyle(placementView.placement)"
                        class="absolute"
                        [ngClass]="{
-                         'ring-2 ring-amber-300 rounded-md': isActiveField(field)
+                         'ring-2 ring-amber-300 rounded-md': isActiveField(placementView.field)
                        }">
                     <input type="text"
-                           [value]="field.value"
-                           (input)="onFieldInput(field, $event)"
-                           (focus)="markFieldAsActive(field)"
-                           [placeholder]="getFieldDisplayName(field)"
-                           class="w-full h-full border border-slate-300 rounded-md bg-transparent px-2 text-[11px] md:text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400" />
+                           [value]="placementView.field.value"
+                           [readonly]="!placementView.field.editable"
+                           (input)="onFieldInput(placementView.field, $event)"
+                           (focus)="markFieldAsActive(placementView.field)"
+                           [placeholder]="getFieldDisplayName(placementView.field)"
+                           class="w-full h-full border border-slate-300 rounded-md bg-transparent px-2 text-[11px] md:text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
+                           [class.bg-slate-100]="!placementView.field.editable"
+                           [class.cursor-not-allowed]="!placementView.field.editable" />
                   </div>
                 </ng-container>
               </div>
@@ -178,10 +184,13 @@
                 <div class="min-w-0 flex-1">
                   <p class="text-xs font-medium text-slate-700 truncate">{{ getFieldDisplayName(field) }}</p>
                   <p class="text-[10px] text-slate-400">
-                    {{ isSignField(field) ? 'Firma' : 'Texto' }} - Pagina {{ field.page }}
+                    {{ isSignField(field) ? 'Firma' : 'Texto' }} - Pagina {{ field.placements[0].page }}
+                  </p>
+                  <p class="text-[10px] text-slate-400">
+                    {{ field.editable ? 'Editable' : 'No editable' }}
                   </p>
                 </div>
-                <button *ngIf="isSignField(field) && !hasFieldValue(field)"
+                <button *ngIf="isSignField(field) && !hasFieldValue(field) && field.editable"
                         (click)="goToField(field, true); $event.stopPropagation()"
                         class="text-[10px] font-semibold text-indigo-600 hover:text-indigo-700">
                   Firmar

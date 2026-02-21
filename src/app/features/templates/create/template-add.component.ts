@@ -194,7 +194,12 @@ export class TemplateCreateComponent {
     const mappedFields = this.mapperComponent?.getMappedFields() ?? [];
     const validations = this.mapperComponent?.validateMappedFields();
     if (validations?.hasIssues) {
-      const shouldContinue = window.confirm(this.buildValidationConfirmMessage(validations));
+      const shouldContinue = await this.alertService.showConfirm(
+        this.buildValidationConfirmMessage(validations),
+        'Advertencias en campos',
+        'Guardar de todas formas',
+        'Cancelar'
+      );
       if (!shouldContinue) {
         this.isSaving = false;
         return;
@@ -202,6 +207,11 @@ export class TemplateCreateComponent {
     }
     const editedTextItems = this.mapperComponent?.getEditedPdfTextItems() ?? [];
     const fields = this.buildTemplateFields(mappedFields);
+    if (!this.hasAtLeastOneSignatureField(fields)) {
+      this.isSaving = false;
+      this.alertService.showError('La plantilla debe tener al menos un campo de firma.', 'Campo de firma requerido');
+      return;
+    }
     let fileToUpload = file;
     try {
       fileToUpload = await this.prepareFileForUpload(file, editedTextItems);
@@ -417,6 +427,13 @@ export class TemplateCreateComponent {
       default:
         return '1';
     }
+  }
+
+  private hasAtLeastOneSignatureField(fields: TemplateField[]): boolean {
+    return fields.some(field => {
+      const type = String(field.fieldType || '').trim().toLowerCase();
+      return type === 'sign' || type === 'signature';
+    });
   }
 
   private toPixelString(value: number, dimension: number): string {

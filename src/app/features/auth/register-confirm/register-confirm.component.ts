@@ -18,12 +18,15 @@ import {
   styleUrls: []
 })
 export class RegisterConfirmComponent implements OnInit, OnDestroy {
+  private readonly otpControlNames = ['otp1', 'otp2', 'otp3', 'otp4', 'otp5', 'otp6'] as const;
   otpForm!: FormGroup;
   submitted = false;
   successMessage: string | null = null;
   errorMessage: string | null = null;
   loading = false;
   email: string | null = null;
+  private fromForgotUnverified = false;
+  hasSentOtp = true;
 
   countdown = 60;
   private countdownSub?: Subscription;
@@ -39,12 +42,18 @@ export class RegisterConfirmComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    const navigationEmail = history.state?.email as string | undefined;
+    const navigationState = history.state as { email?: string; fromForgotUnverified?: boolean };
+    const navigationEmail = navigationState?.email;
+    this.fromForgotUnverified = !!navigationState?.fromForgotUnverified;
     this.pendingConfirm = this.authService.getPendingRegisterConfirmRequest();
     this.pendingRegisterRequest = this.authService.getPendingRegisterRequest();
     this.email = navigationEmail || this.pendingConfirm?.email || null;
 
-    if (!this.pendingConfirm || !this.pendingRegisterRequest) {
+    if (!this.pendingConfirm && this.fromForgotUnverified && this.email) {
+      this.pendingConfirm = this.buildFallbackConfirmRequest(this.email);
+    }
+
+    if (!this.pendingConfirm) {
       this.errorMessage = 'No encontramos una solicitud de registro pendiente. Vuelve a crear tu cuenta.';
     }
 
@@ -57,7 +66,14 @@ export class RegisterConfirmComponent implements OnInit, OnDestroy {
       otp6: ['', [Validators.required, Validators.pattern(/^[0-9]$/)]]
     });
 
-    this.startCountdown();
+    if (this.fromForgotUnverified) {
+      this.hasSentOtp = false;
+      this.countdown = 0;
+      this.sendCode();
+    } else {
+      this.hasSentOtp = true;
+      this.startCountdown();
+    }
   }
 
   ngOnDestroy(): void {
@@ -130,8 +146,91 @@ export class RegisterConfirmComponent implements OnInit, OnDestroy {
     }
   }
 
+  onOtpInput(index: number): void {
+    const controlName = this.otpControlNames[index];
+    const control = this.otpForm.get(controlName);
+    const inputElements = this.otpInputs.toArray();
+    const rawValue = String(control?.value || '');
+    const digitsOnly = rawValue.replace(/\D/g, '');
+
+    if (!control) {
+      return;
+    }
+
+    if (!digitsOnly) {
+      control.setValue('', { emitEvent: false });
+      return;
+    }
+
+    const digit = digitsOnly.slice(-1);
+    control.setValue(digit, { emitEvent: false });
+
+    if (index < inputElements.length - 1) {
+      inputElements[index + 1].nativeElement.focus();
+    }
+  }
+
+  onPasteOtp(event: ClipboardEvent, startIndex = 0): void {
+    event.preventDefault();
+
+    const clipboard = event.clipboardData?.getData('text') ?? '';
+    const digits = clipboard.replace(/\D/g, '');
+    if (!digits) {
+      return;
+    }
+
+    const inputElements = this.otpInputs.toArray();
+    let lastFilledIndex = startIndex;
+
+    for (let i = 0; i < digits.length && startIndex + i < this.otpControlNames.length; i++) {
+      const controlName = this.otpControlNames[startIndex + i];
+      this.otpForm.get(controlName)?.setValue(digits[i], { emitEvent: false });
+      lastFilledIndex = startIndex + i;
+    }
+
+    inputElements[Math.min(lastFilledIndex + 1, inputElements.length - 1)]?.nativeElement.focus();
+  }
+
   resendCode(): void {
-    if (this.countdown > 0 || !this.pendingRegisterRequest) {
+    if (!this.hasSentOtp) {
+      this.sendCode();
+      return;
+    }
+
+    if (this.countdown > 0 || this.loading) {
+      return;
+    }
+
+    this.pendingRegisterRequest = this.pendingRegisterRequest || this.authService.getPendingRegisterRequest();
+    this.pendingConfirm = this.pendingConfirm || this.authService.getPendingRegisterConfirmRequest();
+    this.email = this.email || this.pendingConfirm?.email || null;
+
+    this.errorMessage = null;
+    this.successMessage = null;
+    this.loading = true;
+    const resendEmail = this.pendingRegisterRequest?.email || this.email;
+    if (!resendEmail) {
+      this.loading = false;
+      this.errorMessage = 'No encontramos un correo para reenviar el código.';
+      return;
+    }
+
+    this.authService.resendRegisterOtp(resendEmail).subscribe({
+      next: () => {
+        this.loading = false;
+        this.hasSentOtp = true;
+        this.successMessage = 'Código reenviado. Revisa tu correo.';
+        this.resetCountdown();
+      },
+      error: err => {
+        this.loading = false;
+        this.errorMessage = err?.message || 'No pudimos reenviar el código.';
+      }
+    });
+  }
+
+  sendCode(): void {
+    if (this.loading) {
       return;
     }
 
@@ -139,15 +238,23 @@ export class RegisterConfirmComponent implements OnInit, OnDestroy {
     this.successMessage = null;
     this.loading = true;
 
-    this.authService.register(this.pendingRegisterRequest).subscribe({
+    const resendEmail = this.pendingRegisterRequest?.email || this.email;
+    if (!resendEmail) {
+      this.loading = false;
+      this.errorMessage = 'No encontramos un correo para enviar el código.';
+      return;
+    }
+
+    this.authService.resendRegisterOtp(resendEmail).subscribe({
       next: () => {
         this.loading = false;
-        this.successMessage = 'Código reenviado. Revisa tu correo.';
+        this.hasSentOtp = true;
+        this.successMessage = 'Código enviado. Revisa tu correo.';
         this.resetCountdown();
       },
       error: err => {
         this.loading = false;
-        this.errorMessage = err?.message || 'No pudimos reenviar el código.';
+        this.errorMessage = err?.message || 'No pudimos enviar el código.';
       }
     });
   }
@@ -208,5 +315,37 @@ export class RegisterConfirmComponent implements OnInit, OnDestroy {
     }
 
     return candidate;
+  }
+
+  private buildFallbackConfirmRequest(email: string): PendingRegisterConfirmRequest {
+    const emailLocalPart = String(email || '').split('@')[0] || 'signly-user';
+    const safeName = emailLocalPart.replace(/[^a-zA-Z0-9]/g, ' ').trim() || 'Usuario Signly';
+    const safeSubdomain = this.resolveRequiredSubdomain(emailLocalPart, safeName, email);
+
+    return {
+      email,
+      company: {
+        displayName: safeName,
+        legalName: safeName,
+        industry: 'Software',
+        country: 'CO',
+        city: 'Bogota',
+        subdomain: safeSubdomain,
+        size: 1,
+        billingEmail: email,
+        about: 'Activacion de cuenta'
+      },
+      security: {
+        captchaToken: 'from-forgot-unverified'
+      },
+      consents: {
+        tosAccepted: true,
+        privacyAccepted: true
+      },
+      metadata: {
+        signupSource: 'web',
+        referralCode: null
+      }
+    };
   }
 }

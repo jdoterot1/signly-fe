@@ -118,11 +118,11 @@
                 class="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-blue-600"
               >
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <ng-container *ngIf="showPassword; else eyeClosed">
+                  <ng-container *ngIf="showPassword; else registerEyeClosed">
                     <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
                     <circle cx="12" cy="12" r="3" />
                   </ng-container>
-                  <ng-template #eyeClosed>
+                  <ng-template #registerEyeClosed>
                     <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
                     <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
                     <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
@@ -131,9 +131,55 @@
                 </svg>
               </button>
             </div>
+            <div class="mt-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+              Tu contraseña debe incluir:
+              <ul class="list-disc pl-5 mt-1 space-y-0.5">
+                <li>Mínimo 8 caracteres.</li>
+                <li>Al menos una letra mayúscula.</li>
+                <li>Al menos una letra minúscula.</li>
+                <li>Al menos un número.</li>
+                <li>Al menos un símbolo.</li>
+              </ul>
+            </div>
             <p *ngIf="hasError('user.password','required')" class="text-xs text-red-600 mt-1">La contraseña es obligatoria.</p>
             <p *ngIf="hasError('user.password','pattern')" class="text-xs text-red-600 mt-1">
               Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2 required-marker">Confirmar contraseña</label>
+            <div class="relative">
+              <input
+                [type]="showConfirmPassword ? 'text' : 'password'"
+                formControlName="confirmPassword"
+                placeholder="Repite tu contraseña"
+                class="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <button
+                type="button"
+                (click)="toggleConfirmPassword()"
+                class="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-blue-600"
+              >
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <ng-container *ngIf="showConfirmPassword; else confirmEyeClosed">
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </ng-container>
+                  <ng-template #confirmEyeClosed>
+                    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                    <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                    <line x1="2" x2="22" y1="2" y2="22" />
+                  </ng-template>
+                </svg>
+              </button>
+            </div>
+            <p *ngIf="hasError('user.confirmPassword','required')" class="text-xs text-red-600 mt-1">
+              Debes confirmar la contraseña.
+            </p>
+            <p *ngIf="hasPasswordMismatch()" class="text-xs text-red-600 mt-1">
+              Las contraseñas no coinciden.
             </p>
           </div>
         </div>
@@ -153,14 +199,13 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2 required-marker">Subdominio</label>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Subdominio (opcional)</label>
               <input
                 type="text"
                 formControlName="subdomain"
                 placeholder="Ej: apolo"
                 class="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
-              <p *ngIf="hasError('company.subdomain','required')" class="text-xs text-red-600 mt-1">Requerido.</p>
               <p *ngIf="hasError('company.subdomain','pattern')" class="text-xs text-red-600 mt-1">Usa entre 3 y 63 caracteres: minúsculas, números o guion medio.</p>
             </div>
             <div>

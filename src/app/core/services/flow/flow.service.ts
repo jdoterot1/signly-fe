@@ -197,7 +197,7 @@ export class FlowService {
         { headers }
       )
     ).pipe(
-      map(res => res.data),
+      map(res => this.normalizeTemplateDownloadData(res.data)),
       tap(data => {
         this.templateSnapshot = {
           downloadUrl: data.downloadUrl,
@@ -208,6 +208,16 @@ export class FlowService {
       }),
       catchError(err => this.handleError(err))
     );
+  }
+
+  private normalizeTemplateDownloadData(data: TemplateDownloadData): TemplateDownloadData {
+    const source = data && typeof data === 'object' ? data : ({} as TemplateDownloadData);
+    const fields = Array.isArray(source.fields) ? source.fields : [];
+    return {
+      ...source,
+      downloadUrl: source.downloadUrl ?? '',
+      fields
+    };
   }
 
   submitTemplate(processId: string, request: TemplateSubmitRequest): Observable<void> {

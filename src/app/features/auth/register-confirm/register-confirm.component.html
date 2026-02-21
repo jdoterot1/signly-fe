@@ -46,7 +46,11 @@
             type="text"
             maxlength="1"
             formControlName="otp1"
+            autocomplete="one-time-code"
+            inputmode="numeric"
             (keyup)="onKeyUp($event, 0)"
+            (input)="onOtpInput(0)"
+            (paste)="onPasteOtp($event, 0)"
             class="h-16 w-16 text-center border border-gray-300 rounded-lg
                    focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl"
           />
@@ -55,7 +59,11 @@
             type="text"
             maxlength="1"
             formControlName="otp2"
+            autocomplete="one-time-code"
+            inputmode="numeric"
             (keyup)="onKeyUp($event, 1)"
+            (input)="onOtpInput(1)"
+            (paste)="onPasteOtp($event, 1)"
             class="h-16 w-16 text-center border border-gray-300 rounded-lg
                    focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl"
           />
@@ -64,7 +72,11 @@
             type="text"
             maxlength="1"
             formControlName="otp3"
+            autocomplete="one-time-code"
+            inputmode="numeric"
             (keyup)="onKeyUp($event, 2)"
+            (input)="onOtpInput(2)"
+            (paste)="onPasteOtp($event, 2)"
             class="h-16 w-16 text-center border border-gray-300 rounded-lg
                    focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl"
           />
@@ -73,7 +85,11 @@
             type="text"
             maxlength="1"
             formControlName="otp4"
+            autocomplete="one-time-code"
+            inputmode="numeric"
             (keyup)="onKeyUp($event, 3)"
+            (input)="onOtpInput(3)"
+            (paste)="onPasteOtp($event, 3)"
             class="h-16 w-16 text-center border border-gray-300 rounded-lg
                    focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl"
           />
@@ -82,7 +98,11 @@
             type="text"
             maxlength="1"
             formControlName="otp5"
+            autocomplete="one-time-code"
+            inputmode="numeric"
             (keyup)="onKeyUp($event, 4)"
+            (input)="onOtpInput(4)"
+            (paste)="onPasteOtp($event, 4)"
             class="h-16 w-16 text-center border border-gray-300 rounded-lg
                    focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl"
           />
@@ -91,7 +111,11 @@
             type="text"
             maxlength="1"
             formControlName="otp6"
+            autocomplete="one-time-code"
+            inputmode="numeric"
             (keyup)="onKeyUp($event, 5)"
+            (input)="onOtpInput(5)"
+            (paste)="onPasteOtp($event, 5)"
             class="h-16 w-16 text-center border border-gray-300 rounded-lg
                    focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl"
           />
@@ -115,7 +139,7 @@
             (click)="resendCode()"
             class="text-blue-600 hover:underline"
           >
-            Reenviar código
+            {{ hasSentOtp ? 'Reenviar código' : 'Enviar código' }}
           </button>
           <span *ngIf="countdown > 0">
             Puedes reenviar el código en {{ countdown < 10 ? '00:0' + countdown : '00:' + countdown }}

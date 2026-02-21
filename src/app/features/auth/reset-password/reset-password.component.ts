@@ -5,6 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { AuthService } from '../../../core/services/auth/auth.service';
+import { REGISTER_REGEX } from '../../../core/constants/auth/register-regex.constants';
 
 @Component({
   selector: 'app-reset-password',
@@ -20,7 +21,6 @@ export class ResetPasswordComponent implements OnInit {
   successMessage: string | null = null;
   loading = false;
   email: string | null = null;
-  otp: string | null = null;
   showNewPassword = false;
   showConfirmPassword = false;
 
@@ -32,16 +32,15 @@ export class ResetPasswordComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const state = history.state as { email?: string; otp?: string };
+    const state = history.state as { email?: string };
     this.email = state?.email ?? this.authService.getRecoveryEmail();
-    this.otp = state?.otp ?? this.authService.getRecoveryOtp();
 
-    if (!this.email || !this.otp) {
+    if (!this.email) {
       this.errorMessage = this.translate.instant('AUTH.ERROR_RESET_LINK_EXPIRED');
     }
 
     this.resetForm = this.fb.group({
-      newPassword: ['', [Validators.required]],
+      newPassword: ['', [Validators.required, Validators.pattern(REGISTER_REGEX.strongPassword)]],
       confirmPassword: ['', [Validators.required]]
     });
   }
@@ -55,7 +54,7 @@ export class ResetPasswordComponent implements OnInit {
     this.errorMessage = null;
     this.successMessage = null;
 
-    if (!this.email || !this.otp) {
+    if (!this.email) {
       this.errorMessage = this.translate.instant('AUTH.ERROR_RESET_INVALID');
       return;
     }
@@ -70,21 +69,9 @@ export class ResetPasswordComponent implements OnInit {
       return;
     }
 
-    this.loading = true;
-    this.authService.verifyOtp(this.email, this.otp, newPassword).subscribe({
-      next: () => {
-        this.successMessage = this.translate.instant('AUTH.SUCCESS_PASSWORD_RESET');
-        this.loading = false;
-        setTimeout(() => {
-          this.authService.clearRecoveryEmail();
-          this.authService.clearRecoveryOtp();
-          this.router.navigate(['/login']);
-        }, 1200);
-      },
-      error: (err) => {
-        this.errorMessage = err.message || this.translate.instant('AUTH.ERROR_RESET_PASSWORD');
-        this.loading = false;
-      }
+    this.authService.setPendingRecoveryPassword(newPassword);
+    this.router.navigate(['/otp'], {
+      state: { email: this.email, recoveryFlow: true }
     });
   }
 

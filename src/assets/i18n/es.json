@@ -238,7 +238,11 @@
       "EMAIL_REQUIRED": "El correo es obligatorio.",
       "EMAIL_INVALID": "Formato de correo inválido.",
       "SUBMIT": "Enviar enlace de recuperación",
-      "ERROR_DEFAULT": "Error al procesar la solicitud"
+      "ERROR_DEFAULT": "Error al procesar la solicitud",
+      "SUCCESS_VERIFY_OTP_SENT": "Te enviamos un código de verificación para activar la cuenta.",
+      "ERROR_NO_VERIFIED_CONTACT": "No se puede restablecer la contraseña porque la cuenta no tiene correo o teléfono verificado.",
+      "ERROR_USER_NOT_FOUND": "No encontramos una cuenta asociada a ese correo.",
+      "ERROR_USER_NOT_CONFIRMED": "La cuenta aún no está confirmada. Completa primero el proceso de registro."
     },
     "OTP": {
       "TITLE": "Verificación de código",
@@ -248,7 +252,9 @@
       "COUNTDOWN": "Puedes reenviar el código en {{time}}",
       "SUCCESS": "Código verificado, continua con el cambio de contraseña.",
       "ERROR_NO_EMAIL": "No se encontró un correo asociado a la recuperación.",
-      "ERROR_RESTART": "Por favor inicia el proceso de recuperación nuevamente."
+      "ERROR_RESTART": "Por favor inicia el proceso de recuperación nuevamente.",
+      "RESENT_SUCCESS": "Código reenviado. Revisa tu correo.",
+      "RESEND_FAILED": "No pudimos reenviar el código. Intenta de nuevo."
     }
   },
   "DASHBOARD": {
